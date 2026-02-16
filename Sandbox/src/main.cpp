@@ -3,20 +3,22 @@
 #include <stdexcept>
 #include <iostream>
 
-class HelloTriangleApplication : public VE::Application
+class VulkanApp : public VE::Application
 {
 public:
-    HelloTriangleApplication() = default;
+    VulkanApp() : Application("Vulkan App")
+    {
+    }
 };
 
 int main()
 {
     try
-    {        
-        HelloTriangleApplication app;
+    {
+        VulkanApp app;
         app.Run();
     }
-    catch (const std::exception& e)
+    catch (const std::exception &e)
     {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;

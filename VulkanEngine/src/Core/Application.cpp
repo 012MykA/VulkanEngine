@@ -1,10 +1,31 @@
-#include "Application.hpp"
+#include "VulkanEngine/Core/Application.hpp"
+#include "VulkanEngine/Core/Window.hpp"
+#include "Instance.hpp"
+
+#include <cassert>
 
 namespace VE
 {
-    Application::Application(const WindowConfig &config)
+    Application *Application::s_Instance = nullptr;
+
+    Application::Application(const std::string &name)
     {
-        m_Window = std::make_unique<Window>(config);
+        assert(s_Instance == nullptr && "Application instance alreeady exists!");
+        s_Instance = this;
+
+        m_Window = std::make_unique<Window>(WindowConfig(name));
+        m_Instance = std::make_unique<Instance>(name, *m_Window);
+    }
+
+    Application::~Application()
+    {
+        s_Instance = nullptr;
+    }
+
+    Application &Application::Get()
+    {
+        assert(s_Instance && "Application instance is null!");
+        return *s_Instance;
     }
 
     void Application::Run()

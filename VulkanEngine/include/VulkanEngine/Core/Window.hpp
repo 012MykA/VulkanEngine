@@ -1,7 +1,8 @@
 #pragma once
 
-#include <string>
 #include <cstdint>
+#include <string>
+#include <vector>
 
 struct GLFWwindow;
 
@@ -20,6 +21,8 @@ namespace VE
     public:
         explicit Window(const WindowConfig &config);
         ~Window();
+
+        std::vector<const char *> GetRequiredInstanceExtensions() const;
 
         void OnUpdate();
         bool ShouldClose() const;

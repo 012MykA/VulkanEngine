@@ -1,5 +1,7 @@
-#include "Window.hpp"
+#include "VulkanEngine/Core/Window.hpp"
 
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 #include <stb_image.h>
 
 #include <stdexcept>
@@ -11,6 +13,7 @@ namespace VE
     {
         void GlfwErrorCallback(const int error, const char *const description)
         {
+            // TODO: replace with logging system
             std::cerr << "ERROR: GLFW: " << description << " (code: " << error << ")" << std::endl;
         }
 
@@ -51,6 +54,13 @@ namespace VE
         glfwDestroyWindow(m_Window);
 
         glfwTerminate();
+    }
+
+    std::vector<const char *> Window::GetRequiredInstanceExtensions() const
+    {
+        uint32_t glfwExtensionCount = 0;
+        const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+        return std::vector<const char *>(glfwExtensions, glfwExtensions + glfwExtensionCount);
     }
 
     void Window::OnUpdate()

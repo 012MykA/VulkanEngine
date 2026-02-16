@@ -1,21 +1,29 @@
 #pragma once
 
-#include "Window.hpp"
-
+#include <string>
 #include <memory>
 
 namespace VE
 {
+    class Window;
+    class Instance;
+    
     class Application
     {
     public:
-        Application(const WindowConfig &config = WindowConfig());
-        virtual ~Application() = default;
+        Application(const std::string &name);
+        virtual ~Application();
+
+        static Application &Get();
 
         void Run();
 
     private:
         std::unique_ptr<Window> m_Window;
+        std::unique_ptr<Instance> m_Instance;
+
+    private:
+        static Application *s_Instance;
     };
 
 }
