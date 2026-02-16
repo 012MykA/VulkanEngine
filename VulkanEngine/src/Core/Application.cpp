@@ -1,6 +1,7 @@
 #include "VulkanEngine/Core/Application.hpp"
 #include "VulkanEngine/Core/Window.hpp"
 #include "Instance.hpp"
+#include "DebugUtilsMessenger.hpp"
 
 #include <cassert>
 
@@ -8,13 +9,24 @@ namespace VE
 {
     Application *Application::s_Instance = nullptr;
 
+#ifdef NDEBUG
+    const bool enableValidationLayers = false;
+#else
+    const bool enableValidationLayers = true;
+#endif
+
     Application::Application(const std::string &name)
     {
         assert(s_Instance == nullptr && "Application instance alreeady exists!");
         s_Instance = this;
 
+        const auto validationLayers = enableValidationLayers
+                                          ? std::vector<const char *>{"VK_LAYER_KHRONOS_validation"}
+                                          : std::vector<const char *>();
+
         m_Window = std::make_unique<Window>(WindowConfig(name));
-        m_Instance = std::make_unique<Instance>(name, *m_Window);
+        m_Instance = std::make_unique<Instance>(name, *m_Window, validationLayers);
+        m_DebugUtilsMessenger = std::make_unique<DebugUtilsMessenger>(*m_Instance);
     }
 
     Application::~Application()
