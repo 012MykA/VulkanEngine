@@ -7,7 +7,7 @@ namespace VE
     class Device;
     class RenderPass;
 
-    class Framebuffer
+    class Framebuffer final
     {
     public:
         Framebuffer(const Device &device,
@@ -21,7 +21,7 @@ namespace VE
     private:
         const Device &m_Device;
 
-        VkFramebuffer m_Framebuffer;
+        VkFramebuffer m_Framebuffer = VK_NULL_HANDLE;
     };
 
 }
