@@ -19,6 +19,7 @@ namespace VE
         VkSwapchainKHR Handle() const { return m_Swapchain; }
         const Device& GetDevice() const { return m_Device; }
         VkFormat GetImageFormat() const { return m_ImageFormat; }
+        VkExtent2D GetExtent() const { return m_Extent; }
 
     private:
         void CreateSwapchain(const Window &window);

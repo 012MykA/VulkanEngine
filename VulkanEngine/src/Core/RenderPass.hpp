@@ -12,6 +12,8 @@ namespace VE
         RenderPass(const Swapchain &swapchain);
         ~RenderPass();
 
+        VkRenderPass Handle() const { return m_RenderPass; }
+
     private:
         const Swapchain &m_Swapchain;
         VkRenderPass m_RenderPass = VK_NULL_HANDLE;
