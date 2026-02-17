@@ -138,7 +138,7 @@ namespace VE
         pipelineInfo.subpass = 0;
 
         CheckVk(vkCreateGraphicsPipelines(device.Handle(), nullptr, 1, &pipelineInfo, nullptr, &m_Pipeline),
-                "create graphics pipeline");
+                "create graphics pipeline!");
     }
 
     GraphicsPipeline::~GraphicsPipeline()

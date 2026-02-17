@@ -142,8 +142,7 @@ namespace VE
     VkExtent2D Swapchain::ChooseExtent(const VkSurfaceCapabilitiesKHR &capabilities, const Window &window) const
     {
         if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
-            ;
-        return capabilities.currentExtent;
+            return capabilities.currentExtent;
 
         int width, height;
         glfwGetFramebufferSize(window.Handle(), &width, &height);
