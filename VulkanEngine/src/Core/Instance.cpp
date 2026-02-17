@@ -40,11 +40,7 @@ namespace VE
 
     Instance::~Instance()
     {
-        if (m_Instance != VK_NULL_HANDLE)
-        {
-            vkDestroyInstance(m_Instance, nullptr);
-            m_Instance = VK_NULL_HANDLE;
-        }
+        vkDestroyInstance(m_Instance, nullptr);
     }
 
     void Instance::CheckVulkanValidationLayerSupport(const std::vector<const char *> &validationLayers)
@@ -67,7 +63,7 @@ namespace VE
 
             if (result == availableLayers.end())
             {
-                throw std::runtime_error(std::format("could not find the requested validation layer: '{0}'!", layer));
+                throw std::runtime_error(std::format("could not find the requested validation layer: '{}'!", layer));
             }
         }
     }

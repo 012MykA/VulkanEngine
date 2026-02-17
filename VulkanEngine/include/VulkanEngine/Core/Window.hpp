@@ -22,6 +22,8 @@ namespace VE
         explicit Window(const WindowConfig &config);
         ~Window();
 
+        GLFWwindow* Handle() const { return m_Window; }
+
         std::vector<const char *> GetRequiredInstanceExtensions() const;
 
         void OnUpdate();

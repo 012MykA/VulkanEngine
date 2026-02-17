@@ -2,6 +2,8 @@
 #include "VulkanEngine/Core/Window.hpp"
 #include "Instance.hpp"
 #include "DebugUtilsMessenger.hpp"
+#include "Surface.hpp"
+#include "Device.hpp"
 
 #include <cassert>
 
@@ -27,6 +29,8 @@ namespace VE
         m_Window = std::make_unique<Window>(WindowConfig(name));
         m_Instance = std::make_unique<Instance>(name, *m_Window, validationLayers);
         m_DebugUtilsMessenger = std::make_unique<DebugUtilsMessenger>(*m_Instance);
+        m_Surface = std::make_unique<Surface>(*m_Instance, *m_Window);
+        m_Device = std::make_unique<Device>(*m_Instance, *m_Surface);
     }
 
     Application::~Application()
