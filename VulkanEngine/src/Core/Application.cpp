@@ -3,8 +3,7 @@
 #include "Instance.hpp"
 #include "DebugUtilsMessenger.hpp"
 #include "Surface.hpp"
-#include "Device.hpp"
-#include "Swapchain.hpp"
+#include "Renderer.hpp"
 
 #include <cassert>
 
@@ -31,8 +30,7 @@ namespace VE
         m_Instance = std::make_unique<Instance>(name, *m_Window, validationLayers);
         m_DebugUtilsMessenger = std::make_unique<DebugUtilsMessenger>(*m_Instance);
         m_Surface = std::make_unique<Surface>(*m_Instance, *m_Window);
-        m_Device = std::make_unique<Device>(*m_Instance, *m_Surface);
-        m_Swapchain = std::make_unique<Swapchain>(*m_Device, *m_Surface, *m_Window);
+        m_Renderer = std::make_unique<Renderer>(*m_Instance, *m_Surface, *m_Window);
     }
 
     Application::~Application()

@@ -10,8 +10,7 @@ namespace VE
     class Instance;
     class DebugUtilsMessenger;
     class Surface;
-    class Device;
-    class Swapchain;
+    class Renderer;
 
     class Application
     {
@@ -28,8 +27,8 @@ namespace VE
         std::unique_ptr<Instance> m_Instance;
         std::unique_ptr<DebugUtilsMessenger> m_DebugUtilsMessenger;
         std::unique_ptr<Surface> m_Surface;
-        std::unique_ptr<Device> m_Device;
-        std::unique_ptr<Swapchain> m_Swapchain;
+
+        std::unique_ptr<Renderer> m_Renderer;
 
     private:
         static Application *s_Instance;

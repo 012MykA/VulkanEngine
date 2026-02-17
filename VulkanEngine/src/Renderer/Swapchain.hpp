@@ -17,7 +17,8 @@ namespace VE
         ~Swapchain();
 
         VkSwapchainKHR Handle() const { return m_Swapchain; }
-        const Device& GetDevice() const { return m_Device; }
+        const Device &GetDevice() const { return m_Device; }
+        const std::vector<VkImageView> &GetImageViews() const { return m_ImageViews; }
         VkFormat GetImageFormat() const { return m_ImageFormat; }
         VkExtent2D GetExtent() const { return m_Extent; }
 
