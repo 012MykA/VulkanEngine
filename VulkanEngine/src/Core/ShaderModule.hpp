@@ -23,7 +23,7 @@ namespace VE
 
     private:
         const Device &m_Device;
-        VkShaderModule m_ShaderModule;
+        VkShaderModule m_ShaderModule = VK_NULL_HANDLE;
     };
 
 }

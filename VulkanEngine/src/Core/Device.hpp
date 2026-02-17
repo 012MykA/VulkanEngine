@@ -35,7 +35,7 @@ namespace VE
         ~Device();
 
         VkDevice Handle() const { return m_Device; }
-        VkPhysicalDevice PhysicalDevice() const { return m_PhysicalDevice; }
+        VkPhysicalDevice GetPhysicalDevice() const { return m_PhysicalDevice; }
 
         VkQueue GraphicsQueue() const { return m_GraphicsQueue; }
         VkQueue PresentQueue() const { return m_PresentQueue; }

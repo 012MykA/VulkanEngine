@@ -27,7 +27,7 @@ namespace VE
 
     void Swapchain::CreateSwapchain(const Window &window)
     {
-        auto support = m_Device.QuerySwapchainSupport(m_Device.PhysicalDevice());
+        auto support = m_Device.QuerySwapchainSupport(m_Device.GetPhysicalDevice());
 
         auto surfaceFormat = ChooseSurfaceFormat(support.Formats);
         auto presentMode = ChoosePresentMode(support.PresentModes);

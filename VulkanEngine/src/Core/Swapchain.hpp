@@ -17,6 +17,8 @@ namespace VE
         ~Swapchain();
 
         VkSwapchainKHR Handle() const { return m_Swapchain; }
+        const Device& GetDevice() const { return m_Device; }
+        VkFormat GetImageFormat() const { return m_ImageFormat; }
 
     private:
         void CreateSwapchain(const Window &window);
