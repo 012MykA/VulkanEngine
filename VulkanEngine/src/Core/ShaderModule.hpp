@@ -9,7 +9,7 @@ namespace VE
 {
     class Device;
 
-    class ShaderModule
+    class ShaderModule final
     {
     public:
         ShaderModule(const Device &device, const std::string &filename);
