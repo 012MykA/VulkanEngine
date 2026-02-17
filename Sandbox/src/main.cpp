@@ -1,4 +1,4 @@
-#include "VulkanEngine/VulkanEngine.hpp"
+#include "VulkanEngine.hpp"
 
 #include <stdexcept>
 #include <iostream>

@@ -1,10 +1,11 @@
-#include "VulkanEngine/Core/Application.hpp"
+#include "Application.hpp"
 #include "Window.hpp"
 #include "Instance.hpp"
 #include "DebugUtilsMessenger.hpp"
 #include "Surface.hpp"
 #include "Device.hpp"
 #include "Swapchain.hpp"
+#include "GraphicsPipeline.hpp"
 
 #include <cassert>
 
@@ -33,6 +34,7 @@ namespace VE
         m_Surface = std::make_unique<Surface>(*m_Instance, *m_Window);
         m_Device = std::make_unique<Device>(*m_Instance, *m_Surface);
         m_Swapchain = std::make_unique<Swapchain>(*m_Device, *m_Surface, *m_Window);
+        m_GraphicsPipeline = std::make_unique<GraphicsPipeline>(*m_Swapchain);
     }
 
     Application::~Application()

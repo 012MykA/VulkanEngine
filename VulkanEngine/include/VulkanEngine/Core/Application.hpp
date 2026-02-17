@@ -11,6 +11,7 @@ namespace VE
     class Surface;
     class Device;
     class Swapchain;
+    class GraphicsPipeline;
 
     class Application
     {
@@ -29,6 +30,7 @@ namespace VE
         std::unique_ptr<Surface> m_Surface;
         std::unique_ptr<Device> m_Device;
         std::unique_ptr<Swapchain> m_Swapchain;
+        std::unique_ptr<GraphicsPipeline> m_GraphicsPipeline;
 
     private:
         static Application *s_Instance;

@@ -143,5 +143,7 @@ namespace VE
 
     GraphicsPipeline::~GraphicsPipeline()
     {
+        vkDestroyPipeline(m_Swapchain.GetDevice().Handle(), m_Pipeline, nullptr);
     }
+
 }
