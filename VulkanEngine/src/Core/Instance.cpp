@@ -1,5 +1,5 @@
 #include "Instance.hpp"
-#include "VulkanEngine/Core/Window.hpp"
+#include "Window.hpp"
 #include "Validation.hpp"
 
 #include <stdexcept>

@@ -1,6 +1,6 @@
 #include "Surface.hpp"
 #include "Instance.hpp"
-#include "VulkanEngine/Core/Window.hpp"
+#include "Window.hpp"
 #include "Validation.hpp"
 
 #define GLFW_INCLUDE_VULKAN

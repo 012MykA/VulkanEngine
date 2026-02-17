@@ -1,4 +1,4 @@
-#include "VulkanEngine/Core/Window.hpp"
+#include "Window.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>

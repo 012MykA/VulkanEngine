@@ -99,7 +99,14 @@ namespace VE
 
         bool extensionsSupported = CheckDeviceExtensionSupport(device);
 
-        return indices.IsComplete() && extensionsSupported;
+        bool swapchainAdequate = false;
+        if (extensionsSupported)
+        {
+            auto swapchainSupport = QuerySwapchainSupport(device);
+            swapchainAdequate = !swapchainSupport.Formats.empty() && !swapchainSupport.PresentModes.empty();
+        }
+
+        return indices.IsComplete() && extensionsSupported && swapchainAdequate;
     }
 
     bool Device::CheckDeviceExtensionSupport(VkPhysicalDevice device)
@@ -169,4 +176,34 @@ namespace VE
         return indices;
     }
 
+    SwapchainSupportDetails Device::QuerySwapchainSupport(VkPhysicalDevice device) const
+    {
+        SwapchainSupportDetails details;
+        CheckVk(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_Surface.Handle(), &details.Capabilities),
+                "get physical device surface capabilities KHR!");
+
+        uint32_t formatCount;
+        CheckVk(vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_Surface.Handle(), &formatCount, nullptr),
+                "get physical device surface formats KHR (count)!");
+
+        if (formatCount != 0)
+        {
+            details.Formats.resize(formatCount);
+            CheckVk(vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_Surface.Handle(), &formatCount, details.Formats.data()),
+                    "get physical device surface formats KHR (data)!");
+        }
+
+        uint32_t presentModeCount;
+        CheckVk(vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_Surface.Handle(), &presentModeCount, nullptr),
+                "get physical device surface present modes KHR (count)!");
+
+        if (presentModeCount != 0)
+        {
+            details.PresentModes.resize(presentModeCount);
+            CheckVk(vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_Surface.Handle(), &presentModeCount, details.PresentModes.data()),
+                    "get physical device surface present modes KHR (data)!");
+        }
+
+        return details;
+    }
 }

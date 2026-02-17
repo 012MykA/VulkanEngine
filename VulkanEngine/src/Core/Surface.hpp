@@ -17,7 +17,7 @@ namespace VE
 
     private:
         const Instance &m_Instance;
-        VkSurfaceKHR m_Surface;
+        VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
     };
 
 }

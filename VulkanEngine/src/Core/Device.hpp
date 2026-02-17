@@ -21,6 +21,13 @@ namespace VE
         }
     };
 
+    struct SwapchainSupportDetails
+    {
+        VkSurfaceCapabilitiesKHR Capabilities;
+        std::vector<VkSurfaceFormatKHR> Formats;
+        std::vector<VkPresentModeKHR> PresentModes;
+    };
+
     class Device final
     {
     public:
@@ -34,6 +41,7 @@ namespace VE
         VkQueue PresentQueue() const { return m_PresentQueue; }
 
         const QueueFamilyIndices &Queues() const { return m_QueueFamilies; }
+        SwapchainSupportDetails QuerySwapchainSupport(VkPhysicalDevice device) const;
 
     private:
         void PickPhysicalDevice();
