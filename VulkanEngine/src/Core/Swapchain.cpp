@@ -14,10 +14,14 @@ namespace VE
     Swapchain::Swapchain(const Device &device, const Surface &surface, const Window &window) : m_Device(device), m_Surface(surface)
     {
         CreateSwapchain(window);
+        CreateImageViews();
     }
 
     Swapchain::~Swapchain()
     {
+        for (auto imageView : m_ImageViews)
+            vkDestroyImageView(m_Device.Handle(), imageView, nullptr);
+
         vkDestroySwapchainKHR(m_Device.Handle(), m_Swapchain, nullptr);
     }
 
@@ -75,8 +79,42 @@ namespace VE
 
         CheckVk(vkCreateSwapchainKHR(m_Device.Handle(), &createInfo, nullptr, &m_Swapchain), "create swapchain!");
 
+        CheckVk(vkGetSwapchainImagesKHR(m_Device.Handle(), m_Swapchain, &imageCount, nullptr),
+                "get swapchain images KHR (count)!");
+        m_Images.resize(imageCount);
+
+        CheckVk(vkGetSwapchainImagesKHR(m_Device.Handle(), m_Swapchain, &imageCount, m_Images.data()),
+                "get swapchain images KHR (data!");
+
         m_ImageFormat = surfaceFormat.format;
         m_Extent = extent;
+    }
+
+    void Swapchain::CreateImageViews()
+    {
+        m_ImageViews.resize(m_Images.size());
+
+        for (size_t i = 0; i < m_ImageViews.size(); i++)
+        {
+            VkImageViewCreateInfo createInfo{};
+            createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            createInfo.image = m_Images[i];
+            createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            createInfo.format = m_ImageFormat;
+
+            createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+            createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            createInfo.subresourceRange.baseMipLevel = 0;
+            createInfo.subresourceRange.levelCount = 1;
+            createInfo.subresourceRange.baseArrayLayer = 0;
+            createInfo.subresourceRange.layerCount = 1;
+
+            CheckVk(vkCreateImageView(m_Device.Handle(), &createInfo, nullptr, &m_ImageViews[i]), "create image views!");
+        }
     }
 
     VkSurfaceFormatKHR Swapchain::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &formats) const

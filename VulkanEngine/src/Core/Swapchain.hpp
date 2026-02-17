@@ -20,6 +20,7 @@ namespace VE
 
     private:
         void CreateSwapchain(const Window &window);
+        void CreateImageViews();
 
         VkSurfaceFormatKHR ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &formats) const;
         VkPresentModeKHR ChoosePresentMode(const std::vector<VkPresentModeKHR> &modes) const;
@@ -31,6 +32,9 @@ namespace VE
         const Surface &m_Surface;
 
         VkSwapchainKHR m_Swapchain = VK_NULL_HANDLE;
+
+        std::vector<VkImage> m_Images;
+        std::vector<VkImageView> m_ImageViews;
 
         VkFormat m_ImageFormat{};
         VkExtent2D m_Extent{};
