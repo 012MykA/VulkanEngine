@@ -26,9 +26,13 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include/VulkanEngine
         ${CMAKE_CURRENT_SOURCE_DIR}/include/VulkanEngine/Core
+        
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb_image
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Assets
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Core
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/Assets
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Vulkan
+
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb_image
 )
