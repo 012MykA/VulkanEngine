@@ -17,6 +17,15 @@ namespace VE
             std::cerr << "ERROR: GLFW: " << description << " (code: " << error << ")" << std::endl;
         }
 
+        void GlfwFramebufferResizeCallback(GLFWwindow *window, int width, int height)
+        {
+            auto *const this_ = static_cast<Window *>(glfwGetWindowUserPointer(window));
+            if (this_->OnResize)
+            {
+                this_->OnResize(width, height);
+            }
+        }
+
     }
 
     Window::Window(const WindowConfig &config) : m_Config(config)
@@ -47,6 +56,7 @@ namespace VE
         stbi_image_free(icon.pixels);
 
         glfwSetWindowUserPointer(m_Window, this);
+        glfwSetFramebufferSizeCallback(m_Window, GlfwFramebufferResizeCallback);
     }
 
     Window::~Window()
@@ -66,6 +76,18 @@ namespace VE
     void Window::OnUpdate()
     {
         glfwPollEvents();
+    }
+
+    bool Window::IsMinimized() const
+    {
+        int width, height;
+        glfwGetFramebufferSize(m_Window, &width, &height);
+        return width == 0 || height == 0;
+    }
+
+    void Window::WaitForEvents() const
+    {
+        glfwWaitEvents();
     }
 
     bool Window::ShouldClose() const

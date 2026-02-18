@@ -4,6 +4,7 @@
 #include "DebugUtilsMessenger.hpp"
 #include "Surface.hpp"
 #include "Renderer.hpp"
+#include "Device.hpp"
 
 #include <cassert>
 
@@ -31,6 +32,11 @@ namespace VE
         m_DebugUtilsMessenger = std::make_unique<DebugUtilsMessenger>(*m_Instance);
         m_Surface = std::make_unique<Surface>(*m_Instance, *m_Window);
         m_Renderer = std::make_unique<Renderer>(*m_Instance, *m_Surface, *m_Window);
+
+        m_Window->OnResize = [this](int width, int height)
+        {
+            this->m_Renderer->OnResize();
+        };
     }
 
     Application::~Application()
@@ -51,6 +57,7 @@ namespace VE
             m_Window->OnUpdate();
             m_Renderer->DrawFrame();
         }
+        m_Renderer->GetDevice().WaitIdle();
     }
 
 }

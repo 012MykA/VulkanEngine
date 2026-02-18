@@ -31,10 +31,17 @@ namespace VE
 
         void DrawFrame();
 
+        void OnResize();
+
+        const Device &GetDevice() const { return *m_Device; }
+
     private:
+        void CreateSwapchain();
         void CreateFramebuffers();
         void CreateCommandBuffers();
         void CreateSyncObjects();
+
+        void RecreateSwapchain();
 
     private:
         const Surface &m_Surface;
@@ -48,6 +55,7 @@ namespace VE
 
         std::unique_ptr<CommandPool> m_CommandPool;
         std::unique_ptr<CommandBuffers> m_CommandBuffers;
+        std::vector<Framebuffer> m_Framebuffers;
 
         // Sync objects
         static constexpr int MAX_FRAMES_IN_FLIGHT = 3;
@@ -56,7 +64,7 @@ namespace VE
         std::vector<Fence> m_InFlightFences;
         uint32_t currentFrame = 0;
 
-        std::vector<Framebuffer> m_Framebuffers;
+        bool m_FramebufferResized = false;
     };
 
 }

@@ -11,16 +11,17 @@
 #include "Validation.hpp"
 
 #include <limits>
+#include <stdexcept>
 
 namespace VE
 {
     Renderer::Renderer(const Instance &instance, const Surface &surface, const Window &window) : m_Surface(surface), m_Window(window)
     {
         m_Device = std::make_unique<Device>(instance, m_Surface);
-        m_Swapchain = std::make_unique<Swapchain>(*m_Device, m_Surface, m_Window);
+        CreateSwapchain();
 
         m_RenderPass = std::make_unique<RenderPass>(*m_Swapchain);
-        m_Pipeline = std::make_unique<GraphicsPipeline>(*m_Swapchain);
+        m_Pipeline = std::make_unique<GraphicsPipeline>(*m_Swapchain, *m_RenderPass);
 
         CreateFramebuffers();
 
@@ -44,11 +45,22 @@ namespace VE
         const auto renderFinishedSemaphore = m_RenderFinishedSemaphores[currentFrame].Handle();
 
         inFlightFence.Wait(noTimeout);
-        inFlightFence.Reset();
 
         uint32_t imageIndex;
-        vkAcquireNextImageKHR(m_Device->Handle(), m_Swapchain->Handle(), noTimeout,
-                              imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+        VkResult result = vkAcquireNextImageKHR(m_Device->Handle(), m_Swapchain->Handle(), noTimeout,
+                                                imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            RecreateSwapchain();
+            return;
+        }
+        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        {
+            throw std::runtime_error("failed to acquire swap chain image!");
+        }
+
+        inFlightFence.Reset();
 
         auto commandBuffer = m_CommandBuffers->Begin(imageIndex);
         { // Render
@@ -64,9 +76,25 @@ namespace VE
             renderPassInfo.pClearValues = &clearColor;
 
             vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline->Handle());
+            {
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline->Handle());
 
-            vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+                VkViewport viewport{};
+                viewport.x = 0.0f;
+                viewport.y = 0.0f;
+                viewport.width = static_cast<float>(m_Swapchain->GetExtent().width);
+                viewport.height = static_cast<float>(m_Swapchain->GetExtent().height);
+                viewport.minDepth = 0.0f;
+                viewport.maxDepth = 1.0f;
+                vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+                VkRect2D scissor{};
+                scissor.offset = {0, 0};
+                scissor.extent = m_Swapchain->GetExtent();
+                vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+                vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+            }
             vkCmdEndRenderPass(commandBuffer);
         }
         m_CommandBuffers->End(imageIndex);
@@ -98,9 +126,28 @@ namespace VE
         presentInfo.pSwapchains = swapChains;
         presentInfo.pImageIndices = &imageIndex;
 
-        vkQueuePresentKHR(m_Device->PresentQueue(), &presentInfo);
+        result = vkQueuePresentKHR(m_Device->PresentQueue(), &presentInfo);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_FramebufferResized)
+        {
+            m_FramebufferResized = false;
+            RecreateSwapchain();
+        }
+        else if (result != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to present swap chain image!");
+        }
 
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    }
+
+    void Renderer::OnResize()
+    {
+        m_FramebufferResized = true;
+    }
+
+    void Renderer::CreateSwapchain()
+    {
+        m_Swapchain = std::make_unique<Swapchain>(*m_Device, m_Surface, m_Window);
     }
 
     void Renderer::CreateFramebuffers()
@@ -132,6 +179,28 @@ namespace VE
             m_RenderFinishedSemaphores.emplace_back(*m_Device);
             m_InFlightFences.emplace_back(*m_Device, true);
         }
+    }
+
+    void Renderer::RecreateSwapchain()
+    {
+        m_Device->WaitIdle();
+
+        while (m_Window.IsMinimized())
+        {
+            m_Window.WaitForEvents();
+        }
+
+        m_CommandBuffers.reset();
+        m_Framebuffers.clear();
+        m_RenderPass.reset();
+        m_Pipeline.reset();
+        m_Swapchain.reset();
+
+        CreateSwapchain();
+        m_RenderPass = std::make_unique<RenderPass>(*m_Swapchain);
+        m_Pipeline = std::make_unique<GraphicsPipeline>(*m_Swapchain, *m_RenderPass);
+        CreateFramebuffers();
+        CreateCommandBuffers();
     }
 
 }

@@ -3,6 +3,7 @@
 #include "Validation.hpp"
 
 #include <fstream>
+#include <stdexcept>
 
 namespace VE
 {

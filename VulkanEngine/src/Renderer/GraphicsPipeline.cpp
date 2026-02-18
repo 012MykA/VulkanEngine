@@ -1,18 +1,17 @@
 #include "GraphicsPipeline.hpp"
 #include "Device.hpp"
 #include "Swapchain.hpp"
-#include "ShaderModule.hpp"
 #include "RenderPass.hpp"
 #include "PipelineLayout.hpp"
+#include "ShaderModule.hpp"
 #include "Validation.hpp"
 
 namespace VE
 {
-    GraphicsPipeline::GraphicsPipeline(const Swapchain &swapchain) : m_Swapchain(swapchain)
+    GraphicsPipeline::GraphicsPipeline(const Swapchain &swapchain, const RenderPass &renderPass)
+        : m_Swapchain(swapchain), m_RenderPass(renderPass)
     {
         const auto &device = swapchain.GetDevice();
-
-        m_RenderPass = std::make_unique<RenderPass>(m_Swapchain);
         m_PipelineLayout = std::make_unique<PipelineLayout>(device);
 
         // Vertex input
@@ -30,25 +29,12 @@ namespace VE
         inputAssembly.primitiveRestartEnable = VK_FALSE;
 
         // Viewport & scissor
-        VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width = static_cast<float>(m_Swapchain.GetExtent().width);
-        viewport.height = static_cast<float>(m_Swapchain.GetExtent().height);
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-
-        VkRect2D scissor{};
-        scissor.offset = {0, 0};
-        scissor.extent = m_Swapchain.GetExtent();
-
         VkPipelineViewportStateCreateInfo viewportState{};
         viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
         viewportState.viewportCount = 1;
-        viewportState.pViewports = &viewport;
         viewportState.scissorCount = 1;
-        viewportState.pScissors = &scissor;
 
+        // Rasterizer
         VkPipelineRasterizationStateCreateInfo rasterizer = {};
         rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         rasterizer.depthClampEnable = VK_FALSE;
@@ -71,18 +57,6 @@ namespace VE
         multisampling.pSampleMask = nullptr;            // Optional
         multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
         multisampling.alphaToOneEnable = VK_FALSE;      // Optional
-
-        VkPipelineDepthStencilStateCreateInfo depthStencil = {};
-        depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        depthStencil.depthTestEnable = VK_FALSE;
-        depthStencil.depthWriteEnable = VK_FALSE;
-        depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-        depthStencil.depthBoundsTestEnable = VK_FALSE;
-        depthStencil.minDepthBounds = 0.0f; // Optional
-        depthStencil.maxDepthBounds = 1.0f; // Optional
-        depthStencil.stencilTestEnable = VK_FALSE;
-        depthStencil.front = {}; // Optional
-        depthStencil.back = {};  // Optional
 
         // Color blending
         VkPipelineColorBlendAttachmentState colorBlendAttachment{};
@@ -107,6 +81,16 @@ namespace VE
         colorBlending.blendConstants[2] = 0.0f; // Optional
         colorBlending.blendConstants[3] = 0.0f; // Optional
 
+        std::vector<VkDynamicState> dynamicStates = {
+            VK_DYNAMIC_STATE_VIEWPORT,
+            VK_DYNAMIC_STATE_SCISSOR,
+        };
+
+        VkPipelineDynamicStateCreateInfo dynamicState{};
+        dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+        dynamicState.pDynamicStates = dynamicStates.data();
+
         const ShaderModule vertShader(device, "shaders/Graphics.vert.spv");
         const ShaderModule fragShader(device, "shaders/Graphics.frag.spv");
 
@@ -126,15 +110,15 @@ namespace VE
         pipelineInfo.pViewportState = &viewportState;
         pipelineInfo.pRasterizationState = &rasterizer;
         pipelineInfo.pMultisampleState = &multisampling;
-        pipelineInfo.pDepthStencilState = &depthStencil;
+        pipelineInfo.pDepthStencilState = nullptr;
         pipelineInfo.pColorBlendState = &colorBlending;
 
-        pipelineInfo.pDynamicState = nullptr;      // Optional
+        pipelineInfo.pDynamicState = &dynamicState;
         pipelineInfo.basePipelineHandle = nullptr; // Optional
         pipelineInfo.basePipelineIndex = -1;       // Optional
 
         pipelineInfo.layout = m_PipelineLayout->Handle();
-        pipelineInfo.renderPass = m_RenderPass->Handle();
+        pipelineInfo.renderPass = m_RenderPass.Handle();
         pipelineInfo.subpass = 0;
 
         CheckVk(vkCreateGraphicsPipelines(device.Handle(), nullptr, 1, &pipelineInfo, nullptr, &m_Pipeline),

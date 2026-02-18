@@ -4,6 +4,7 @@
 #include "Validation.hpp"
 
 #include <set>
+#include <stdexcept>
 
 namespace VE
 {
