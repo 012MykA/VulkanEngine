@@ -1,3 +1,6 @@
 [submodule "VulkanEngine/vendor/glfw"]
 	path = VulkanEngine/vendor/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "VulkanEngine/vendor/glm"]
+	path = VulkanEngine/vendor/glm
+	url = https://github.com/g-truc/glm.git

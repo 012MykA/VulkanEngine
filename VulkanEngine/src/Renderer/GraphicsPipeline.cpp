@@ -5,6 +5,7 @@
 #include "PipelineLayout.hpp"
 #include "ShaderModule.hpp"
 #include "Validation.hpp"
+#include "Vertex.hpp"
 
 namespace VE
 {
@@ -12,15 +13,16 @@ namespace VE
         : m_Swapchain(swapchain), m_RenderPass(renderPass)
     {
         const auto &device = swapchain.GetDevice();
-        m_PipelineLayout = std::make_unique<PipelineLayout>(device);
+        const auto bindingDescription = Vertex::GetBindingDescription();
+        const auto attributeDescriptions = Vertex::GetAttributeDescriptions();
 
         // Vertex input
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputInfo.vertexBindingDescriptionCount = 0;
-        vertexInputInfo.pVertexBindingDescriptions = nullptr;
-        vertexInputInfo.vertexAttributeDescriptionCount = 0;
-        vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+        vertexInputInfo.vertexBindingDescriptionCount = 1;
+        vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
         // Input assembly
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -98,6 +100,8 @@ namespace VE
             vertShader.CreateShaderStage(VK_SHADER_STAGE_VERTEX_BIT),
             fragShader.CreateShaderStage(VK_SHADER_STAGE_FRAGMENT_BIT),
         };
+
+        m_PipelineLayout = std::make_unique<PipelineLayout>(device);
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
