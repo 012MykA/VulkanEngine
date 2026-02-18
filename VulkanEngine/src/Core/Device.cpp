@@ -206,4 +206,10 @@ namespace VE
 
         return details;
     }
+
+    void Device::WaitIdle() const
+    {
+        vkDeviceWaitIdle(m_Device);
+    }
+    
 }

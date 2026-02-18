@@ -43,6 +43,8 @@ namespace VE
         const QueueFamilyIndices &Queues() const { return m_QueueFamilies; }
         SwapchainSupportDetails QuerySwapchainSupport(VkPhysicalDevice device) const;
 
+        void WaitIdle() const;
+
     private:
         void PickPhysicalDevice();
         void CreateLogicalDevice();

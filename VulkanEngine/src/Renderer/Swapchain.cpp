@@ -84,7 +84,7 @@ namespace VE
         m_Images.resize(imageCount);
 
         CheckVk(vkGetSwapchainImagesKHR(m_Device.Handle(), m_Swapchain, &imageCount, m_Images.data()),
-                "get swapchain images KHR (data!");
+                "get swapchain images KHR (data)!");
 
         m_ImageFormat = surfaceFormat.format;
         m_Extent = extent;

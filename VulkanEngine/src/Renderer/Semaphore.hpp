@@ -17,6 +17,7 @@ namespace VE
         Semaphore(Semaphore &&other) noexcept;
         ~Semaphore();
 
+        VkSemaphore Handle() const { return m_Semaphore; }
         const Device &GetDevice() const { return m_Device; }
 
     private:

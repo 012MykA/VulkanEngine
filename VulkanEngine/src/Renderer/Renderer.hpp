@@ -1,5 +1,7 @@
 #pragma once
 #include "Framebuffer.hpp"
+#include "Semaphore.hpp"
+#include "Fence.hpp"
 
 #include <vulkan/vulkan.h>
 
@@ -32,8 +34,12 @@ namespace VE
     private:
         void CreateFramebuffers();
         void CreateCommandBuffers();
+        void CreateSyncObjects();
 
     private:
+        const Surface &m_Surface;
+        const Window &m_Window;
+
         std::unique_ptr<Device> m_Device;
         std::unique_ptr<Swapchain> m_Swapchain;
 
@@ -44,9 +50,11 @@ namespace VE
         std::unique_ptr<CommandBuffers> m_CommandBuffers;
 
         // Sync objects
-        std::unique_ptr<Semaphore> m_ImageAvailable;
-        std::unique_ptr<Semaphore> m_RenderFinished;
-        std::unique_ptr<Fence> m_InFlightFence;
+        static const int MAX_FRAMES_IN_FLIGHT = 3;
+        std::vector<Semaphore> m_ImageAvailableSemaphores;
+        std::vector<Semaphore> m_RenderFinishedSemaphores;
+        std::vector<Fence> m_InFlightFences;
+        uint32_t currentFrame = 0;
 
         std::vector<Framebuffer> m_Framebuffers;
     };
