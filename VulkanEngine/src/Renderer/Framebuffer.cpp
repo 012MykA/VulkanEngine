@@ -27,6 +27,11 @@ namespace VE
         CheckVk(vkCreateFramebuffer(m_Device.Handle(), &framebufferInfo, nullptr, &m_Framebuffer), "create framebuffer!");
     }
 
+    Framebuffer::Framebuffer(Framebuffer &&other) noexcept : m_Device(other.m_Device), m_Framebuffer(other.m_Framebuffer)
+    {
+        other.m_Framebuffer = VK_NULL_HANDLE;
+    }
+
     Framebuffer::~Framebuffer()
     {
         vkDestroyFramebuffer(m_Device.Handle(), m_Framebuffer, nullptr);

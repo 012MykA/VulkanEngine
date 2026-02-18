@@ -10,10 +10,15 @@ namespace VE
     class Framebuffer final
     {
     public:
+        Framebuffer(const Framebuffer &) = delete;
+        Framebuffer &operator=(const Framebuffer &) = delete;
+        Framebuffer &operator=(Framebuffer &&) = delete;
+
         Framebuffer(const Device &device,
                     const RenderPass &renderPass,
                     VkImageView imageView,
                     VkExtent2D extent);
+        Framebuffer(Framebuffer &&other) noexcept;
         ~Framebuffer();
 
         VkFramebuffer Handle() const { return m_Framebuffer; }

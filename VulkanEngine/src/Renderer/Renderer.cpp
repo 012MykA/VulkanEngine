@@ -6,9 +6,10 @@
 #include "Swapchain.hpp"
 #include "RenderPass.hpp"
 #include "GraphicsPipeline.hpp"
-#include "Framebuffer.hpp"
 #include "CommandPool.hpp"
 #include "CommandBuffers.hpp"
+#include "Semaphore.hpp"
+#include "Fence.hpp"
 
 namespace VE
 {
@@ -36,12 +37,7 @@ namespace VE
     {
         for (auto imageView : m_Swapchain->GetImageViews())
         {
-            m_Framebuffers.push_back(
-                std::make_unique<Framebuffer>(
-                    *m_Device,
-                    *m_RenderPass,
-                    imageView,
-                    m_Swapchain->GetExtent()));
+            m_Framebuffers.emplace_back(*m_Device, *m_RenderPass, imageView, m_Swapchain->GetExtent());
         }
     }
 

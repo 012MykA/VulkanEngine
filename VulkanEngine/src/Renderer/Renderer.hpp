@@ -1,4 +1,5 @@
 #pragma once
+#include "Framebuffer.hpp"
 
 #include <vulkan/vulkan.h>
 
@@ -17,6 +18,8 @@ namespace VE
     class Framebuffer;
     class CommandPool;
     class CommandBuffers;
+    class Semaphore;
+    class Fence;
 
     class Renderer final
     {
@@ -40,7 +43,12 @@ namespace VE
         std::unique_ptr<CommandPool> m_CommandPool;
         std::unique_ptr<CommandBuffers> m_CommandBuffers;
 
-        std::vector<std::unique_ptr<Framebuffer>> m_Framebuffers;
+        // Sync objects
+        std::unique_ptr<Semaphore> m_ImageAvailable;
+        std::unique_ptr<Semaphore> m_RenderFinished;
+        std::unique_ptr<Fence> m_InFlightFence;
+
+        std::vector<Framebuffer> m_Framebuffers;
     };
 
 }
