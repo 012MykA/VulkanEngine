@@ -65,14 +65,21 @@ namespace VE
 
         // TODO: remove
         m_Vertices = std::vector<Vertex>{
-            {{0.0f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
-            {{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-            {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+            {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+            {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+            {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+            {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
         };
 
         auto [vertexBuffer, vertexMemory] = Buffer::CreateFromData(*m_CommandPool, m_Vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
         m_VertexBuffer = std::move(vertexBuffer);
         m_VertexBufferMemory = std::move(vertexMemory);
+
+        m_Indices = std::vector<uint16_t>{0, 1, 2, 2, 3, 0};
+
+        auto [indexBuffer, indexMemory] = Buffer::CreateFromData(*m_CommandPool, m_Indices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+        m_IndexBuffer = std::move(indexBuffer);
+        m_IndexBufferMemory = std::move(indexMemory);
         // ---
     }
 
@@ -141,8 +148,9 @@ namespace VE
                 VkBuffer vertexBuffers[] = {m_VertexBuffer->Handle()};
                 VkDeviceSize offsets[] = {0};
                 vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+                vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->Handle(), 0, VK_INDEX_TYPE_UINT16);
 
-                vkCmdDraw(commandBuffer, static_cast<uint32_t>(m_Vertices.size()), 1, 0, 0);
+                vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
             }
             vkCmdEndRenderPass(commandBuffer);
         }

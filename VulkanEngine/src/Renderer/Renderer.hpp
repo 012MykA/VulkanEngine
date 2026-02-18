@@ -11,6 +11,7 @@
 
 #include <memory>
 #include <vector>
+#include <cstdint>
 
 namespace VE
 {
@@ -76,11 +77,13 @@ namespace VE
 
     private:
         // TODO: remove
-
         std::vector<Vertex> m_Vertices;
         std::unique_ptr<Buffer> m_VertexBuffer;
         std::unique_ptr<DeviceMemory> m_VertexBufferMemory;
 
+        std::vector<uint16_t> m_Indices;
+        std::unique_ptr<Buffer> m_IndexBuffer;
+        std::unique_ptr<DeviceMemory> m_IndexBufferMemory;
         // ---
     };
 
