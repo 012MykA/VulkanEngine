@@ -3,6 +3,10 @@
 #include "Semaphore.hpp"
 #include "Fence.hpp"
 
+// TODO: remove
+#include "Vertex.hpp"
+// ---
+
 #include <vulkan/vulkan.h>
 
 #include <memory>
@@ -22,6 +26,10 @@ namespace VE
     class CommandBuffers;
     class Semaphore;
     class Fence;
+    // TODO: remove
+    class Buffer;
+    class DeviceMemory;
+    // ---
 
     class Renderer final
     {
@@ -65,6 +73,15 @@ namespace VE
         uint32_t currentFrame = 0;
 
         bool m_FramebufferResized = false;
+
+    private:
+        // TODO: remove
+
+        std::vector<Vertex> m_Vertices;
+        std::unique_ptr<Buffer> m_VertexBuffer;
+        std::unique_ptr<DeviceMemory> m_VertexBufferMemory;
+
+        // ---
     };
 
 }

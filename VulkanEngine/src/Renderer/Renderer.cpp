@@ -9,6 +9,10 @@
 #include "CommandPool.hpp"
 #include "CommandBuffers.hpp"
 #include "Validation.hpp"
+// TODO: remove
+#include "Buffer.hpp"
+#include "DeviceMemory.hpp"
+// ---
 
 #include <limits>
 #include <stdexcept>
@@ -29,6 +33,28 @@ namespace VE
         CreateCommandBuffers();
 
         CreateSyncObjects();
+
+        // TODO: remove
+        m_Vertices = std::vector<Vertex>{
+            {{0.0f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+            {{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+            {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+        };
+
+        const auto verticesSize = sizeof(m_Vertices[0]) * m_Vertices.size();
+
+        m_VertexBuffer = std::make_unique<Buffer>(*m_Device, verticesSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+        m_VertexBufferMemory = std::make_unique<DeviceMemory>(m_VertexBuffer->AllocateMemory(
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+
+        void *data = m_VertexBufferMemory->Map(0, verticesSize);
+
+        memcpy(data, m_Vertices.data(), verticesSize);
+
+        m_VertexBufferMemory->Unmap();
+        // ---
     }
 
     Renderer::~Renderer()
@@ -93,7 +119,11 @@ namespace VE
                 scissor.extent = m_Swapchain->GetExtent();
                 vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-                vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+                VkBuffer vertexBuffers[] = {m_VertexBuffer->Handle()};
+                VkDeviceSize offsets[] = {0};
+                vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+                vkCmdDraw(commandBuffer, static_cast<uint32_t>(m_Vertices.size()), 1, 0, 0);
             }
             vkCmdEndRenderPass(commandBuffer);
         }

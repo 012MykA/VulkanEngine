@@ -37,6 +37,8 @@ namespace VE
         {
             this->m_Renderer->OnResize();
         };
+
+
     }
 
     Application::~Application()
