@@ -13,6 +13,7 @@ namespace VE
         ~CommandPool();
 
         VkCommandPool Handle() const { return m_CommandPool; }
+        const Device& GetDevice() const { return m_Device; }
 
     private:
         const Device &m_Device;

@@ -47,7 +47,7 @@ namespace VE
 
     void Renderer::CreateCommandBuffers()
     {
-        m_CommandBuffers = std::make_unique<CommandBuffers>(*m_Device, *m_CommandPool, static_cast<uint32_t>(m_Framebuffers.size()));
+        m_CommandBuffers = std::make_unique<CommandBuffers>(*m_CommandPool, static_cast<uint32_t>(m_Framebuffers.size()));
     }
 
 }

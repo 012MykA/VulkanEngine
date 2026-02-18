@@ -7,19 +7,21 @@
 
 namespace VE
 {
-    class Device;
     class CommandPool;
 
     class CommandBuffers final
     {
     public:
-        CommandBuffers(const Device &device, const CommandPool &commandPool, uint32_t count);
+        CommandBuffers(const CommandPool &commandPool, const uint32_t count);
         ~CommandBuffers();
 
-        const std::vector<VkCommandBuffer> &Handle() const { return m_CommandBuffers; }
+        uint32_t Size() { return static_cast<uint32_t>(m_CommandBuffers.size()); }
+        VkCommandBuffer &operator[](const size_t i) { return m_CommandBuffers[i]; }
+
+        VkCommandBuffer Begin(size_t i);
+        void End(size_t i);
 
     private:
-        const Device &m_Device;
         const CommandPool &m_CommandPool;
 
         std::vector<VkCommandBuffer> m_CommandBuffers;
