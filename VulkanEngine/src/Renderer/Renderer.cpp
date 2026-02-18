@@ -30,7 +30,10 @@ namespace VE
         CreateSyncObjects();
     }
 
-    Renderer::~Renderer() = default;
+    Renderer::~Renderer()
+    {
+        m_Device->WaitIdle();
+    }
 
     void Renderer::DrawFrame()
     {
@@ -119,20 +122,16 @@ namespace VE
 
     void Renderer::CreateSyncObjects()
     {
-        auto imageCount = m_Swapchain->GetImageViews().size();
-
         m_ImageAvailableSemaphores.reserve(MAX_FRAMES_IN_FLIGHT);
+        m_RenderFinishedSemaphores.reserve(MAX_FRAMES_IN_FLIGHT);
         m_InFlightFences.reserve(MAX_FRAMES_IN_FLIGHT);
-        m_RenderFinishedSemaphores.reserve(imageCount);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
             m_ImageAvailableSemaphores.emplace_back(*m_Device);
+            m_RenderFinishedSemaphores.emplace_back(*m_Device);
             m_InFlightFences.emplace_back(*m_Device, true);
         }
-
-        for (size_t i = 0; i < imageCount; i++)
-        {
-            m_RenderFinishedSemaphores.emplace_back(*m_Device);
-        }
     }
+
+}
