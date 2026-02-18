@@ -9,7 +9,7 @@ namespace VE
     class RenderPass final
     {
     public:
-        RenderPass(const Swapchain &swapchain);
+        explicit RenderPass(const Swapchain &swapchain);
         ~RenderPass();
 
         VkRenderPass Handle() const { return m_RenderPass; }

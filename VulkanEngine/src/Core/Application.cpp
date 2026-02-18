@@ -49,6 +49,7 @@ namespace VE
         while (!m_Window->ShouldClose())
         {
             m_Window->OnUpdate();
+            m_Renderer->DrawFrame();
         }
     }
 

@@ -13,7 +13,7 @@ namespace VE
     class GraphicsPipeline final
     {
     public:
-        GraphicsPipeline(const Swapchain &swapchain);
+        explicit GraphicsPipeline(const Swapchain &swapchain);
         ~GraphicsPipeline();
 
         VkPipeline Handle() const { return m_Pipeline; }

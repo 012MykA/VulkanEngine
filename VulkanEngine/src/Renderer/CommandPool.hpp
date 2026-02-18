@@ -9,7 +9,7 @@ namespace VE
     class CommandPool final
     {
     public:
-        CommandPool(const Device &device);
+        explicit CommandPool(const Device &device);
         ~CommandPool();
 
         VkCommandPool Handle() const { return m_CommandPool; }

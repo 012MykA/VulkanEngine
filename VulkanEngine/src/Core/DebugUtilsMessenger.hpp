@@ -9,7 +9,7 @@ namespace VE
     class DebugUtilsMessenger final
     {
     public:
-        DebugUtilsMessenger(const Instance &instnace);
+        explicit DebugUtilsMessenger(const Instance &instnace);
         ~DebugUtilsMessenger();
 
     public:
