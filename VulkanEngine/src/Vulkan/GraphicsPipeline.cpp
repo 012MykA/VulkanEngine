@@ -2,6 +2,7 @@
 #include "Device.hpp"
 #include "Swapchain.hpp"
 #include "RenderPass.hpp"
+#include "DescriptorSetLayout.hpp"
 #include "PipelineLayout.hpp"
 #include "ShaderModule.hpp"
 #include "Validation.hpp"
@@ -9,7 +10,7 @@
 
 namespace VE
 {
-    GraphicsPipeline::GraphicsPipeline(const Swapchain &swapchain, const RenderPass &renderPass)
+    GraphicsPipeline::GraphicsPipeline(const Swapchain &swapchain, const RenderPass &renderPass, const DescriptorSetLayout &descriptorSetLayout)
         : m_Swapchain(swapchain), m_RenderPass(renderPass)
     {
         const auto &device = swapchain.GetDevice();
@@ -101,7 +102,7 @@ namespace VE
             fragShader.CreateShaderStage(VK_SHADER_STAGE_FRAGMENT_BIT),
         };
 
-        m_PipelineLayout = std::make_unique<PipelineLayout>(device);
+        m_PipelineLayout = std::make_unique<PipelineLayout>(device, descriptorSetLayout);
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;

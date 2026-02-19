@@ -5,6 +5,7 @@
 #include "Device.hpp"
 #include "Swapchain.hpp"
 #include "RenderPass.hpp"
+#include "DescriptorSetLayout.hpp"
 #include "GraphicsPipeline.hpp"
 #include "CommandPool.hpp"
 #include "CommandBuffers.hpp"
@@ -12,6 +13,11 @@
 // TODO: remove
 #include "Buffer.hpp"
 #include "DeviceMemory.hpp"
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include <chrono>
 // ---
 
 #include <limits>
@@ -19,13 +25,21 @@
 
 namespace VE
 {
+    struct UniformBufferObject
+    {
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 proj;
+    };
+
     Renderer::Renderer(const Instance &instance, const Surface &surface, const Window &window) : m_Surface(surface), m_Window(window)
     {
         m_Device = std::make_unique<Device>(instance, m_Surface);
         CreateSwapchain();
 
         m_RenderPass = std::make_unique<RenderPass>(*m_Swapchain);
-        m_Pipeline = std::make_unique<GraphicsPipeline>(*m_Swapchain, *m_RenderPass);
+        CreateDescriptorSetLayout();
+        m_Pipeline = std::make_unique<GraphicsPipeline>(*m_Swapchain, *m_RenderPass, *m_DescriptorSetLayout);
 
         CreateFramebuffers();
 
@@ -35,22 +49,9 @@ namespace VE
         CreateSyncObjects();
 
         // TODO: remove
-        m_Vertices = std::vector<Vertex>{
-            {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-            {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-            {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-            {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
-        };
-
-        auto [vertexBuffer, vertexMemory] = Buffer::CreateFromData(*m_CommandPool, m_Vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-        m_VertexBuffer = std::move(vertexBuffer);
-        m_VertexBufferMemory = std::move(vertexMemory);
-
-        m_Indices = std::vector<uint16_t>{0, 1, 2, 2, 3, 0};
-
-        auto [indexBuffer, indexMemory] = Buffer::CreateFromData(*m_CommandPool, m_Indices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-        m_IndexBuffer = std::move(indexBuffer);
-        m_IndexBufferMemory = std::move(indexMemory);
+        CreateVertexBuffer();
+        CreateIndexBuffer();
+        CreateUniformBuffer();
         // ---
     }
 
@@ -82,6 +83,8 @@ namespace VE
         {
             throw std::runtime_error("failed to acquire swap chain image!");
         }
+
+        UpdateUniformBuffer(currentFrame);
 
         inFlightFence.Reset();
 
@@ -226,9 +229,84 @@ namespace VE
 
         CreateSwapchain();
         m_RenderPass = std::make_unique<RenderPass>(*m_Swapchain);
-        m_Pipeline = std::make_unique<GraphicsPipeline>(*m_Swapchain, *m_RenderPass);
+        m_Pipeline = std::make_unique<GraphicsPipeline>(*m_Swapchain, *m_RenderPass, *m_DescriptorSetLayout);
         CreateFramebuffers();
         CreateCommandBuffers();
+    }
+
+    void Renderer::UpdateUniformBuffer(uint32_t currentImage)
+    {
+        static auto startTime = std::chrono::high_resolution_clock::now();
+
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+        VkExtent2D swapchainExtent = m_Swapchain->GetExtent();
+
+        UniformBufferObject ubo{};
+        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.proj = glm::perspective(glm::radians(45.0f), swapchainExtent.width / (float)swapchainExtent.height, 0.1f, 10.0f);
+        ubo.proj[1][1] *= -1;
+
+        void *data = m_UniformBuffersMemory[currentImage]->Map(0, sizeof(ubo));
+        std::memcpy(data, &ubo, sizeof(ubo));
+        m_UniformBuffersMemory[currentImage]->Unmap();
+    }
+
+    void Renderer::CreateDescriptorSetLayout()
+    {
+        DescriptorBinding binding{};
+        binding.Binding = 0;
+        binding.DescriptorCount = 1;
+        binding.Stage = VK_SHADER_STAGE_VERTEX_BIT;
+        binding.Type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        std::vector<DescriptorBinding> bindings = {binding};
+        m_DescriptorSetLayout = std::make_unique<DescriptorSetLayout>(*m_Device, bindings);
+    }
+
+    void Renderer::CreateVertexBuffer()
+    {
+        m_Vertices = std::vector<Vertex>{
+            {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+            {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+            {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+            {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+        };
+
+        auto [vertexBuffer, vertexMemory] = Buffer::CreateFromData(*m_CommandPool, m_Vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+        m_VertexBuffer = std::move(vertexBuffer);
+        m_VertexBufferMemory = std::move(vertexMemory);
+    }
+
+    void Renderer::CreateIndexBuffer()
+    {
+        m_Indices = std::vector<uint16_t>{0, 1, 2, 2, 3, 0};
+
+        auto [indexBuffer, indexMemory] = Buffer::CreateFromData(*m_CommandPool, m_Indices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+        m_IndexBuffer = std::move(indexBuffer);
+        m_IndexBufferMemory = std::move(indexMemory);
+    }
+
+    void Renderer::CreateUniformBuffer()
+    {
+        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+        m_UniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+        m_UniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            m_UniformBuffers[i] = std::make_unique<Buffer>(
+                *m_Device,
+                bufferSize,
+                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+            m_UniformBuffersMemory[i] = std::make_unique<DeviceMemory>(
+                m_UniformBuffers[i]->AllocateMemory(
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+        }
     }
 
 }

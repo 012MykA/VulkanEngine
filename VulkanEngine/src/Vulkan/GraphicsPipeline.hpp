@@ -8,12 +8,13 @@ namespace VE
 {
     class Swapchain;
     class RenderPass;
+    class DescriptorSetLayout;
     class PipelineLayout;
 
     class GraphicsPipeline final
     {
     public:
-        explicit GraphicsPipeline(const Swapchain &swapchain, const RenderPass &renderPass);
+        GraphicsPipeline(const Swapchain &swapchain, const RenderPass &renderPass, const DescriptorSetLayout &descriptorSetLayout);
         ~GraphicsPipeline();
 
         VkPipeline Handle() const { return m_Pipeline; }

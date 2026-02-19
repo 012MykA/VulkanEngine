@@ -21,6 +21,7 @@ namespace VE
     class Device;
     class Swapchain;
     class RenderPass;
+    class DescriptorSetLayout;
     class GraphicsPipeline;
     class Framebuffer;
     class CommandPool;
@@ -51,6 +52,7 @@ namespace VE
         void CreateSyncObjects();
 
         void RecreateSwapchain();
+        void UpdateUniformBuffer(uint32_t currentFrame);
 
     private:
         const Surface &m_Surface;
@@ -60,6 +62,11 @@ namespace VE
         std::unique_ptr<Swapchain> m_Swapchain;
 
         std::unique_ptr<RenderPass> m_RenderPass;
+
+        // TODO: remove
+        std::unique_ptr<DescriptorSetLayout> m_DescriptorSetLayout;
+        void CreateDescriptorSetLayout();
+
         std::unique_ptr<GraphicsPipeline> m_Pipeline;
 
         std::unique_ptr<CommandPool> m_CommandPool;
@@ -80,10 +87,17 @@ namespace VE
         std::vector<Vertex> m_Vertices;
         std::unique_ptr<Buffer> m_VertexBuffer;
         std::unique_ptr<DeviceMemory> m_VertexBufferMemory;
+        void CreateVertexBuffer();
 
         std::vector<uint16_t> m_Indices;
         std::unique_ptr<Buffer> m_IndexBuffer;
         std::unique_ptr<DeviceMemory> m_IndexBufferMemory;
+        void CreateIndexBuffer();
+
+        std::vector<std::unique_ptr<Buffer>> m_UniformBuffers;
+        std::vector<std::unique_ptr<DeviceMemory>> m_UniformBuffersMemory;
+        std::vector<void *> m_UniformBuffersMapped;
+        void CreateUniformBuffer();
         // ---
     };
 
