@@ -45,6 +45,7 @@ namespace VE
 
         m_CommandPool = std::make_unique<CommandPool>(*m_Device);
         CreateTextureImage();
+        CreateTextureImageView();
         CreateCommandBuffers();
 
         CreateSyncObjects();
@@ -286,7 +287,7 @@ namespace VE
             throw std::runtime_error("failed to load texture image!");
 
         VkDeviceSize imageSize = texWidth * texHeight * 4;
-        
+
         Buffer stagingBuffer(*m_Device, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         DeviceMemory stagingMemory = stagingBuffer.AllocateMemory(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                                                                   VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -302,6 +303,31 @@ namespace VE
         m_TextureImage->TransitionImageLayout(*m_CommandPool, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         m_TextureImage->CopyFrom(*m_CommandPool, stagingBuffer);
         m_TextureImage->TransitionImageLayout(*m_CommandPool, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    }
+
+    VkImageView Renderer::createImageView(VkImage image, VkFormat format)
+    {
+        VkImageViewCreateInfo viewInfo{};
+        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = image;
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = format;
+        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount = 1;
+
+        VkImageView imageView;
+        CheckVk(vkCreateImageView(m_Device->Handle(), &viewInfo, nullptr, &imageView),
+                "failed to create texture image view!");
+
+        return imageView;
+    }
+
+    void Renderer::CreateTextureImageView()
+    {
+        m_TextureImageView = createImageView(m_TextureImage->Handle(), m_TextureImage->GetFormat());
     }
 
     void Renderer::CreateVertexBuffer()

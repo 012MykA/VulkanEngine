@@ -17,6 +17,10 @@ namespace VE
         Image(const Device &device, const VkExtent2D extent, const VkFormat format, VkImageTiling tiling, VkImageUsageFlags isage);
         ~Image();
 
+        VkImage Handle() const { return m_Image; }
+
+        VkFormat GetFormat() const { return m_Format; }
+
         DeviceMemory AllocateMemory(const VkMemoryPropertyFlags properties) const;
         VkMemoryRequirements GetMemoryRequirements() const;
 

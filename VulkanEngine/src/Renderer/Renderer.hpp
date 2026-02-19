@@ -80,8 +80,11 @@ namespace VE
 
         // TODO: remove
         std::unique_ptr<Image> m_TextureImage;
-        void CreateTextureImage();
         std::unique_ptr<DeviceMemory> m_TextureImageMemory;
+        void CreateTextureImage();
+        VkImageView m_TextureImageView;
+        VkImageView createImageView(VkImage image, VkFormat format);
+        void CreateTextureImageView();
         // ---
 
         std::unique_ptr<CommandBuffers> m_CommandBuffers;
