@@ -19,35 +19,6 @@
 
 namespace VE
 {
-    static void copyBuffer(const CommandPool &commandPool, const Buffer &srcBuffer, Buffer &dstBuffer, VkDeviceSize size)
-    {
-        CommandBuffers commandBuffers(commandPool, 1);
-
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        vkBeginCommandBuffer(commandBuffers[0], &beginInfo);
-
-        VkBufferCopy copyRegion{};
-        copyRegion.srcOffset = 0; // Optional
-        copyRegion.dstOffset = 0; // Optional
-        copyRegion.size = size;
-
-        vkCmdCopyBuffer(commandBuffers[0], srcBuffer.Handle(), dstBuffer.Handle(), 1, &copyRegion);
-
-        vkEndCommandBuffer(commandBuffers[0]);
-
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffers[0];
-
-        const auto graphicsQueue = commandPool.GetDevice().GraphicsQueue();
-        vkQueueSubmit(graphicsQueue, 1, &submitInfo, nullptr);
-        vkQueueWaitIdle(graphicsQueue);
-    }
-
     Renderer::Renderer(const Instance &instance, const Surface &surface, const Window &window) : m_Surface(surface), m_Window(window)
     {
         m_Device = std::make_unique<Device>(instance, m_Surface);
