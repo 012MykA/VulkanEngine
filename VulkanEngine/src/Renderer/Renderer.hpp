@@ -36,6 +36,7 @@ namespace VE
     class DescriptorPool;
     class DescriptorSets;
     class Image;
+    class ImageView;
     // ---
 
     class Renderer final
@@ -82,8 +83,7 @@ namespace VE
         std::unique_ptr<Image> m_TextureImage;
         std::unique_ptr<DeviceMemory> m_TextureImageMemory;
         void CreateTextureImage();
-        VkImageView m_TextureImageView;
-        VkImageView createImageView(VkImage image, VkFormat format);
+        std::unique_ptr<ImageView> m_TextureImageView;
         void CreateTextureImageView();
         // ---
 

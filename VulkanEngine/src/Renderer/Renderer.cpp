@@ -11,6 +11,7 @@
 #include "CommandPool.hpp"
 #include "CommandBuffers.hpp"
 #include "Image.hpp"
+#include "ImageView.hpp"
 #include "Validation.hpp"
 // TODO: remove
 #include "Buffer.hpp"
@@ -44,8 +45,12 @@ namespace VE
         CreateFramebuffers();
 
         m_CommandPool = std::make_unique<CommandPool>(*m_Device);
+
+        // TODO: remove
         CreateTextureImage();
         CreateTextureImageView();
+        // ---
+
         CreateCommandBuffers();
 
         CreateSyncObjects();
@@ -305,29 +310,10 @@ namespace VE
         m_TextureImage->TransitionImageLayout(*m_CommandPool, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 
-    VkImageView Renderer::createImageView(VkImage image, VkFormat format)
-    {
-        VkImageViewCreateInfo viewInfo{};
-        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image = image;
-        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = format;
-        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = 1;
-        viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
-
-        VkImageView imageView;
-        CheckVk(vkCreateImageView(m_Device->Handle(), &viewInfo, nullptr, &imageView),
-                "failed to create texture image view!");
-
-        return imageView;
-    }
-
     void Renderer::CreateTextureImageView()
     {
-        m_TextureImageView = createImageView(m_TextureImage->Handle(), m_TextureImage->GetFormat());
+        m_TextureImageView = std::make_unique<ImageView>(*m_Device, m_TextureImage->Handle(),
+                                                         m_TextureImage->GetFormat(), VK_IMAGE_ASPECT_COLOR_BIT);
     }
 
     void Renderer::CreateVertexBuffer()
