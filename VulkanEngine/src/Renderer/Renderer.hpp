@@ -2,6 +2,7 @@
 #include "Framebuffer.hpp"
 #include "Semaphore.hpp"
 #include "Fence.hpp"
+#include "UniformBuffer.hpp"
 
 // TODO: remove
 #include "Vertex.hpp"
@@ -99,13 +100,11 @@ namespace VE
         std::unique_ptr<DeviceMemory> m_IndexBufferMemory;
         void CreateIndexBuffer();
 
-        std::vector<std::unique_ptr<Buffer>> m_UniformBuffers;
-        std::vector<std::unique_ptr<DeviceMemory>> m_UniformBuffersMemory;
-        std::vector<void *> m_UniformBuffersMapped;
+        std::vector<UniformBuffer> m_UniformBuffers;
         void CreateUniformBuffers();
 
         std::unique_ptr<DescriptorPool> m_DescriptorPool;
-        
+
         std::unique_ptr<DescriptorSets> m_DescriptorSets;
         void CreateDescriptorSets();
         // ---

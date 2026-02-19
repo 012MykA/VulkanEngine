@@ -30,13 +30,6 @@
 
 namespace VE
 {
-    struct UniformBufferObject
-    {
-        glm::mat4 model;
-        glm::mat4 view;
-        glm::mat4 proj;
-    };
-
     Renderer::Renderer(const Instance &instance, const Surface &surface, const Window &window) : m_Surface(surface), m_Window(window)
     {
         m_Device = std::make_unique<Device>(instance, m_Surface);
@@ -259,14 +252,14 @@ namespace VE
         VkExtent2D swapchainExtent = m_Swapchain->GetExtent();
 
         UniformBufferObject ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.proj = glm::perspective(glm::radians(45.0f), swapchainExtent.width / (float)swapchainExtent.height, 0.1f, 10.0f);
-        ubo.proj[1][1] *= -1;
+        ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
+                               glm::vec3(0.0f, 0.0f, 0.0f),
+                               glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.Proj = glm::perspective(glm::radians(45.0f), swapchainExtent.width / (float)swapchainExtent.height, 0.1f, 10.0f);
+        ubo.Proj[1][1] *= -1;
 
-        void *data = m_UniformBuffersMemory[currentImage]->Map(0, sizeof(ubo));
-        std::memcpy(data, &ubo, sizeof(ubo));
-        m_UniformBuffersMemory[currentImage]->Unmap();
+        m_UniformBuffers[currentImage].SetValue(ubo);
     }
 
     void Renderer::CreateDescriptorSetLayout()
@@ -307,22 +300,12 @@ namespace VE
 
     void Renderer::CreateUniformBuffers()
     {
-        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
-        m_UniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-        m_UniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+        m_UniformBuffers.clear();
+        m_UniformBuffers.reserve(MAX_FRAMES_IN_FLIGHT);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
-            m_UniformBuffers[i] = std::make_unique<Buffer>(
-                *m_Device,
-                bufferSize,
-                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-
-            m_UniformBuffersMemory[i] = std::make_unique<DeviceMemory>(
-                m_UniformBuffers[i]->AllocateMemory(
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+            m_UniformBuffers.emplace_back(*m_Device);
         }
     }
 
@@ -333,7 +316,7 @@ namespace VE
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
             VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = m_UniformBuffers[i]->Handle();
+            bufferInfo.buffer = m_UniformBuffers[i].GetBuffer().Handle();
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(UniformBufferObject);
 
