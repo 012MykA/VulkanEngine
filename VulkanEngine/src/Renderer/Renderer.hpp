@@ -35,6 +35,7 @@ namespace VE
     class DeviceMemory;
     class DescriptorPool;
     class DescriptorSets;
+    class Image;
     // ---
 
     class Renderer final
@@ -78,13 +79,9 @@ namespace VE
         std::unique_ptr<CommandPool> m_CommandPool;
 
         // TODO: remove
-        VkImage m_TextureImage;
-        std::unique_ptr<DeviceMemory> m_TextureImageMemory;
+        std::unique_ptr<Image> m_TextureImage;
         void CreateTextureImage();
-        void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
-                         VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
-        void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-        void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+        std::unique_ptr<DeviceMemory> m_TextureImageMemory;
         // ---
 
         std::unique_ptr<CommandBuffers> m_CommandBuffers;
