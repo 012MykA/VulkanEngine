@@ -48,7 +48,7 @@ namespace VE
             throw std::runtime_error("failed to create GLFW window!");
 
         GLFWimage icon;
-        icon.pixels = stbi_load("VulkanEngine/Assets/Textures/Vulkan.png", &icon.width, &icon.height, nullptr, 4);
+        icon.pixels = stbi_load("textures/vulkan.png", &icon.width, &icon.height, nullptr, STBI_rgb_alpha);
         if (icon.pixels == nullptr)
             throw std::runtime_error("failed to window icon");
 

@@ -2,6 +2,7 @@
 #include "Device.hpp"
 #include "DeviceMemory.hpp"
 #include "CommandBuffers.hpp"
+#include "SingleTimeCommands.hpp"
 #include "Validation.hpp"
 
 namespace VE
@@ -56,31 +57,17 @@ namespace VE
 
     void Buffer::CopyFrom(const CommandPool &commandPool, const Buffer &src, VkDeviceSize size)
     {
-        CommandBuffers commandBuffers(commandPool, 1);
+        auto action = [&](VkCommandBuffer commandBuffer) -> void
+        {
+            VkBufferCopy copyRegion{};
+            copyRegion.srcOffset = 0; // Optional
+            copyRegion.dstOffset = 0; // Optional
+            copyRegion.size = size;
 
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+            vkCmdCopyBuffer(commandBuffer, src.Handle(), m_Buffer, 1, &copyRegion);
+        };
 
-        vkBeginCommandBuffer(commandBuffers[0], &beginInfo);
-
-        VkBufferCopy copyRegion{};
-        copyRegion.srcOffset = 0; // Optional
-        copyRegion.dstOffset = 0; // Optional
-        copyRegion.size = size;
-
-        vkCmdCopyBuffer(commandBuffers[0], src.Handle(), m_Buffer, 1, &copyRegion);
-
-        vkEndCommandBuffer(commandBuffers[0]);
-
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffers[0];
-
-        const auto graphicsQueue = commandPool.GetDevice().GraphicsQueue();
-        vkQueueSubmit(graphicsQueue, 1, &submitInfo, nullptr);
-        vkQueueWaitIdle(graphicsQueue);
+        SingleTimeCommands::Submit(commandPool, action);
     }
 
 }
