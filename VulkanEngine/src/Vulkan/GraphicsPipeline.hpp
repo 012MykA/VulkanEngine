@@ -18,6 +18,7 @@ namespace VE
         ~GraphicsPipeline();
 
         VkPipeline Handle() const { return m_Pipeline; }
+        const PipelineLayout& Layout() const { return *m_PipelineLayout; } 
 
     private:
         const Swapchain &m_Swapchain;

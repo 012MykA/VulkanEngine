@@ -5,6 +5,7 @@
 
 // TODO: remove
 #include "Vertex.hpp"
+#include "DescriptorBinding.hpp"
 // ---
 
 #include <vulkan/vulkan.h>
@@ -31,6 +32,8 @@ namespace VE
     // TODO: remove
     class Buffer;
     class DeviceMemory;
+    class DescriptorPool;
+    class DescriptorSets;
     // ---
 
     class Renderer final
@@ -65,7 +68,9 @@ namespace VE
 
         // TODO: remove
         std::unique_ptr<DescriptorSetLayout> m_DescriptorSetLayout;
+        std::vector<DescriptorBinding> m_DescriptorBindings;
         void CreateDescriptorSetLayout();
+        // ---
 
         std::unique_ptr<GraphicsPipeline> m_Pipeline;
 
@@ -97,7 +102,12 @@ namespace VE
         std::vector<std::unique_ptr<Buffer>> m_UniformBuffers;
         std::vector<std::unique_ptr<DeviceMemory>> m_UniformBuffersMemory;
         std::vector<void *> m_UniformBuffersMapped;
-        void CreateUniformBuffer();
+        void CreateUniformBuffers();
+
+        std::unique_ptr<DescriptorPool> m_DescriptorPool;
+        
+        std::unique_ptr<DescriptorSets> m_DescriptorSets;
+        void CreateDescriptorSets();
         // ---
     };
 

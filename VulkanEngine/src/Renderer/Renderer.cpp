@@ -6,6 +6,7 @@
 #include "Swapchain.hpp"
 #include "RenderPass.hpp"
 #include "DescriptorSetLayout.hpp"
+#include "PipelineLayout.hpp"
 #include "GraphicsPipeline.hpp"
 #include "CommandPool.hpp"
 #include "CommandBuffers.hpp"
@@ -13,6 +14,8 @@
 // TODO: remove
 #include "Buffer.hpp"
 #include "DeviceMemory.hpp"
+#include "DescriptorPool.hpp"
+#include "DescriptorSets.hpp"
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -22,6 +25,8 @@
 
 #include <limits>
 #include <stdexcept>
+#include <cstdint>
+#include <map>
 
 namespace VE
 {
@@ -51,7 +56,13 @@ namespace VE
         // TODO: remove
         CreateVertexBuffer();
         CreateIndexBuffer();
-        CreateUniformBuffer();
+        CreateUniformBuffers();
+        m_DescriptorPool = std::make_unique<DescriptorPool>(*m_Device, m_DescriptorBindings, MAX_FRAMES_IN_FLIGHT);
+
+        std::map<uint32_t, VkDescriptorType> bindings = {std::make_pair(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)};
+        m_DescriptorSets = std::make_unique<DescriptorSets>(*m_DescriptorPool, *m_DescriptorSetLayout,
+                                                            bindings, MAX_FRAMES_IN_FLIGHT);
+        CreateDescriptorSets();
         // ---
     }
 
@@ -123,6 +134,10 @@ namespace VE
                 VkDeviceSize offsets[] = {0};
                 vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
                 vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->Handle(), 0, VK_INDEX_TYPE_UINT16);
+
+                VkDescriptorSet descriptorSet = (*m_DescriptorSets)[currentFrame];
+                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                        m_Pipeline->Layout().Handle(), 0, 1, &descriptorSet, 0, nullptr);
 
                 vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
             }
@@ -256,13 +271,15 @@ namespace VE
 
     void Renderer::CreateDescriptorSetLayout()
     {
-        DescriptorBinding binding{};
+        DescriptorBinding binding;
         binding.Binding = 0;
         binding.DescriptorCount = 1;
         binding.Stage = VK_SHADER_STAGE_VERTEX_BIT;
         binding.Type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        std::vector<DescriptorBinding> bindings = {binding};
-        m_DescriptorSetLayout = std::make_unique<DescriptorSetLayout>(*m_Device, bindings);
+
+        m_DescriptorBindings = std::vector<DescriptorBinding>{binding};
+
+        m_DescriptorSetLayout = std::make_unique<DescriptorSetLayout>(*m_Device, m_DescriptorBindings);
     }
 
     void Renderer::CreateVertexBuffer()
@@ -288,7 +305,7 @@ namespace VE
         m_IndexBufferMemory = std::move(indexMemory);
     }
 
-    void Renderer::CreateUniformBuffer()
+    void Renderer::CreateUniformBuffers()
     {
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
@@ -307,6 +324,24 @@ namespace VE
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
         }
+    }
+
+    void Renderer::CreateDescriptorSets()
+    {
+        std::vector<VkWriteDescriptorSet> descriptorWrites;
+
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            VkDescriptorBufferInfo bufferInfo{};
+            bufferInfo.buffer = m_UniformBuffers[i]->Handle();
+            bufferInfo.offset = 0;
+            bufferInfo.range = sizeof(UniformBufferObject);
+
+            descriptorWrites.push_back(
+                m_DescriptorSets->Bind(i, 0, bufferInfo, 1));
+        }
+
+        m_DescriptorSets->UpdateDescriptors(descriptorWrites);
     }
 
 }

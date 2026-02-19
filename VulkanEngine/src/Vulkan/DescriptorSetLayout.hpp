@@ -1,5 +1,7 @@
 #pragma once
 
+#include "DescriptorBinding.hpp"
+
 #include <vulkan/vulkan.h>
 
 #include <vector>
@@ -8,14 +10,6 @@
 namespace VE
 {
     class Device;
-
-    struct DescriptorBinding
-    {
-        uint32_t Binding;
-        uint32_t DescriptorCount;
-        VkDescriptorType Type;
-        VkShaderStageFlags Stage;
-    };
 
     class DescriptorSetLayout final
     {
