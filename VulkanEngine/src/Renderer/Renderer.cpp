@@ -229,7 +229,7 @@ namespace VE
 
     void Renderer::CreateDepthBuffer()
     {
-        // m_DepthBuffer = std::make_unique<DepthBuffer>(*m_CommandPool, m_Swapchain->GetExtent());
+        m_DepthBuffer = std::make_unique<DepthBuffer>(*m_CommandPool, m_Swapchain->GetExtent());
     }
 
     void Renderer::CreateFramebuffers()
@@ -251,11 +251,15 @@ namespace VE
     void Renderer::CreateVertexBuffer()
     {
         m_Vertices = std::vector<Vertex>{
-            {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-            {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-            {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-            {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-        };
+            {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+            {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+            {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+            {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+            {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+            {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+            {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+            {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}};
 
         auto [vertexBuffer, vertexMemory] = Buffer::CreateFromData(*m_CommandPool, m_Vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
         m_VertexBuffer = std::move(vertexBuffer);
@@ -264,7 +268,9 @@ namespace VE
 
     void Renderer::CreateIndexBuffer()
     {
-        m_Indices = std::vector<uint16_t>{0, 1, 2, 2, 3, 0};
+        m_Indices = std::vector<uint16_t>{
+            0, 1, 2, 2, 3, 0,
+            4, 5, 6, 6, 7, 4};
 
         auto [indexBuffer, indexMemory] = Buffer::CreateFromData(*m_CommandPool, m_Indices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
         m_IndexBuffer = std::move(indexBuffer);

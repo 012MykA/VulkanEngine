@@ -30,7 +30,7 @@ namespace VE
                 }
             }
 
-            throw std::runtime_error("failed to find supported format");
+            throw std::runtime_error("failed to find supported format!");
         }
 
         VkFormat FindDepthFormat(const Device &device)
