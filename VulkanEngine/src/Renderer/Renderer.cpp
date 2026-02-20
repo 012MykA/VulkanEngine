@@ -352,8 +352,9 @@ namespace VE
         {
             m_Window.WaitForEvents();
         }
-
+        
         m_Framebuffers.clear();
+        // m_DepthBuffer.reset();
         m_Pipeline.reset();
         m_RenderPass.reset();
         m_Swapchain.reset();
@@ -361,6 +362,7 @@ namespace VE
         CreateSwapchain();
         CreateRenderPass();
         CreateGraphicsPipeline();
+        // CreateDepthBuffer();
         CreateFramebuffers();
     }
 
