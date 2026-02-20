@@ -23,6 +23,9 @@ namespace VE
         VkWriteDescriptorSet Bind(const size_t index, const uint32_t binding,
                                   const VkDescriptorBufferInfo &bufferInfo, const uint32_t count) const;
 
+        VkWriteDescriptorSet Bind(const size_t index, const uint32_t binding,
+                                                  const VkDescriptorImageInfo &imageInfo, const uint32_t count) const;
+
         void UpdateDescriptors(const std::vector<VkWriteDescriptorSet> &descriptorWrites);
 
     private:

@@ -63,7 +63,10 @@ namespace VE
         CreateUniformBuffers();
         m_DescriptorPool = std::make_unique<DescriptorPool>(*m_Device, m_DescriptorBindings, MAX_FRAMES_IN_FLIGHT);
 
-        std::map<uint32_t, VkDescriptorType> bindings = {std::make_pair(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)};
+        std::map<uint32_t, VkDescriptorType> bindings = {
+            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER},
+            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER}};
+
         m_DescriptorSets = std::make_unique<DescriptorSets>(*m_DescriptorPool, *m_DescriptorSetLayout,
                                                             bindings, MAX_FRAMES_IN_FLIGHT);
         CreateDescriptorSets();
@@ -275,13 +278,19 @@ namespace VE
 
     void Renderer::CreateDescriptorSetLayout()
     {
-        DescriptorBinding binding;
-        binding.Binding = 0;
-        binding.DescriptorCount = 1;
-        binding.Stage = VK_SHADER_STAGE_VERTEX_BIT;
-        binding.Type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        DescriptorBinding ubo;
+        ubo.Binding = 0;
+        ubo.DescriptorCount = 1;
+        ubo.Stage = VK_SHADER_STAGE_VERTEX_BIT;
+        ubo.Type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
-        m_DescriptorBindings = std::vector<DescriptorBinding>{binding};
+        DescriptorBinding sampler;
+        sampler.Binding = 1;
+        sampler.DescriptorCount = 1;
+        sampler.Stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        sampler.Type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+        m_DescriptorBindings = std::vector<DescriptorBinding>{ubo, sampler};
 
         m_DescriptorSetLayout = std::make_unique<DescriptorSetLayout>(*m_Device, m_DescriptorBindings);
     }
@@ -315,10 +324,10 @@ namespace VE
     void Renderer::CreateVertexBuffer()
     {
         m_Vertices = std::vector<Vertex>{
-            {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-            {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-            {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-            {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+            {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+            {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+            {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+            {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
         };
 
         auto [vertexBuffer, vertexMemory] = Buffer::CreateFromData(*m_CommandPool, m_Vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
@@ -357,8 +366,14 @@ namespace VE
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(UniformBufferObject);
 
-            descriptorWrites.push_back(
-                m_DescriptorSets->Bind(i, 0, bufferInfo, 1));
+            descriptorWrites.push_back(m_DescriptorSets->Bind(i, 0, bufferInfo, 1));
+
+            VkDescriptorImageInfo imageInfo{};
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageInfo.imageView = m_TextureImageView->Handle();
+            imageInfo.sampler = m_TextureSampler->Handle();
+
+            descriptorWrites.push_back(m_DescriptorSets->Bind(i, 1, imageInfo, 1));
         }
 
         m_DescriptorSets->UpdateDescriptors(descriptorWrites);

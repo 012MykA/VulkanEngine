@@ -44,6 +44,20 @@ namespace VE
         return descriptorWrite;
     }
 
+    VkWriteDescriptorSet DescriptorSets::Bind(const size_t index, const uint32_t binding, const VkDescriptorImageInfo &imageInfo, const uint32_t count) const
+    {
+        VkWriteDescriptorSet descriptorWrite = {};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = m_DescriptorSets[index];
+        descriptorWrite.dstBinding = binding;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = GetBindingType(binding);
+        descriptorWrite.descriptorCount = count;
+        descriptorWrite.pImageInfo = &imageInfo;
+
+        return descriptorWrite;
+    }
+
     void DescriptorSets::UpdateDescriptors(const std::vector<VkWriteDescriptorSet> &descriptorWrites)
     {
         vkUpdateDescriptorSets(m_DescriptorPool.GetDevice().Handle(),
