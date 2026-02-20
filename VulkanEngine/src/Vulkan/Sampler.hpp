@@ -24,7 +24,7 @@ namespace VE
         float MaxLod = 0.0f;
     };
 
-    class Sampler
+    class Sampler final
     {
     public:
         Sampler(const Device &device, const SamplerConfig &config);

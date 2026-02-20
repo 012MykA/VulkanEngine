@@ -22,7 +22,8 @@
 #include <stb_image.h>
 #include "SingleTimeCommands.hpp"
 #include <chrono>
-#include "Image.hpp"
+#include "Texture.hpp"
+#include "TextureImage.hpp"
 #include "ImageView.hpp"
 #include "Sampler.hpp"
 // ---
@@ -48,9 +49,8 @@ namespace VE
         m_CommandPool = std::make_unique<CommandPool>(*m_Device);
 
         // TODO: remove
-        CreateTextureImage();
-        m_TextureImageView = std::make_unique<ImageView>(*m_Device, m_TextureImage->Handle(), m_TextureImage->GetFormat(), VK_IMAGE_ASPECT_COLOR_BIT);
-        m_TextureSampler = std::make_unique<Sampler>(*m_Device, SamplerConfig());
+        Texture texture = Texture::LoadTexture("textures/texture.jpg");
+        m_TextureImage = std::make_unique<TextureImage>(*m_CommandPool, texture);
         // ---
 
         CreateCommandBuffers();
@@ -295,32 +295,6 @@ namespace VE
         m_DescriptorSetLayout = std::make_unique<DescriptorSetLayout>(*m_Device, m_DescriptorBindings);
     }
 
-    void Renderer::CreateTextureImage()
-    {
-        int texWidth, texHeight, texChannels;
-        stbi_uc *pixels = stbi_load("textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-        if (!pixels)
-            throw std::runtime_error("failed to load texture image!");
-
-        VkDeviceSize imageSize = texWidth * texHeight * 4;
-
-        Buffer stagingBuffer(*m_Device, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-        DeviceMemory stagingMemory = stagingBuffer.AllocateMemory(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                                                  VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-        void *data = stagingMemory.Map(0, imageSize);
-        std::memcpy(data, pixels, imageSize);
-        stagingMemory.Unmap();
-        stbi_image_free(pixels);
-
-        m_TextureImage = std::make_unique<Image>(*m_Device, VkExtent2D{static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight)}, VK_FORMAT_R8G8B8A8_SRGB);
-        m_TextureImageMemory = std::make_unique<DeviceMemory>(m_TextureImage->AllocateMemory(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
-
-        m_TextureImage->TransitionImageLayout(*m_CommandPool, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        m_TextureImage->CopyFrom(*m_CommandPool, stagingBuffer);
-        m_TextureImage->TransitionImageLayout(*m_CommandPool, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    }
-
     void Renderer::CreateVertexBuffer()
     {
         m_Vertices = std::vector<Vertex>{
@@ -370,8 +344,8 @@ namespace VE
 
             VkDescriptorImageInfo imageInfo{};
             imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = m_TextureImageView->Handle();
-            imageInfo.sampler = m_TextureSampler->Handle();
+            imageInfo.imageView = m_TextureImage->GetImageView().Handle();
+            imageInfo.sampler = m_TextureImage->GetSampler().Handle();
 
             descriptorWrites.push_back(m_DescriptorSets->Bind(i, 1, imageInfo, 1));
         }

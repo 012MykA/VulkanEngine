@@ -35,9 +35,7 @@ namespace VE
     class DeviceMemory;
     class DescriptorPool;
     class DescriptorSets;
-    class Image;
-    class ImageView;
-    class Sampler;
+    class TextureImage;
     // ---
 
     class Renderer final
@@ -81,11 +79,7 @@ namespace VE
         std::unique_ptr<CommandPool> m_CommandPool;
 
         // TODO: remove
-        std::unique_ptr<Image> m_TextureImage;
-        std::unique_ptr<DeviceMemory> m_TextureImageMemory;
-        void CreateTextureImage();
-        std::unique_ptr<ImageView> m_TextureImageView;
-        std::unique_ptr<Sampler> m_TextureSampler;
+        std::unique_ptr<TextureImage> m_TextureImage;
         // ---
 
         std::unique_ptr<CommandBuffers> m_CommandBuffers;

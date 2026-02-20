@@ -11,12 +11,13 @@ namespace VE
     public:
         static Texture LoadTexture(const std::string &filename);
 
-    private:
+    public:
         ~Texture() = default;
 
-        const unsigned char *GetPixels() const { return m_Pixels.get(); }
-        int GetWidth() const { return m_Width; }
-        int GetHeight() const { return m_Height; }
+        int Width() const { return m_Width; }
+        int Height() const { return m_Height; }
+        int Channels() const { return m_Channels; }
+        const unsigned char *Pixels() const { return m_Pixels.get(); }
 
     private:
         Texture(int width, int height, int channels, unsigned char *pixels);
