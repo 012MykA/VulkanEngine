@@ -52,12 +52,12 @@ namespace VE
         const Device &GetDevice() const { return *m_Device; }
 
     private:
+        void CreateCommandPool();
         void CreateSwapchain();
+        void CreateDepthBuffer();
         void CreateRenderPass();
         void CreateDescriptorSetLayout();
         void CreateGraphicsPipeline();
-        void CreateCommandPool();
-        void CreateDepthBuffer();
         void CreateFramebuffers();
 
         // TODO: remove
@@ -81,7 +81,9 @@ namespace VE
         const Surface &m_Surface;
 
         std::unique_ptr<Device> m_Device;
+        std::unique_ptr<CommandPool> m_CommandPool;
         std::unique_ptr<Swapchain> m_Swapchain;
+        std::unique_ptr<DepthBuffer> m_DepthBuffer;
         std::unique_ptr<RenderPass> m_RenderPass;
 
         // TODO: remove
@@ -90,8 +92,6 @@ namespace VE
         // ---
 
         std::unique_ptr<GraphicsPipeline> m_Pipeline;
-        std::unique_ptr<CommandPool> m_CommandPool;
-        std::unique_ptr<DepthBuffer> m_DepthBuffer;
         std::vector<Framebuffer> m_Framebuffers;
 
     private:

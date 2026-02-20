@@ -40,13 +40,13 @@ namespace VE
         : m_Window(window), m_Surface(surface)
     {
         m_Device = std::make_unique<Device>(instance, m_Surface);
+        CreateCommandPool();
 
         CreateSwapchain();
+        CreateDepthBuffer();
         CreateRenderPass();
         CreateDescriptorSetLayout();
         CreateGraphicsPipeline();
-        CreateCommandPool();
-        CreateDepthBuffer();
         CreateFramebuffers();
 
         // TODO: remove
@@ -195,7 +195,7 @@ namespace VE
 
     void Renderer::CreateRenderPass()
     {
-        m_RenderPass = std::make_unique<RenderPass>(*m_Swapchain);
+        m_RenderPass = std::make_unique<RenderPass>(*m_Swapchain, *m_DepthBuffer);
     }
 
     void Renderer::CreateDescriptorSetLayout()
@@ -354,15 +354,15 @@ namespace VE
         }
         
         m_Framebuffers.clear();
-        // m_DepthBuffer.reset();
         m_Pipeline.reset();
         m_RenderPass.reset();
+        m_DepthBuffer.reset();
         m_Swapchain.reset();
 
         CreateSwapchain();
+        CreateDepthBuffer();
         CreateRenderPass();
         CreateGraphicsPipeline();
-        // CreateDepthBuffer();
         CreateFramebuffers();
     }
 

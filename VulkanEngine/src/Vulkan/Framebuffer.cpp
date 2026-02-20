@@ -1,6 +1,8 @@
 #include "FrameBuffer.hpp"
 #include "Device.hpp"
 #include "RenderPass.hpp"
+#include "DepthBuffer.hpp"
+#include "ImageView.hpp"
 #include "Validation.hpp"
 
 #include <array>
@@ -13,7 +15,7 @@ namespace VE
                              VkExtent2D extent)
         : m_Device(device)
     {
-        std::array<VkImageView, 1> attachments = {imageView};
+        std::array<VkImageView, 2> attachments = {imageView, renderPass.GetDepthBuffer().GetImageView().Handle()};
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
