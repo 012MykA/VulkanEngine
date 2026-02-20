@@ -33,7 +33,7 @@ namespace VE
         const VkFormat m_Format;
 
         VkImageLayout m_ImageLayout;
-        VkImage m_Image;
+        VkImage m_Image = VK_NULL_HANDLE;
     };
 
 }

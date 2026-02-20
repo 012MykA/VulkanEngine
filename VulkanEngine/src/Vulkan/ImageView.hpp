@@ -16,7 +16,7 @@ namespace VE
 
     private:
         const Device &m_Device;
-        VkImageView m_ImageView;
+        VkImageView m_ImageView = VK_NULL_HANDLE;
     };
 
 }

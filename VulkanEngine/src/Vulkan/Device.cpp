@@ -66,6 +66,7 @@ namespace VE
         }
 
         VkPhysicalDeviceFeatures deviceFeatures{};
+        deviceFeatures.samplerAnisotropy = VK_TRUE;
 
         VkDeviceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -100,6 +101,9 @@ namespace VE
 
         bool extensionsSupported = CheckDeviceExtensionSupport(device);
 
+        VkPhysicalDeviceFeatures supportedFeatures{};
+        vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+
         bool swapchainAdequate = false;
         if (extensionsSupported)
         {
@@ -107,7 +111,10 @@ namespace VE
             swapchainAdequate = !swapchainSupport.Formats.empty() && !swapchainSupport.PresentModes.empty();
         }
 
-        return indices.IsComplete() && extensionsSupported && swapchainAdequate;
+        return indices.IsComplete() &&
+               extensionsSupported &&
+               swapchainAdequate &&
+               supportedFeatures.samplerAnisotropy;
     }
 
     bool Device::CheckDeviceExtensionSupport(VkPhysicalDevice device)
@@ -212,5 +219,5 @@ namespace VE
     {
         vkDeviceWaitIdle(m_Device);
     }
-    
+
 }

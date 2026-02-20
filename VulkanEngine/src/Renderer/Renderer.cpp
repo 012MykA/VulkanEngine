@@ -49,6 +49,7 @@ namespace VE
         // TODO: remove
         CreateTextureImage();
         CreateTextureImageView();
+        CreateTextureSampler();
         // ---
 
         CreateCommandBuffers();
@@ -71,6 +72,7 @@ namespace VE
     Renderer::~Renderer()
     {
         m_Device->WaitIdle();
+        vkDestroySampler(m_Device->Handle(), m_TextureSampler, nullptr);
     }
 
     void Renderer::DrawFrame()
@@ -314,6 +316,32 @@ namespace VE
     {
         m_TextureImageView = std::make_unique<ImageView>(*m_Device, m_TextureImage->Handle(),
                                                          m_TextureImage->GetFormat(), VK_IMAGE_ASPECT_COLOR_BIT);
+    }
+
+    void Renderer::CreateTextureSampler()
+    {
+        VkPhysicalDeviceProperties properties{};
+        vkGetPhysicalDeviceProperties(m_Device->GetPhysicalDevice(), &properties);
+
+        VkSamplerCreateInfo samplerInfo{};
+        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.magFilter = VK_FILTER_LINEAR;
+        samplerInfo.minFilter = VK_FILTER_LINEAR;
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.anisotropyEnable = VK_TRUE;
+        samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        samplerInfo.unnormalizedCoordinates = VK_FALSE;
+        samplerInfo.compareEnable = VK_FALSE;
+        samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        samplerInfo.mipLodBias = 0.0f;
+        samplerInfo.minLod = 0.0f;
+        samplerInfo.maxLod = 0.0f;
+
+        CheckVk(vkCreateSampler(m_Device->Handle(), &samplerInfo, nullptr, &m_TextureSampler), "create sampler!");
     }
 
     void Renderer::CreateVertexBuffer()

@@ -85,6 +85,8 @@ namespace VE
         void CreateTextureImage();
         std::unique_ptr<ImageView> m_TextureImageView;
         void CreateTextureImageView();
+        VkSampler m_TextureSampler;
+        void CreateTextureSampler();
         // ---
 
         std::unique_ptr<CommandBuffers> m_CommandBuffers;
