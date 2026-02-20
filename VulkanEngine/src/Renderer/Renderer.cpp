@@ -10,6 +10,7 @@
 #include "GraphicsPipeline.hpp"
 #include "CommandPool.hpp"
 #include "CommandBuffers.hpp"
+#include "DepthBuffer.hpp"
 #include "Validation.hpp"
 // TODO: remove
 #include "Buffer.hpp"
@@ -35,42 +36,31 @@
 
 namespace VE
 {
-    Renderer::Renderer(const Instance &instance, const Surface &surface, const Window &window) : m_Surface(surface), m_Window(window)
+    Renderer::Renderer(const Instance &instance, const Surface &surface, const Window &window)
+        : m_Window(window), m_Surface(surface)
     {
         m_Device = std::make_unique<Device>(instance, m_Surface);
+
         CreateSwapchain();
-
-        m_RenderPass = std::make_unique<RenderPass>(*m_Swapchain);
+        CreateRenderPass();
         CreateDescriptorSetLayout();
-        m_Pipeline = std::make_unique<GraphicsPipeline>(*m_Swapchain, *m_RenderPass, *m_DescriptorSetLayout);
-
+        CreateGraphicsPipeline();
+        CreateCommandPool();
+        CreateDepthBuffer();
         CreateFramebuffers();
 
-        m_CommandPool = std::make_unique<CommandPool>(*m_Device);
-
         // TODO: remove
-        Texture texture = Texture::LoadTexture("textures/texture.jpg");
-        m_TextureImage = std::make_unique<TextureImage>(*m_CommandPool, texture);
-        // ---
-
-        CreateCommandBuffers();
-
-        CreateSyncObjects();
-
-        // TODO: remove
+        CreateTextureImage();
         CreateVertexBuffer();
         CreateIndexBuffer();
         CreateUniformBuffers();
-        m_DescriptorPool = std::make_unique<DescriptorPool>(*m_Device, m_DescriptorBindings, MAX_FRAMES_IN_FLIGHT);
-
-        std::map<uint32_t, VkDescriptorType> bindings = {
-            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER},
-            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER}};
-
-        m_DescriptorSets = std::make_unique<DescriptorSets>(*m_DescriptorPool, *m_DescriptorSetLayout,
-                                                            bindings, MAX_FRAMES_IN_FLIGHT);
-        CreateDescriptorSets();
         // ---
+
+        CreateDescriptorPool();
+        CreateDescriptorSets();
+
+        CreateCommandBuffers();
+        CreateSyncObjects();
     }
 
     Renderer::~Renderer()
@@ -203,77 +193,9 @@ namespace VE
         m_Swapchain = std::make_unique<Swapchain>(*m_Device, m_Surface, m_Window);
     }
 
-    void Renderer::CreateFramebuffers()
+    void Renderer::CreateRenderPass()
     {
-        auto imageViews = m_Swapchain->GetImageViews();
-        m_Framebuffers.reserve(imageViews.size());
-        for (auto &imageView : imageViews)
-        {
-            m_Framebuffers.emplace_back(*m_Device, *m_RenderPass, imageView, m_Swapchain->GetExtent());
-        }
-    }
-
-    void Renderer::CreateCommandBuffers()
-    {
-        m_CommandBuffers = std::make_unique<CommandBuffers>(
-            *m_CommandPool,
-            static_cast<uint32_t>(m_Swapchain->GetImageViews().size()));
-    }
-
-    void Renderer::CreateSyncObjects()
-    {
-        m_ImageAvailableSemaphores.reserve(MAX_FRAMES_IN_FLIGHT);
-        m_RenderFinishedSemaphores.reserve(MAX_FRAMES_IN_FLIGHT);
-        m_InFlightFences.reserve(MAX_FRAMES_IN_FLIGHT);
-
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-        {
-            m_ImageAvailableSemaphores.emplace_back(*m_Device);
-            m_RenderFinishedSemaphores.emplace_back(*m_Device);
-            m_InFlightFences.emplace_back(*m_Device, true);
-        }
-    }
-
-    void Renderer::RecreateSwapchain()
-    {
-        m_Device->WaitIdle();
-
-        while (m_Window.IsMinimized())
-        {
-            m_Window.WaitForEvents();
-        }
-
-        m_CommandBuffers.reset();
-        m_Framebuffers.clear();
-        m_RenderPass.reset();
-        m_Pipeline.reset();
-        m_Swapchain.reset();
-
-        CreateSwapchain();
         m_RenderPass = std::make_unique<RenderPass>(*m_Swapchain);
-        m_Pipeline = std::make_unique<GraphicsPipeline>(*m_Swapchain, *m_RenderPass, *m_DescriptorSetLayout);
-        CreateFramebuffers();
-        CreateCommandBuffers();
-    }
-
-    void Renderer::UpdateUniformBuffer(uint32_t currentImage)
-    {
-        static auto startTime = std::chrono::high_resolution_clock::now();
-
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-        VkExtent2D swapchainExtent = m_Swapchain->GetExtent();
-
-        UniformBufferObject ubo{};
-        ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
-                               glm::vec3(0.0f, 0.0f, 0.0f),
-                               glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.Proj = glm::perspective(glm::radians(45.0f), swapchainExtent.width / (float)swapchainExtent.height, 0.1f, 10.0f);
-        ubo.Proj[1][1] *= -1;
-
-        m_UniformBuffers[currentImage].SetValue(ubo);
     }
 
     void Renderer::CreateDescriptorSetLayout()
@@ -293,6 +215,37 @@ namespace VE
         m_DescriptorBindings = std::vector<DescriptorBinding>{ubo, sampler};
 
         m_DescriptorSetLayout = std::make_unique<DescriptorSetLayout>(*m_Device, m_DescriptorBindings);
+    }
+
+    void Renderer::CreateGraphicsPipeline()
+    {
+        m_Pipeline = std::make_unique<GraphicsPipeline>(*m_Swapchain, *m_RenderPass, *m_DescriptorSetLayout);
+    }
+
+    void Renderer::CreateCommandPool()
+    {
+        m_CommandPool = std::make_unique<CommandPool>(*m_Device);
+    }
+
+    void Renderer::CreateDepthBuffer()
+    {
+        // m_DepthBuffer = std::make_unique<DepthBuffer>(*m_CommandPool, m_Swapchain->GetExtent());
+    }
+
+    void Renderer::CreateFramebuffers()
+    {
+        auto imageViews = m_Swapchain->GetImageViews();
+        m_Framebuffers.reserve(imageViews.size());
+        for (auto &imageView : imageViews)
+        {
+            m_Framebuffers.emplace_back(*m_Device, *m_RenderPass, imageView, m_Swapchain->GetExtent());
+        }
+    }
+
+    void Renderer::CreateTextureImage()
+    {
+        Texture texture = Texture::LoadTexture("textures/texture.jpg");
+        m_TextureImage = std::make_unique<TextureImage>(*m_CommandPool, texture);
     }
 
     void Renderer::CreateVertexBuffer()
@@ -329,8 +282,19 @@ namespace VE
         }
     }
 
+    void Renderer::CreateDescriptorPool()
+    {
+        m_DescriptorPool = std::make_unique<DescriptorPool>(*m_Device, m_DescriptorBindings, MAX_FRAMES_IN_FLIGHT);
+    }
+
     void Renderer::CreateDescriptorSets()
     {
+        std::map<uint32_t, VkDescriptorType> bindings = {
+            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER},
+            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER}};
+
+        m_DescriptorSets = std::make_unique<DescriptorSets>(*m_DescriptorPool, *m_DescriptorSetLayout, bindings, MAX_FRAMES_IN_FLIGHT);
+
         std::vector<VkWriteDescriptorSet> descriptorWrites;
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -351,6 +315,67 @@ namespace VE
         }
 
         m_DescriptorSets->UpdateDescriptors(descriptorWrites);
+    }
+
+    void Renderer::CreateCommandBuffers()
+    {
+        m_CommandBuffers = std::make_unique<CommandBuffers>(
+            *m_CommandPool,
+            static_cast<uint32_t>(m_Swapchain->GetImageViews().size()));
+    }
+
+    void Renderer::CreateSyncObjects()
+    {
+        m_ImageAvailableSemaphores.reserve(MAX_FRAMES_IN_FLIGHT);
+        m_RenderFinishedSemaphores.reserve(MAX_FRAMES_IN_FLIGHT);
+        m_InFlightFences.reserve(MAX_FRAMES_IN_FLIGHT);
+
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            m_ImageAvailableSemaphores.emplace_back(*m_Device);
+            m_RenderFinishedSemaphores.emplace_back(*m_Device);
+            m_InFlightFences.emplace_back(*m_Device, true);
+        }
+    }
+
+    void Renderer::RecreateSwapchain()
+    {
+        m_Device->WaitIdle();
+
+        while (m_Window.IsMinimized())
+        {
+            m_Window.WaitForEvents();
+        }
+
+        m_Framebuffers.clear();
+        m_Pipeline.reset();
+        m_RenderPass.reset();
+        m_Swapchain.reset();
+
+        CreateSwapchain();
+        CreateRenderPass();
+        CreateGraphicsPipeline();
+        CreateFramebuffers();
+    }
+
+    void Renderer::UpdateUniformBuffer(uint32_t currentImage)
+    {
+        static auto startTime = std::chrono::high_resolution_clock::now();
+
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+        VkExtent2D swapchainExtent = m_Swapchain->GetExtent();
+
+        UniformBufferObject ubo{};
+        ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
+                               glm::vec3(0.0f, 0.0f, 0.0f),
+                               glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.Proj = glm::perspective(glm::radians(45.0f), swapchainExtent.width / (float)swapchainExtent.height, 0.1f, 10.0f);
+        ubo.Proj[1][1] *= -1;
+
+        m_UniformBuffers[currentImage].SetValue(ubo);
     }
 
 }

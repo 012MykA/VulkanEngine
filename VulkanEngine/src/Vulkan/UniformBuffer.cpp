@@ -20,9 +20,7 @@ namespace VE
     {
     }
 
-    UniformBuffer::~UniformBuffer()
-    {
-    }
+    UniformBuffer::~UniformBuffer() = default;
 
     void UniformBuffer::SetValue(const UniformBufferObject &ubo)
     {
