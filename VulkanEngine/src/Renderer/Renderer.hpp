@@ -37,6 +37,7 @@ namespace VE
     class DescriptorSets;
     class Image;
     class ImageView;
+    class Sampler;
     // ---
 
     class Renderer final
@@ -84,9 +85,7 @@ namespace VE
         std::unique_ptr<DeviceMemory> m_TextureImageMemory;
         void CreateTextureImage();
         std::unique_ptr<ImageView> m_TextureImageView;
-        void CreateTextureImageView();
-        VkSampler m_TextureSampler;
-        void CreateTextureSampler();
+        std::unique_ptr<Sampler> m_TextureSampler;
         // ---
 
         std::unique_ptr<CommandBuffers> m_CommandBuffers;
