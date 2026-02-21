@@ -27,15 +27,20 @@
 #include "TextureImage.hpp"
 #include "ImageView.hpp"
 #include "Sampler.hpp"
+#include "Model.hpp"
 // ---
 
 #include <limits>
 #include <stdexcept>
 #include <cstdint>
 #include <map>
+#include <string>
 
 namespace VE
 {
+    static const std::string TEXTURE_PATH = "assets/textures/texture.jpg";
+    static const std::string MODEL_PATH = "assets/models/viking_room/viking_room.obj";
+
     Renderer::Renderer(const Instance &instance, const Surface &surface, const Window &window)
         : m_Window(window), m_Surface(surface)
     {
@@ -51,6 +56,7 @@ namespace VE
 
         // TODO: remove
         CreateTextureImage();
+        LoadModel();
         CreateVertexBuffer();
         CreateIndexBuffer();
         CreateUniformBuffers();
@@ -133,7 +139,7 @@ namespace VE
                 VkBuffer vertexBuffers[] = {m_VertexBuffer->Handle()};
                 VkDeviceSize offsets[] = {0};
                 vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-                vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->Handle(), 0, VK_INDEX_TYPE_UINT16);
+                vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->Handle(), 0, VK_INDEX_TYPE_UINT32);
 
                 VkDescriptorSet descriptorSet = (*m_DescriptorSets)[currentFrame];
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -247,8 +253,13 @@ namespace VE
 
     void Renderer::CreateTextureImage()
     {
-        Texture texture = Texture::LoadTexture("textures/texture.jpg");
+        Texture texture = Texture::LoadTexture(TEXTURE_PATH);
         m_TextureImage = std::make_unique<TextureImage>(*m_CommandPool, texture);
+    }
+
+    void Renderer::LoadModel()
+    {
+        m_Model = std::make_unique<Model>(Model::LoadModel(MODEL_PATH));
     }
 
     void Renderer::CreateVertexBuffer()
@@ -271,7 +282,7 @@ namespace VE
 
     void Renderer::CreateIndexBuffer()
     {
-        m_Indices = std::vector<uint16_t>{
+        m_Indices = std::vector<uint32_t>{
             0, 1, 2, 2, 3, 0,
             4, 5, 6, 6, 7, 4};
 

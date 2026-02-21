@@ -6,9 +6,12 @@
 
 #include <stdexcept>
 #include <iostream>
+#include <string>
 
 namespace VE
 {
+    static const std::string ICON_PATH = "assets/textures/vulkan.png";
+    
     namespace
     {
         void GlfwErrorCallback(const int error, const char *const description)
@@ -48,7 +51,7 @@ namespace VE
             throw std::runtime_error("failed to create GLFW window!");
 
         GLFWimage icon;
-        icon.pixels = stbi_load("textures/vulkan.png", &icon.width, &icon.height, nullptr, STBI_rgb_alpha);
+        icon.pixels = stbi_load(ICON_PATH.c_str(), &icon.width, &icon.height, nullptr, STBI_rgb_alpha);
         if (icon.pixels == nullptr)
             throw std::runtime_error("failed to window icon");
 

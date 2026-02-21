@@ -8,8 +8,13 @@
 #include "Validation.hpp"
 #include "Vertex.hpp"
 
+#include <string>
+
 namespace VE
 {
+    static const std::string VERTEX_GRAPHICS_SHADER_PATH = "assets/shaders/Graphics.vert.spv";
+    static const std::string FRAGMENT_GRAPHICS_SHADER_PATH = "assets/shaders/Graphics.frag.spv";
+
     GraphicsPipeline::GraphicsPipeline(const Swapchain &swapchain, const RenderPass &renderPass, const DescriptorSetLayout &descriptorSetLayout)
         : m_Swapchain(swapchain), m_RenderPass(renderPass)
     {
@@ -105,8 +110,8 @@ namespace VE
         dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
         dynamicState.pDynamicStates = dynamicStates.data();
 
-        const ShaderModule vertShader(device, "shaders/Graphics.vert.spv");
-        const ShaderModule fragShader(device, "shaders/Graphics.frag.spv");
+        const ShaderModule vertShader(device, VERTEX_GRAPHICS_SHADER_PATH);
+        const ShaderModule fragShader(device, FRAGMENT_GRAPHICS_SHADER_PATH);
 
         VkPipelineShaderStageCreateInfo shaderStages[] = {
             vertShader.CreateShaderStage(VK_SHADER_STAGE_VERTEX_BIT),

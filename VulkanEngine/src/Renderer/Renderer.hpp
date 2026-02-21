@@ -37,6 +37,7 @@ namespace VE
     class DescriptorPool;
     class DescriptorSets;
     class TextureImage;
+    class Model;
     // ---
 
     class Renderer final
@@ -62,6 +63,7 @@ namespace VE
 
         // TODO: remove
         void CreateTextureImage();
+        void LoadModel();
         void CreateVertexBuffer();
         void CreateIndexBuffer();
         void CreateUniformBuffers();
@@ -97,12 +99,13 @@ namespace VE
     private:
         // TODO: remove
         std::unique_ptr<TextureImage> m_TextureImage;
+        std::unique_ptr<Model> m_Model;
 
         std::vector<Vertex> m_Vertices;
         std::unique_ptr<Buffer> m_VertexBuffer;
         std::unique_ptr<DeviceMemory> m_VertexBufferMemory;
 
-        std::vector<uint16_t> m_Indices;
+        std::vector<uint32_t> m_Indices;
         std::unique_ptr<Buffer> m_IndexBuffer;
         std::unique_ptr<DeviceMemory> m_IndexBufferMemory;
 

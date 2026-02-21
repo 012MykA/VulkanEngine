@@ -12,6 +12,7 @@ add_subdirectory(vendor/glm)
 file(GLOB_RECURSE ENGINE_SOURCES
     src/*.cpp
     vendor/stb_image/stb_image.c
+    vendor/tinyobjloader/tiny_obj_loader.cc
 )
 
 add_library(${PROJECT_NAME} STATIC ${ENGINE_SOURCES})
@@ -35,4 +36,5 @@ target_include_directories(${PROJECT_NAME}
 
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb_image
+        ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tinyobjloader
 )
