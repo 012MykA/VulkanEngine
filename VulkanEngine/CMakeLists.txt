@@ -32,6 +32,7 @@ target_include_directories(${PROJECT_NAME}
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Assets
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Core
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Utils
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Vulkan
 
     PRIVATE

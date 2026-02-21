@@ -1,4 +1,5 @@
 #include "Model.hpp"
+#include "Timer.hpp"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
@@ -26,6 +27,9 @@ namespace VE
 {
     Model Model::LoadModel(const std::string &filename)
     {
+        std::cout << "Loading model: " << filename << "... " << std::flush;
+        Timer timer;
+
         tinyobj::ObjReader objReader;
 
         if (!objReader.ParseFromFile(filename))
@@ -83,6 +87,12 @@ namespace VE
         // {
 
         // }
+
+        const double elapsed = timer.ElapsedMilliseconds();
+        std::cout << "Loaded model: " << filename;
+        std::cout << "\nVertices Count: " << vertices.size();
+        std::cout << "\nIndices Count: " << indices.size();
+        std::cout << "\nElapsed: " << elapsed << "ms" << std::endl;
 
         return Model(vertices, indices);
     }
