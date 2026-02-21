@@ -136,7 +136,7 @@ namespace VE
                 scissor.extent = m_Swapchain->GetExtent();
                 vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-                VkBuffer vertexBuffers[] = {m_ModelVertexBuffer->Handle() /*m_VertexBuffer->Handle()*/};
+                VkBuffer vertexBuffers[] = {m_ModelVertexBuffer->Handle()};
                 VkDeviceSize offsets[] = {0};
                 vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
                 vkCmdBindIndexBuffer(commandBuffer, m_ModelIndexBuffer->Handle(), 0, VK_INDEX_TYPE_UINT32);
@@ -145,7 +145,7 @@ namespace VE
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                         m_Pipeline->Layout().Handle(), 0, 1, &descriptorSet, 0, nullptr);
 
-                vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Model->Indices().size()), 1, 0, 0, 0);
+                vkCmdDrawIndexed(commandBuffer, m_Model->NumberOfIndices(), 1, 0, 0, 0);
             }
             vkCmdEndRenderPass(commandBuffer);
         }

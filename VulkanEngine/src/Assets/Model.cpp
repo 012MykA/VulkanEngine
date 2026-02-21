@@ -1,9 +1,26 @@
 #include "Model.hpp"
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 #include <tiny_obj_loader.h>
 
 #include <stdexcept>
 #include <iostream>
+#include <unordered_map>
+
+namespace std
+{
+    template <>
+    struct hash<VE::Vertex>
+    {
+        size_t operator()(VE::Vertex const &vertex) const
+        {
+            return ((hash<glm::vec3>()(vertex.Position) ^ (hash<glm::vec3>()(vertex.Color) << 1)) >> 1) ^
+                   (hash<glm::vec2>()(vertex.TexCoord) << 1);
+        }
+    };
+
+}
 
 namespace VE
 {
@@ -24,6 +41,7 @@ namespace VE
 
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
+        std::unordered_map<Vertex, uint32_t> uniqueVertices{};
 
         for (const auto &shape : objReader.GetShapes())
         {
@@ -39,15 +57,23 @@ namespace VE
                     objAttrib.vertices[3 * index.vertex_index + 2],
                 };
 
-                vertex.TexCoord = {
-                    objAttrib.texcoords[2 * index.texcoord_index + 0],
-                    1.0f - objAttrib.texcoords[2 * index.texcoord_index + 1],
-                };
+                if (!objAttrib.texcoords.empty())
+                {
+                    vertex.TexCoord = {
+                        objAttrib.texcoords[2 * index.texcoord_index + 0],
+                        1.0f - objAttrib.texcoords[2 * index.texcoord_index + 1],
+                    };
+                }
 
                 vertex.Color = {1.0f, 1.0f, 1.0f};
 
-                vertices.push_back(vertex);
-                indices.push_back(indices.size());
+                if (!uniqueVertices.contains(vertex))
+                {
+                    uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+                    vertices.push_back(vertex);
+                }
+
+                indices.push_back(uniqueVertices[vertex]);
             }
         }
 

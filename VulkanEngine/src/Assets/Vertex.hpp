@@ -13,6 +13,11 @@ namespace VE
         glm::vec3 Color;
         glm::vec2 TexCoord;
 
+        bool operator==(const Vertex &other) const
+        {
+            return Position == other.Position && Color == other.Color && TexCoord == other.TexCoord;
+        }
+
         static VkVertexInputBindingDescription GetBindingDescription()
         {
             VkVertexInputBindingDescription bindingDescription{};

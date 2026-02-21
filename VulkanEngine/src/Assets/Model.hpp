@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+#include <cstdint>
 
 namespace VE
 {
@@ -12,8 +13,11 @@ namespace VE
     public:
         static Model LoadModel(const std::string &filename);
 
-        const std::vector<Vertex>& Vertices() const { return m_Vertices; }
-        const std::vector<uint32_t>& Indices() const { return m_Indices; }
+        const std::vector<Vertex> &Vertices() const { return m_Vertices; }
+        const std::vector<uint32_t> &Indices() const { return m_Indices; }
+
+        uint32_t NumberOfVertices() const { return static_cast<uint32_t>(m_Vertices.size()); }
+        uint32_t NumberOfIndices() const { return static_cast<uint32_t>(m_Indices.size()); }
 
     private:
         Model() = default;
