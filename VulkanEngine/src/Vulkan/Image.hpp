@@ -10,7 +10,7 @@ namespace VE
     class CommandPool;
     class Buffer;
 
-    class Image
+    class Image final
     {
     public:
         Image(const Device &device, const VkExtent2D extent, const VkFormat format);

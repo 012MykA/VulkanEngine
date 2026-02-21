@@ -6,7 +6,7 @@ namespace VE
 {
     class Device;
 
-    class ImageView
+    class ImageView final
     {
     public:
         ImageView(const Device &device, VkImage image, VkFormat format, VkImageAspectFlags aspect);
