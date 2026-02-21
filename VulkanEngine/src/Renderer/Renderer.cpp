@@ -38,8 +38,8 @@
 
 namespace VE
 {
-    static const std::string TEXTURE_PATH = "assets/textures/texture.jpg";
     static const std::string MODEL_PATH = "assets/models/viking_room/viking_room.obj";
+    static const std::string TEXTURE_PATH = "assets/models/viking_room/viking_room.png";
 
     Renderer::Renderer(const Instance &instance, const Surface &surface, const Window &window)
         : m_Window(window), m_Surface(surface)
@@ -136,16 +136,16 @@ namespace VE
                 scissor.extent = m_Swapchain->GetExtent();
                 vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-                VkBuffer vertexBuffers[] = {m_VertexBuffer->Handle()};
+                VkBuffer vertexBuffers[] = {m_ModelVertexBuffer->Handle() /*m_VertexBuffer->Handle()*/};
                 VkDeviceSize offsets[] = {0};
                 vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-                vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->Handle(), 0, VK_INDEX_TYPE_UINT32);
+                vkCmdBindIndexBuffer(commandBuffer, m_ModelIndexBuffer->Handle(), 0, VK_INDEX_TYPE_UINT32);
 
                 VkDescriptorSet descriptorSet = (*m_DescriptorSets)[currentFrame];
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                         m_Pipeline->Layout().Handle(), 0, 1, &descriptorSet, 0, nullptr);
 
-                vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
+                vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Model->Indices().size()), 1, 0, 0, 0);
             }
             vkCmdEndRenderPass(commandBuffer);
         }
@@ -264,31 +264,18 @@ namespace VE
 
     void Renderer::CreateVertexBuffer()
     {
-        m_Vertices = std::vector<Vertex>{
-            {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-            {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-            {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-            {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+        auto [buffer, memory] = Buffer::CreateFromData(*m_CommandPool, m_Model->Vertices(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
-            {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-            {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-            {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-            {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}};
-
-        auto [vertexBuffer, vertexMemory] = Buffer::CreateFromData(*m_CommandPool, m_Vertices, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-        m_VertexBuffer = std::move(vertexBuffer);
-        m_VertexBufferMemory = std::move(vertexMemory);
+        m_ModelVertexBuffer = std::move(buffer);
+        m_ModelVertexBufferMemory = std::move(memory);
     }
 
     void Renderer::CreateIndexBuffer()
     {
-        m_Indices = std::vector<uint32_t>{
-            0, 1, 2, 2, 3, 0,
-            4, 5, 6, 6, 7, 4};
+        auto [buffer, memory] = Buffer::CreateFromData(*m_CommandPool, m_Model->Indices(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-        auto [indexBuffer, indexMemory] = Buffer::CreateFromData(*m_CommandPool, m_Indices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-        m_IndexBuffer = std::move(indexBuffer);
-        m_IndexBufferMemory = std::move(indexMemory);
+        m_ModelIndexBuffer = std::move(buffer);
+        m_ModelIndexBufferMemory = std::move(memory);
     }
 
     void Renderer::CreateUniformBuffers()

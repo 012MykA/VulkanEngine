@@ -7,6 +7,7 @@
 #include <vector>
 #include <utility>
 #include <memory>
+#include <cassert>
 
 namespace VE
 {
@@ -50,6 +51,7 @@ namespace VE
         const auto &device = commandPool.GetDevice();
 
         VkDeviceSize size = sizeof(T) * data.size();
+        assert(size > 0 && "data size should be greater than 0");
 
         Buffer stagingBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         DeviceMemory stagingMemory = stagingBuffer.AllocateMemory(
