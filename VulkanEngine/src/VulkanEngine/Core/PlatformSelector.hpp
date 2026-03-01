@@ -12,7 +12,6 @@
     #define VE_PLATFORM_ANDROID
 
 #elif defined(__linux__)
-    #error "Linux platform is not supported!"
     #define VE_PLATFORM_LINUX
 
 #elif defined(__APPLE__) || defined(__MACH__)
