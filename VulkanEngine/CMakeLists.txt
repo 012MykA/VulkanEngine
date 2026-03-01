@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Vulkan REQUIRED)
 
 add_subdirectory(vendor/spdlog)
+add_subdirectory(vendor/glfw)
 
 # Sources
 file(GLOB_RECURSE ENGINE_SOURCES
@@ -18,6 +19,9 @@ add_library(${PROJECT_NAME} STATIC ${ENGINE_SOURCES})
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
         Vulkan::Vulkan
+    
+    PRIVATE
+        glfw
 )
 
 if (MSVC)

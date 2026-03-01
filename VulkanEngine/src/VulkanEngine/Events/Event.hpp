@@ -42,6 +42,8 @@ namespace VE
 
     class Event
     {
+        friend class EventDispatcher;
+        
     public:
         virtual ~Event() = default;
 
