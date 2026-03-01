@@ -14,13 +14,6 @@ namespace VE
         uint32_t GetWidth() const { return m_Width; }
         uint32_t GetHeight() const { return m_Height; }
 
-        std::string ToString() const
-        {
-            std::stringstream ss;
-            ss << "WindowResizeEvent: " << m_Width << ", " << m_Height;
-            return ss.str();
-        }
-
         EVENT_CLASS_TYPE(WindowResize)
         EVENT_CLASS_CATEGORY(EventCategoryApplication)
 
