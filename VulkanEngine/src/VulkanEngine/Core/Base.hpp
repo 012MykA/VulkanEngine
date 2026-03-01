@@ -47,3 +47,5 @@ namespace VE
     }
 
 } // namespace VE
+
+#include "VulkanEngine/Core/Log.hpp"

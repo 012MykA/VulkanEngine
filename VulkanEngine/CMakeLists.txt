@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Vulkan REQUIRED)
 
+add_subdirectory(vendor/spdlog)
+
 # Sources
 file(GLOB_RECURSE ENGINE_SOURCES
     src/*.cpp
@@ -18,8 +20,14 @@ target_link_libraries(${PROJECT_NAME}
         Vulkan::Vulkan
 )
 
+if (MSVC)
+    target_compile_options(${PROJECT_NAME} PUBLIC /W4 /utf-8) # for spdlog
+endif()
+
 target_include_directories(${PROJECT_NAME}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+
+        ${CMAKE_CURRENT_SOURCE_DIR}/vendor/spdlog/include
 )

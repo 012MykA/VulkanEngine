@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VulkanEngine/Core/Application.hpp"
+#include "VulkanEngine/Core/Log.hpp"
 
 #include <stdexcept>
 #include <memory>
@@ -10,6 +11,8 @@ namespace VE
 {
     int Main(int argc, char **argv)
     {
+        Log::Init();
+        
         try
         {
             std::unique_ptr<VE::Application> app(VE::CreateApplication());
@@ -18,7 +21,7 @@ namespace VE
         }
         catch (const std::exception &e)
         {
-            std::cerr << "Application crashed: " << e.what() << std::endl;
+            VE_CORE_CRITICAL("{0}", e.what());
 
 #ifdef VE_DEBUG
             std::cin.get();
@@ -31,6 +34,7 @@ namespace VE
 
 }
 
+// Entry Point
 #if defined(VE_DIST) && defined(VE_PLATFORM_WINDOWS)
 
 #include <Windows.h>
@@ -39,7 +43,6 @@ namespace VE
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
-    std::cout << "wWinMain()" << std::endl;
     return VE::Main(__argc, __argv);
 }
 
@@ -47,8 +50,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 
 int main(int argc, char **argv)
 {
-    std::cout << "main()" << std::endl;
     return VE::Main(argc, argv);
 }
 
-#endif
+#endif // End Entry Point
