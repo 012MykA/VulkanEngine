@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VulkanEngine/Core/Base.hpp"
+
 namespace VE
 {
     class Application
@@ -9,7 +11,7 @@ namespace VE
         virtual ~Application() {}
 
     public:
-        void Run() {}
+        void Run();
     
     };
 
