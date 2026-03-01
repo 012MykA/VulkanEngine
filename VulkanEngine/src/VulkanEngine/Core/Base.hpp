@@ -28,6 +28,8 @@
     #define VE_DEBUGBREAK()
 #endif // Debugbreak support
 
+#define BIT(x) (1 << x)
+
 namespace VE
 {
     template <typename T>
