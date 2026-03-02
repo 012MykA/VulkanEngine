@@ -59,8 +59,8 @@ namespace VE
         glfwSetWindowSizeCallback(m_Window, [](GLFWwindow *window, int width, int height)
                                   {
             WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
-            data.Width = width;
-            data.Height = height;
+            data.Width = static_cast<uint32_t>(width);
+            data.Height = static_cast<uint32_t>(height);
 
             WindowResizeEvent event(width, height);
             data.EventCallback(event); });

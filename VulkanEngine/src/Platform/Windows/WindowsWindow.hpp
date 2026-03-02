@@ -10,7 +10,7 @@ namespace VE
     {
     public:
         WindowsWindow(const WindowConfig &config);
-        ~WindowsWindow();
+        ~WindowsWindow() override;
 
         virtual void OnUpdate() override;
 
