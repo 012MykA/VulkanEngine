@@ -43,7 +43,7 @@ namespace VE
     class Event
     {
         friend class EventDispatcher;
-        
+
     public:
         virtual ~Event() = default;
 
@@ -55,8 +55,7 @@ namespace VE
             return GetCategoryFlags() & category;
         }
 
-    protected:
-        bool m_Handled = false;
+        bool Handled = false;
     };
 
     class EventDispatcher
@@ -73,7 +72,7 @@ namespace VE
             static_assert(std::is_base_of<Event, T>::value, "Dispathed type is not a subclass of Event!");
             if (m_Event.GetEventType() == T::GetStaticType())
             {
-                m_Event.m_Handled = func(*reinterpret_cast<T *>(&m_Event));
+                m_Event.Handled = func(*reinterpret_cast<T *>(&m_Event));
                 return true;
             }
             return false;
