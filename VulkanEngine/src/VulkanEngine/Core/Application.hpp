@@ -25,7 +25,7 @@ namespace VE
     private:
         Scope<Window> m_Window;
         bool m_Running = true;
-        bool m_Minimized = false;indwo
+        bool m_Minimized = false;
     };
 
     // To be defined in a CLIENT
