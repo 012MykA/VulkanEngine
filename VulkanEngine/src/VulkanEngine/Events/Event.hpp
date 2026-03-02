@@ -4,7 +4,7 @@
 
 #include <functional>
 
-namespace VE
+namespace ve
 {
     enum class EventType
     {
@@ -82,4 +82,4 @@ namespace VE
         Event &m_Event;
     };
 
-} // namespace VE
+} // namespace ve

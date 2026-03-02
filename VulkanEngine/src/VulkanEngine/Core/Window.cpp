@@ -5,9 +5,9 @@
     #include "Platform/Windows/WindowsWindow.hpp"
 #endif
 
-namespace VE
+namespace ve
 {
-    Scope<Window> VE::Window::Create(const WindowConfig &config)
+    Scope<Window> ve::Window::Create(const WindowConfig &config)
     {
 #if defined(VE_PLATFORM_WINDOWS)
         return CreateScope<WindowsWindow>(config);
@@ -16,4 +16,4 @@ namespace VE
 #endif
     }
 
-} // namespace VE
+} // namespace ve

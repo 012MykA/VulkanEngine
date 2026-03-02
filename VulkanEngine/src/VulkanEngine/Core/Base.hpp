@@ -33,7 +33,7 @@
 
 #define BIT(x) (1 << x)
 
-namespace VE
+namespace ve
 {
     template <typename T>
     using Scope = std::unique_ptr<T>;
@@ -51,6 +51,6 @@ namespace VE
         return std::make_shared<T>(std::forward<Args>(args)...);
     }
 
-} // namespace VE
+} // namespace ve
 
 #include "VulkanEngine/Core/Log.hpp"

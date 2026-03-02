@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace VE
+namespace ve
 {
     class WindowResizeEvent : public Event
     {
@@ -30,4 +30,4 @@ namespace VE
         EVENT_CLASS_CATEGORY(EventCategoryApplication)
     };
 
-} // namespace VE
+} // namespace ve

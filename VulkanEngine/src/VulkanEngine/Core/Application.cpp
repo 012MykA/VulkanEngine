@@ -4,7 +4,7 @@
 
 #include <cassert>
 
-namespace VE
+namespace ve
 {
     Application *Application::s_Instance = nullptr;
 
@@ -85,4 +85,4 @@ namespace VE
         return false;
     }
 
-} // namespace VE
+} // namespace ve

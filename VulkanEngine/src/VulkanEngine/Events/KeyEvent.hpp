@@ -2,7 +2,7 @@
 
 #include "VulkanEngine/Events/Event.hpp"
 
-namespace VE
+namespace ve
 {
     class KeyEvent : public Event
     {
@@ -46,4 +46,4 @@ namespace VE
         EVENT_CLASS_TYPE(KeyTyped)
     };
 
-} // namespace VE
+} // namespace ve

@@ -7,7 +7,7 @@
 
 struct GLFWwindow;
 
-namespace VE
+namespace ve
 {
     class WindowsWindow : public Window
     {
@@ -33,6 +33,6 @@ namespace VE
         GLFWwindow *m_Window;
     };
 
-} // namespace VE
+} // namespace ve
 
 #endif // VE_PLATFORM_WINDOWS

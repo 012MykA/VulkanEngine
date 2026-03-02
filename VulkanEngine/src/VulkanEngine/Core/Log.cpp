@@ -2,7 +2,7 @@
 
 #include <spdlog/sinks/stdout_color_sinks.h>
 
-namespace VE
+namespace ve
 {
 	Ref<spdlog::logger> Log::m_CoreLogger;
 	Ref<spdlog::logger> Log::m_ClientLogger;
@@ -17,4 +17,4 @@ namespace VE
 		m_ClientLogger->set_level(spdlog::level::trace);
 	}
 
-} // namespace VE
+} // namespace ve

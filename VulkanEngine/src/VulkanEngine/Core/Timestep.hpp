@@ -1,6 +1,6 @@
 #pragma once
 
-namespace VE
+namespace ve
 {
     class Timestep
     {
@@ -16,4 +16,4 @@ namespace VE
         float m_Time;
     };
 
-} // namespace VE
+} // namespace ve

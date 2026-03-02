@@ -7,7 +7,7 @@
 #include <memory>
 #include <iostream>
 
-namespace VE
+namespace ve
 {
     int Main(int argc, char **argv)
     {
@@ -15,7 +15,7 @@ namespace VE
         
         try
         {
-            std::unique_ptr<VE::Application> app(VE::CreateApplication());
+            std::unique_ptr<ve::Application> app(ve::CreateApplication());
 
             app->Run();
         }
@@ -43,14 +43,14 @@ namespace VE
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
-    return VE::Main(__argc, __argv);
+    return ve::Main(__argc, __argv);
 }
 
 #else
 
 int main(int argc, char **argv)
 {
-    return VE::Main(argc, argv);
+    return ve::Main(argc, argv);
 }
 
 #endif // End Entry Point

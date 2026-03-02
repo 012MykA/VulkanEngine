@@ -3,7 +3,7 @@
 
 #include "Sandbox3D.hpp"
 
-class VulkanApp : public VE::Application
+class VulkanApp : public ve::Application
 {
 public:
     VulkanApp()
@@ -12,7 +12,7 @@ public:
     }
 };
 
-VE::Application *VE::CreateApplication()
+ve::Application *ve::CreateApplication()
 {
     return new VulkanApp();
 }

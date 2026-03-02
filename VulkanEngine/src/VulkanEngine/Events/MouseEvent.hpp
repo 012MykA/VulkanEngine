@@ -2,7 +2,7 @@
 
 #include "VulkanEngine/Events/Event.hpp"
 
-namespace VE
+namespace ve
 {
     class MouseMovedEvent : public Event
     {
@@ -65,4 +65,4 @@ namespace VE
         EVENT_CLASS_TYPE(MouseButtonReleased)
     };
 
-} // namespace VE
+} // namespace ve

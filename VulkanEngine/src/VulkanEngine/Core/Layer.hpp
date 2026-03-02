@@ -5,7 +5,7 @@
 
 #include <string>
 
-namespace VE
+namespace ve
 {
     class Layer
     {
@@ -25,4 +25,4 @@ namespace VE
         std::string m_DebugName;
     };
 
-} // namespace VE
+} // namespace ve

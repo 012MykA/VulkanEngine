@@ -6,13 +6,13 @@
 
 #include <GLFW/glfw3.h>
 
-namespace VE
+namespace ve
 {
     float Time::GetTime()
     {
         return static_cast<float>(glfwGetTime());
     }
 
-} // namespace VE
+} // namespace ve
 
 #endif // VE_PLATFORM_WINDOWS

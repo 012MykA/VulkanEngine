@@ -1,6 +1,6 @@
 #include "LayerStack.hpp"
 
-namespace VE
+namespace ve
 {
     LayerStack::~LayerStack()
     {
@@ -41,4 +41,4 @@ namespace VE
             m_Layers.erase(it);
     }
 
-} // namespace VE
+} // namespace ve

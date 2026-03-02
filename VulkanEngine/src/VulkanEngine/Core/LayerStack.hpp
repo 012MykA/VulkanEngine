@@ -3,7 +3,7 @@
 #include "VulkanEngine/Core/Base.hpp"
 #include "VulkanEngine/Core/Layer.hpp"
 
-namespace VE
+namespace ve
 {
     class LayerStack
     {
@@ -31,4 +31,4 @@ namespace VE
         uint32_t m_LayerInsertIndex = 0;
     };
 
-} // namespace VE
+} // namespace ve

@@ -12,7 +12,7 @@
 
 #include <stdexcept>
 
-namespace VE
+namespace ve
 {
     namespace
     {
@@ -168,6 +168,6 @@ namespace VE
         m_Data.EventCallback = callback;
     }
 
-} // namespace VE
+} // namespace ve
 
 #endif // VE_PLATFORM_WINDOWS

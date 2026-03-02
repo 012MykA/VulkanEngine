@@ -6,7 +6,7 @@
 #include "VulkanEngine/Events/Event.hpp"
 #include "VulkanEngine/Events/ApplicationEvent.hpp"
 
-namespace VE
+namespace ve
 {
     class Application
     {
@@ -41,4 +41,4 @@ namespace VE
     // To be defined in a CLIENT
     Application *CreateApplication();
 
-} // namespace VE
+} // namespace ve

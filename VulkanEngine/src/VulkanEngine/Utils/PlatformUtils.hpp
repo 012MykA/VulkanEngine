@@ -1,6 +1,6 @@
 #pragma once
 
-namespace VE
+namespace ve
 {
     class Time
     {
@@ -8,4 +8,4 @@ namespace VE
         static float GetTime();
     };
 
-} // namespace VE
+} // namespace ve

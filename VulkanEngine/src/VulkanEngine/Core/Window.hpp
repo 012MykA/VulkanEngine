@@ -7,7 +7,7 @@
 #include <filesystem>
 #include <functional>
 
-namespace VE
+namespace ve
 {
     struct WindowConfig
     {
@@ -35,4 +35,4 @@ namespace VE
         static Scope<Window> Create(const WindowConfig &config = WindowConfig());
     };
 
-} // namespace VE
+} // namespace ve
