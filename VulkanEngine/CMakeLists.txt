@@ -10,11 +10,20 @@ add_subdirectory(vendor/spdlog)
 add_subdirectory(vendor/glfw)
 
 # Sources
-file(GLOB_RECURSE ENGINE_SOURCES
-    src/*.cpp
+file(GLOB_RECURSE ENGINE_CORE_SOURCES
+    src/VulkanEngine/*.cpp
 )
 
-add_library(${PROJECT_NAME} STATIC ${ENGINE_SOURCES})
+if (WIN32)
+file(GLOB_RECURSE PLATFORM_SOURCES
+    src/Platform/Windows/*.cpp
+)
+endif()
+
+add_library(${PROJECT_NAME} STATIC
+    ${ENGINE_CORE_SOURCES}
+    ${PLATFORM_SOURCES}
+)
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC

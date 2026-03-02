@@ -8,7 +8,7 @@
 namespace VE
 {
     class Application
-    {        
+    {
     public:
         Application();
         virtual ~Application() {}
@@ -16,11 +16,11 @@ namespace VE
     public:
         void Run();
 
-        void OnEvent(Event& e);
+        void OnEvent(Event &e);
 
     private:
-        bool OnWindowClose(WindowCloseEvent& e);
-        bool OnWindowResize(WindowResizeEvent& e);
+        bool OnWindowClose(WindowCloseEvent &e);
+        bool OnWindowResize(WindowResizeEvent &e);
 
     private:
         Scope<Window> m_Window;

@@ -1,9 +1,8 @@
 #include "Window.hpp"
+#include "VulkanEngine/Core/Base.hpp"
 
 #if defined(VE_PLATFORM_WINDOWS)
     #include "Platform/Windows/WindowsWindow.hpp"
-#elif defined(VE_PLATFORM_LINUX)
-    #include "Platform/Linux/LinuxWindow.hpp"
 #endif
 
 namespace VE
@@ -12,8 +11,6 @@ namespace VE
     {
 #if defined(VE_PLATFORM_WINDOWS)
         return CreateScope<WindowsWindow>(config);
-#elif defined(VE_PLATFORM_LINUX)
-        return CreateScope<LinuxWindow>(config);
 #else
         return nullptr;
 #endif

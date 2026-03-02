@@ -1,5 +1,8 @@
 #pragma once
 
+#include "VulkanEngine/Core/Base.hpp"
+#ifdef VE_PLATFORM_WINDOWS
+
 #include "VulkanEngine/Core/Window.hpp"
 
 struct GLFWwindow;
@@ -31,3 +34,5 @@ namespace VE
     };
 
 } // namespace VE
+
+#endif // VE_PLATFORM_WINDOWS

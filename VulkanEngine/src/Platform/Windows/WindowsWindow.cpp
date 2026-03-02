@@ -1,3 +1,6 @@
+#include "VulkanEngine/Core/Base.hpp"
+#ifdef VE_PLATFORM_WINDOWS
+
 #include "WindowsWindow.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 #include "VulkanEngine/Events/ApplicationEvent.hpp"
@@ -166,3 +169,5 @@ namespace VE
     }
 
 } // namespace VE
+
+#endif // VE_PLATFORM_WINDOWS
