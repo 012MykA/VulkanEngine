@@ -1,10 +1,10 @@
 #include <VulkanEngine/VulkanEngine.hpp>
 
-class Sandbox3D : public ve::Layer
+class RenderLayer : public ve::Layer
 {
 public:
-    Sandbox3D();
-    virtual ~Sandbox3D() = default;
+    RenderLayer();
+    virtual ~RenderLayer() = default;
 
     virtual void OnAttach() override;
     virtual void OnDetach() override;
