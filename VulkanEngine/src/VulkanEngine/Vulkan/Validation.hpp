@@ -3,9 +3,12 @@
 #include <vulkan/vulkan.h>
 
 #include <string>
+#include <vector>
 
-namespace ve
+namespace ve::validation
 {
     void CheckVk(VkResult result, const std::string &operation);
 
-} // namespace ve
+    void CheckValidationLayerSupport(const std::vector<const char *> &validationLayers);
+
+} // namespace ve::validation

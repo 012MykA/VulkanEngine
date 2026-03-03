@@ -1,7 +1,7 @@
 #include "VulkanEngine/Core/Base.hpp"
-#ifdef VE_PLATFORM_WINDOWS
+#if defined(VE_PLATFORM_WINDOWS) || defined(VE_PLATFORM_LINUX)
 
-#include "WindowsWindow.hpp"
+#include "GlfwWindowDriver.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 #include "VulkanEngine/Events/ApplicationEvent.hpp"
 #include "VulkanEngine/Events/KeyEvent.hpp"
@@ -23,7 +23,7 @@ namespace ve
         }
     }
 
-    WindowsWindow::WindowsWindow(const WindowCreateInfo &createInfo)
+    GlfwWindowDriver::GlfwWindowDriver(const WindowCreateInfo &createInfo)
     {
         m_Data.Title = createInfo.Title;
         m_Data.Width = createInfo.Width;
@@ -143,32 +143,32 @@ namespace ve
             data.EventCallback(event); });
     }
 
-    WindowsWindow::~WindowsWindow()
+    GlfwWindowDriver::~GlfwWindowDriver()
     {
         glfwDestroyWindow(m_Window);
         glfwTerminate();
     }
 
-    void WindowsWindow::OnUpdate()
+    void GlfwWindowDriver::OnUpdate()
     {
         glfwPollEvents();
     }
 
-    uint32_t WindowsWindow::GetWidth() const
+    uint32_t GlfwWindowDriver::GetWidth() const
     {
         return m_Data.Width;
     }
 
-    uint32_t WindowsWindow::GetHeight() const
+    uint32_t GlfwWindowDriver::GetHeight() const
     {
         return m_Data.Height;
     }
 
-    void WindowsWindow::SetEventCallback(const EventCallbackFn &callback)
+    void GlfwWindowDriver::SetEventCallback(const EventCallbackFn &callback)
     {
         m_Data.EventCallback = callback;
     }
 
 } // namespace ve
 
-#endif // VE_PLATFORM_WINDOWS
+#endif // VE_PLATFORM_WINDOWS || VE_PLATFORM_LINUX

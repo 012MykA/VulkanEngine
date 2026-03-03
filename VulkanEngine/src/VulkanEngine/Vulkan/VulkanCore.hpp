@@ -16,9 +16,11 @@ namespace ve
 
     private:
         void CreateInstance(const std::string &appName);
+        void CreateDebugCallback();
 
     private:
         VkInstance m_Instance = VK_NULL_HANDLE;
+        VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
     };
 
 } // namespace ve

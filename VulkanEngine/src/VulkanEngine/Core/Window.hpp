@@ -21,6 +21,13 @@ namespace ve
     class Window
     {
     public:
+        enum class Backend
+        {
+            None = 0,
+            GLFW,
+            Native
+        };
+
         using EventCallbackFn = std::function<void(Event &)>;
 
         virtual ~Window() = default;
@@ -32,7 +39,7 @@ namespace ve
 
         virtual void SetEventCallback(const EventCallbackFn &callback) = 0;
 
-        static Scope<Window> Create(const WindowCreateInfo &createInfo);
+        static Scope<Window> Create(const WindowCreateInfo &createInfo, Window::Backend backend = Window::Backend::GLFW);
     };
 
 } // namespace ve

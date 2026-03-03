@@ -14,11 +14,22 @@ file(GLOB_RECURSE ENGINE_CORE_SOURCES
     src/VulkanEngine/*.cpp
 )
 
-if (WIN32)
-file(GLOB_RECURSE PLATFORM_SOURCES
-    src/Platform/Windows/*.cpp
-)
+# Platform Sources
+# Common
+if(UNIX OR WIN32)
+    file(GLOB_RECURSE PLATFORM_GLFW_SOURCES src/Platform/Glfw/*.cpp)
+    list(APPEND PLATFORM_SOURCES ${PLATFORM_GLFW_SOURCES})
 endif()
+
+# Windows
+if(WIN32)
+    file(GLOB_RECURSE PLATFORM_WINDOWS_SOURCES src/Platform/Windows/*.cpp)
+    list(APPEND PLATFORM_SOURCES ${PLATFORM_WINDOWS_SOURCES})
+elseif(UNIX AND NOT APPLE) # Linux
+    file(GLOB_RECURSE PLATFORM_LINUX_SOURCES src/Platform/Linux/*.cpp)
+    list(APPEND PLATFORM_SOURCES ${PLATFORM_LINUX_SOURCES})
+endif()
+# End Platform Sources
 
 set(STB_IMAGE_SOURCE vendor/stb_image/stb_image.c)
 

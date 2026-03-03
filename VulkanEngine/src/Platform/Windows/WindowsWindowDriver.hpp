@@ -9,11 +9,11 @@ struct GLFWwindow;
 
 namespace ve
 {
-    class WindowsWindow : public Window
+    class WindowsWindowDriver : public Window
     {
     public:
-        WindowsWindow(const WindowCreateInfo &createInfo);
-        ~WindowsWindow() override;
+        WindowsWindowDriver(const WindowCreateInfo &createInfo);
+        ~WindowsWindowDriver() override;
 
         virtual void OnUpdate() override;
 
