@@ -166,6 +166,8 @@ namespace ve
             CreateDebugCallback();
         }
         CreateSurface(window);
+        m_PhysicalDevices.Init(m_Instance, m_Surface);
+        m_QueueFamily = m_PhysicalDevices.SelectDevice(VK_QUEUE_GRAPHICS_BIT, true);
     }
 
     void VulkanCore::CreateInstance(const std::string &appName)
