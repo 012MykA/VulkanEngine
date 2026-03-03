@@ -12,10 +12,10 @@ namespace ve
     int Main(int argc, char **argv)
     {
         Log::Init();
-        
+
         try
         {
-            std::unique_ptr<ve::Application> app(ve::CreateApplication());
+            std::unique_ptr<ve::Application> app(ve::CreateApplication({argc, argv}));
 
             app->Run();
         }

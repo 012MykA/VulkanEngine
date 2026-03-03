@@ -6,13 +6,17 @@
 class VulkanApp : public ve::Application
 {
 public:
-    VulkanApp()
+    VulkanApp(const ve::ApplicationCreateInfo &createInfo) : ve::Application(createInfo)
     {
         PushLayer(new RenderLayer());
     }
 };
 
-ve::Application *ve::CreateApplication()
+ve::Application *ve::CreateApplication(ApplicationCommandLineArgs args)
 {
-    return new VulkanApp();
+    ve::ApplicationCreateInfo appInfo;
+    appInfo.Name = "VulkanApp";
+    appInfo.CommandLineArgs = args;
+
+    return new VulkanApp(appInfo);
 }

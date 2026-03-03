@@ -12,7 +12,7 @@ namespace ve
     class WindowsWindow : public Window
     {
     public:
-        WindowsWindow(const WindowConfig &config);
+        WindowsWindow(const WindowCreateInfo &createInfo);
         ~WindowsWindow() override;
 
         virtual void OnUpdate() override;

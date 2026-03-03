@@ -7,10 +7,10 @@
 
 namespace ve
 {
-    Scope<Window> ve::Window::Create(const WindowConfig &config)
+    Scope<Window> ve::Window::Create(const WindowCreateInfo &createInfo)
     {
 #if defined(VE_PLATFORM_WINDOWS)
-        return CreateScope<WindowsWindow>(config);
+        return CreateScope<WindowsWindow>(createInfo);
 #else
         return nullptr;
 #endif

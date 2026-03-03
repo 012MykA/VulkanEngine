@@ -22,11 +22,11 @@ namespace ve
         }
     }
 
-    WindowsWindow::WindowsWindow(const WindowConfig &config)
+    WindowsWindow::WindowsWindow(const WindowCreateInfo &createInfo)
     {
-        m_Data.Title = config.Title;
-        m_Data.Width = config.Width;
-        m_Data.Height = config.Height;
+        m_Data.Title = createInfo.Title;
+        m_Data.Width = createInfo.Width;
+        m_Data.Height = createInfo.Height;
 
         glfwSetErrorCallback(GlfwErrorCallback);
 
@@ -37,18 +37,18 @@ namespace ve
             throw std::runtime_error("Vulkan is not supported by GLFW!");
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, config.Resizable ? GLFW_TRUE : GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, createInfo.Resizable ? GLFW_TRUE : GLFW_FALSE);
 
-        GLFWmonitor *const monitor = config.Fullscreen ? glfwGetPrimaryMonitor() : nullptr;
+        GLFWmonitor *const monitor = createInfo.Fullscreen ? glfwGetPrimaryMonitor() : nullptr;
 
-        m_Window = glfwCreateWindow(config.Width, config.Height, config.Title.c_str(), monitor, nullptr);
+        m_Window = glfwCreateWindow(createInfo.Width, createInfo.Height, createInfo.Title.c_str(), monitor, nullptr);
         if (!m_Window)
             throw std::runtime_error("failed to create GLFW window!");
 
-        if (!config.IconPath.empty())
+        if (!createInfo.IconPath.empty())
         {
             // GLFWimage icon;
-            // icon.pixels = stbi_load(config.IconPath.string().c_str(), &icon.width, &icon.height, nullptr, STBI_rgb_alpha);
+            // icon.pixels = stbi_load(createInfo.IconPath.string().c_str(), &icon.width, &icon.height, nullptr, STBI_rgb_alpha);
             // if (icon.pixels == nullptr)
             //     throw std::runtime_error("failed to load window icon");
 

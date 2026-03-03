@@ -6,12 +6,35 @@
 #include "VulkanEngine/Events/Event.hpp"
 #include "VulkanEngine/Events/ApplicationEvent.hpp"
 
+#include <string>
+#include <cassert>
+
 namespace ve
 {
+    struct ApplicationCommandLineArgs
+    {
+        int Count = 0;
+        char **Args = nullptr;
+
+        const char *operator[](int index) const
+        {
+            assert(index < Count && "Index out of range!");
+            return Args[index];
+        }
+    };
+
+    struct ApplicationCreateInfo
+    {
+        std::string Name = "VulkanEngine App";
+        std::string WorkingDirectory;
+        ApplicationCommandLineArgs CommandLineArgs;
+        WindowCreateInfo WindowInfo;
+    };
+
     class Application
     {
     public:
-        Application();
+        Application(const ApplicationCreateInfo &createInfo);
         virtual ~Application() {}
 
     public:
@@ -28,6 +51,7 @@ namespace ve
         bool OnWindowResize(WindowResizeEvent &e);
 
     private:
+        ApplicationCreateInfo m_Info;
         Scope<Window> m_Window;
         bool m_Running = true;
         bool m_Minimized = false;
@@ -39,6 +63,6 @@ namespace ve
     };
 
     // To be defined in a CLIENT
-    Application *CreateApplication();
+    Application *CreateApplication(ApplicationCommandLineArgs args);
 
 } // namespace ve

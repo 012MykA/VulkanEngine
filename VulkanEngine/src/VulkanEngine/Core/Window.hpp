@@ -9,12 +9,12 @@
 
 namespace ve
 {
-    struct WindowConfig
+    struct WindowCreateInfo
     {
-        std::string Title = "Vulkan Window";
+        std::string Title = "VulkanEngine Window";
         std::filesystem::path IconPath;
         uint32_t Width = 800, Height = 600;
-        bool Resizable = true;
+        bool Resizable = false;
         bool Fullscreen = false;
     };
 
@@ -32,7 +32,7 @@ namespace ve
 
         virtual void SetEventCallback(const EventCallbackFn &callback) = 0;
 
-        static Scope<Window> Create(const WindowConfig &config = WindowConfig());
+        static Scope<Window> Create(const WindowCreateInfo &createInfo);
     };
 
 } // namespace ve
