@@ -22,7 +22,7 @@ namespace ve
         m_Window = Window::Create(createInfo.WindowInfo);
         m_Window->SetEventCallback(VE_BIND_EVENT_FN(OnEvent));
         
-        m_VulkanCore.Init(createInfo.Name);
+        m_VulkanCore.Init(createInfo.Name, reinterpret_cast<GLFWwindow*>(m_Window->GetNativeWindow()));
     }
 
     void Application::Run()

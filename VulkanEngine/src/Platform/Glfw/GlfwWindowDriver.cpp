@@ -164,6 +164,11 @@ namespace ve
         return m_Data.Height;
     }
 
+    void *GlfwWindowDriver::GetNativeWindow() const
+    {
+        return reinterpret_cast<void *>(m_WindowHandle);
+    }
+
     void GlfwWindowDriver::SetEventCallback(const EventCallbackFn &callback)
     {
         m_Data.EventCallback = callback;

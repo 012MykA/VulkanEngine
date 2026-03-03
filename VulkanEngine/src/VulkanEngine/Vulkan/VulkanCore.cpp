@@ -3,6 +3,9 @@
 #include "VulkanEngine/Core/Log.hpp"
 #include "Validation.hpp"
 
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
 namespace ve
 {
     namespace
@@ -142,23 +145,27 @@ namespace ve
 
     VulkanCore::~VulkanCore()
     {
+        VE_CORE_TRACE("----------------------------------------");
+
+        vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
+        VE_CORE_TRACE("VkSurfaceKHR destroyed");
         if constexpr (validation::enabled)
         {
-            DestroyDebugUtilsMessengerEXT(m_Instance , m_DebugMessenger, nullptr);
+            DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
             VE_CORE_TRACE("VkDebugUtilsMessengerEXT destroyed");
         }
-
         vkDestroyInstance(m_Instance, nullptr);
         VE_CORE_TRACE("VkInstance destroyed");
     }
 
-    void VulkanCore::Init(const std::string &appName)
+    void VulkanCore::Init(const std::string &appName, GLFWwindow* window)
     {
         CreateInstance(appName);
         if constexpr (validation::enabled)
         {
             CreateDebugCallback();
         }
+        CreateSurface(window);
     }
 
     void VulkanCore::CreateInstance(const std::string &appName)
@@ -172,20 +179,20 @@ namespace ve
             validation::CheckValidationLayerSupport(validationLayers);
         }
 
-        const std::vector<const char *> extensions = {
+        std::vector<const char *> extensions = {
             VK_KHR_SURFACE_EXTENSION_NAME,
 #if defined(VE_PLATFORM_WINDOWS)
             "VK_KHR_win32_surface",
 #elif defined(VE_PLATFORM_LINUX)
-            "VK_KHR_xcb_surface",
+            "VK_KHR_wayland_surface",
 #elif defined(VE_PLATFORM_APPLE)
             "VK_MVK_macos_surface",
 #endif
-
-#if defined(VE_DEBUG)
-            VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
-#endif
         };
+        if constexpr (validation::enabled)
+        {
+            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        }
 
         VE_CORE_TRACE("Instance extensions:");
         for (auto extension : extensions)
@@ -230,6 +237,13 @@ namespace ve
         validation::CheckVk(CreateDebugUtilsMessengerEXT(m_Instance, &createInfo, nullptr, &m_DebugMessenger),
                             "setup Vulkan debug callback");
         VE_CORE_TRACE("VkDebugUtilsMessengerEXT created");
+    }
+
+    void VulkanCore::CreateSurface(GLFWwindow *window)
+    {
+        validation::CheckVk(glfwCreateWindowSurface(m_Instance, window, nullptr, &m_Surface),
+                            "create window surface");
+        VE_CORE_TRACE("VkSurfaceKHR created");
     }
 
 } // namespace ve

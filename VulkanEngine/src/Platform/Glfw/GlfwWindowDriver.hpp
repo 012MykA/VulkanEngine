@@ -19,6 +19,7 @@ namespace ve
 
         virtual uint32_t GetWidth() const override;
         virtual uint32_t GetHeight() const override;
+        virtual void *GetNativeWindow() const override;
 
         virtual void SetEventCallback(const EventCallbackFn &callback) override;
 

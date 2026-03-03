@@ -29,6 +29,7 @@ namespace ve
 
         virtual uint32_t GetWidth() const = 0;
         virtual uint32_t GetHeight() const = 0;
+        virtual void *GetNativeWindow() const = 0;
 
         virtual void SetEventCallback(const EventCallbackFn &callback) = 0;
 
