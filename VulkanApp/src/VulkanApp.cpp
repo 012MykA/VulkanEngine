@@ -16,8 +16,9 @@ ve::Application *ve::CreateApplication(ApplicationCommandLineArgs args)
 {
     ve::ApplicationCreateInfo appInfo;
     appInfo.Name = "VulkanApp";
+    appInfo.WorkingDirectory = "VulkanApp/";
     appInfo.CommandLineArgs = args;
-    appInfo.WindowInfo = {.Title = "VulkanApp", .IconPath = "assets/textures/vulkan.png"};
+    appInfo.WindowInfo = {.Title = "VulkanApp", .IconPath = "assets/icons/vulkan.png"};
 
     return new VulkanApp(appInfo);
 }

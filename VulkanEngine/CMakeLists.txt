@@ -20,9 +20,12 @@ file(GLOB_RECURSE PLATFORM_SOURCES
 )
 endif()
 
+set(STB_IMAGE_SOURCE vendor/stb_image/stb_image.c)
+
 add_library(${PROJECT_NAME} STATIC
     ${ENGINE_CORE_SOURCES}
     ${PLATFORM_SOURCES}
+    ${STB_IMAGE_SOURCE}
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -43,4 +46,5 @@ target_include_directories(${PROJECT_NAME}
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 
         ${CMAKE_CURRENT_SOURCE_DIR}/vendor/spdlog/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb_image
 )

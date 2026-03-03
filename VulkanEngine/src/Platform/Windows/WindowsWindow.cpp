@@ -9,6 +9,7 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <stb_image.h>
 
 #include <stdexcept>
 
@@ -47,13 +48,13 @@ namespace ve
 
         if (!createInfo.IconPath.empty())
         {
-            // GLFWimage icon;
-            // icon.pixels = stbi_load(createInfo.IconPath.string().c_str(), &icon.width, &icon.height, nullptr, STBI_rgb_alpha);
-            // if (icon.pixels == nullptr)
-            //     throw std::runtime_error("failed to load window icon");
+            GLFWimage icon;
+            icon.pixels = stbi_load(createInfo.IconPath.string().c_str(), &icon.width, &icon.height, nullptr, STBI_rgb_alpha);
+            if (icon.pixels == nullptr)
+                throw std::runtime_error("failed to load window icon");
 
-            // glfwSetWindowIcon(m_Window, 1, &icon);
-            // stbi_image_free(icon.pixels);
+            glfwSetWindowIcon(m_Window, 1, &icon);
+            stbi_image_free(icon.pixels);
         }
 
         glfwSetWindowUserPointer(m_Window, &m_Data);
