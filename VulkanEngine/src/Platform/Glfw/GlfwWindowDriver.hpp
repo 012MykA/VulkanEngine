@@ -23,14 +23,14 @@ namespace ve
         virtual void SetEventCallback(const EventCallbackFn &callback) override;
 
     private:
+        GLFWwindow *m_WindowHandle;
+
         struct WindowData
         {
             std::string Title;
             uint32_t Width, Height;
             EventCallbackFn EventCallback;
         } m_Data;
-
-        GLFWwindow *m_Window;
     };
 
 } // namespace ve

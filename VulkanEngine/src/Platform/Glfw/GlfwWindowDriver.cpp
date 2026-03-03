@@ -42,8 +42,8 @@ namespace ve
 
         GLFWmonitor *const monitor = createInfo.Fullscreen ? glfwGetPrimaryMonitor() : nullptr;
 
-        m_Window = glfwCreateWindow(createInfo.Width, createInfo.Height, createInfo.Title.c_str(), monitor, nullptr);
-        if (!m_Window)
+        m_WindowHandle = glfwCreateWindow(createInfo.Width, createInfo.Height, createInfo.Title.c_str(), monitor, nullptr);
+        if (!m_WindowHandle)
             throw std::runtime_error("failed to create GLFW window!");
 
         if (!createInfo.IconPath.empty())
@@ -53,14 +53,14 @@ namespace ve
             if (icon.pixels == nullptr)
                 throw std::runtime_error("failed to load window icon");
 
-            glfwSetWindowIcon(m_Window, 1, &icon);
+            glfwSetWindowIcon(m_WindowHandle, 1, &icon);
             stbi_image_free(icon.pixels);
         }
 
-        glfwSetWindowUserPointer(m_Window, &m_Data);
+        glfwSetWindowUserPointer(m_WindowHandle, &m_Data);
 
         // Set GLFW callbacks
-        glfwSetWindowSizeCallback(m_Window, [](GLFWwindow *window, int width, int height)
+        glfwSetWindowSizeCallback(m_WindowHandle, [](GLFWwindow *window, int width, int height)
                                   {
             WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
             data.Width = static_cast<uint32_t>(width);
@@ -69,14 +69,14 @@ namespace ve
             WindowResizeEvent event(width, height);
             data.EventCallback(event); });
 
-        glfwSetWindowCloseCallback(m_Window, [](GLFWwindow *window)
+        glfwSetWindowCloseCallback(m_WindowHandle, [](GLFWwindow *window)
                                    {
             WindowData& data =*reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
             WindowCloseEvent event;
             data.EventCallback(event); });
 
-        glfwSetKeyCallback(m_Window, [](GLFWwindow *window, int key, int scancode, int action, int mods)
+        glfwSetKeyCallback(m_WindowHandle, [](GLFWwindow *window, int key, int scancode, int action, int mods)
                            {
             WindowData& data =*reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
@@ -102,13 +102,13 @@ namespace ve
                 }
             } });
 
-        glfwSetCharCallback(m_Window, [](GLFWwindow *window, unsigned int keycode)
+        glfwSetCharCallback(m_WindowHandle, [](GLFWwindow *window, unsigned int keycode)
                             {
             WindowData& data =*reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
             KeyTypedEvent event(keycode);
             data.EventCallback(event); });
 
-        glfwSetMouseButtonCallback(m_Window, [](GLFWwindow *window, int button, int action, int mods)
+        glfwSetMouseButtonCallback(m_WindowHandle, [](GLFWwindow *window, int button, int action, int mods)
                                    {
             WindowData& data =*reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
@@ -128,14 +128,14 @@ namespace ve
                 }
             } });
 
-        glfwSetScrollCallback(m_Window, [](GLFWwindow *window, double xOffset, double yOffset)
+        glfwSetScrollCallback(m_WindowHandle, [](GLFWwindow *window, double xOffset, double yOffset)
                               {
             WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
             
             MouseScrolledEvent event(static_cast<float>(xOffset), static_cast<float>(yOffset));
             data.EventCallback(event); });
 
-        glfwSetCursorPosCallback(m_Window, [](GLFWwindow *window, double xPos, double yPos)
+        glfwSetCursorPosCallback(m_WindowHandle, [](GLFWwindow *window, double xPos, double yPos)
                                  {
             WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
@@ -145,7 +145,7 @@ namespace ve
 
     GlfwWindowDriver::~GlfwWindowDriver()
     {
-        glfwDestroyWindow(m_Window);
+        glfwDestroyWindow(m_WindowHandle);
         glfwTerminate();
     }
 
