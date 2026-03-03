@@ -35,8 +35,11 @@ namespace ve
 #elif defined(VE_PLATFORM_APPLE)
             "VK_MVK_macos_surface"
 #endif
+
+#if defined(VE_DEBUG)
             VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
             VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
+#endif
         };
 
         VE_CORE_TRACE("deviceExtensions:");
@@ -63,6 +66,11 @@ namespace ve
 
         CheckVk(vkCreateInstance(&createInfo, nullptr, &m_Instance), "create instance!");
         VE_CORE_TRACE("VkInstance created");
+    }
+
+    void VulkanCore::CreateDebugCallback()
+    {
+
     }
 
 } // namespace ve
