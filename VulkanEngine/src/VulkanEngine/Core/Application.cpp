@@ -21,6 +21,8 @@ namespace ve
 
         m_Window = Window::Create(createInfo.WindowInfo);
         m_Window->SetEventCallback(VE_BIND_EVENT_FN(OnEvent));
+        
+        m_VulkanCore.Init(createInfo.Name);
     }
 
     void Application::Run()

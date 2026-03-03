@@ -11,7 +11,7 @@ namespace ve
 {
     struct WindowCreateInfo
     {
-        std::string Title = "VulkanEngine Window";
+        std::string Title = "Untitled Window";
         std::filesystem::path IconPath;
         uint32_t Width = 800, Height = 600;
         bool Resizable = false;

@@ -9,6 +9,9 @@
 #include <string>
 #include <cassert>
 
+// TODO: refactor
+#include "VulkanEngine/Vulkan/VulkanCore.hpp"
+
 namespace ve
 {
     struct ApplicationCommandLineArgs
@@ -57,6 +60,9 @@ namespace ve
         bool m_Minimized = false;
         LayerStack m_LayerStack;
         float m_LastFrameTime = 0.0f;
+
+    private: // TODO: refactor
+        VulkanCore m_VulkanCore;
 
     private:
         static Application *s_Instance;
