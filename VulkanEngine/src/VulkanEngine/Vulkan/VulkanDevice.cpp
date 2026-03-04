@@ -16,8 +16,6 @@ namespace ve
         if (deviceCount == 0)
             throw std::runtime_error("No GPUs found with Vulkan support!");
 
-        VE_CORE_INFO("Physical Devices ({0}):", deviceCount);
-
         m_Devices.resize(deviceCount);
 
         std::vector<VkPhysicalDevice> devices(deviceCount);
@@ -33,24 +31,10 @@ namespace ve
 
             vkGetPhysicalDeviceProperties(physicalDevice, &m_Devices[i].deviceProps);
 
-            const auto &props = m_Devices[i].deviceProps;
-
-            VE_CORE_INFO("Device [{0}]", i);
-            VE_CORE_INFO("  Name: {0}", props.deviceName);
-
-            uint32_t apiVersion = props.apiVersion;
-            VE_CORE_INFO("  API Version: {0}.{1}.{2}.{3}",
-                         VK_API_VERSION_VARIANT(apiVersion),
-                         VK_API_VERSION_MAJOR(apiVersion),
-                         VK_API_VERSION_MINOR(apiVersion),
-                         VK_API_VERSION_PATCH(apiVersion));
-
             // === Queue families ===
             uint32_t queueFamiliesCount = 0;
             vkGetPhysicalDeviceQueueFamilyProperties(
                 physicalDevice, &queueFamiliesCount, nullptr);
-
-            VE_CORE_INFO("  Queue Families: {0}", queueFamiliesCount);
 
             m_Devices[i].queueFamilyProps.resize(queueFamiliesCount);
             m_Devices[i].queueSupportsPresent.resize(queueFamiliesCount);
@@ -105,7 +89,16 @@ namespace ve
                 {
                     m_SelectedDeviceIndex = i;
                     int queueFamily = j;
-                    VE_CORE_INFO("Using Graphics device {0} and queue family {1}", m_SelectedDeviceIndex, queueFamily);
+
+                    VkPhysicalDeviceProperties deviceProps = m_Devices[m_SelectedDeviceIndex].deviceProps;
+                    uint32_t apiVersion = deviceProps.apiVersion;
+
+                    VE_CORE_INFO("Using GFX device: {0}, Vulkan API Version: {1}.{2}.{3}.{4}",
+                                 deviceProps.deviceName, VK_API_VERSION_VARIANT(apiVersion),
+                                 VK_API_VERSION_MAJOR(apiVersion),
+                                 VK_API_VERSION_MINOR(apiVersion),
+                                 VK_API_VERSION_PATCH(apiVersion));
+
                     return queueFamily;
                 }
             }

@@ -158,7 +158,7 @@ namespace ve
         VE_CORE_TRACE("VkInstance destroyed");
     }
 
-    void VulkanCore::Init(const std::string &appName, GLFWwindow* window)
+    void VulkanCore::Init(const std::string &appName, GLFWwindow *window)
     {
         CreateInstance(appName);
         if constexpr (validation::enabled)

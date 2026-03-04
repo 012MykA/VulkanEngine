@@ -7,7 +7,7 @@
 
 namespace ve::validation
 {
-    void CheckVk(VkResult result, const std::string &operation);
+    inline void CheckVk(VkResult result, const std::string &operation);
 
     void CheckValidationLayerSupport(const std::vector<const char *> &validationLayers);
 

@@ -1,17 +1,22 @@
 #include "Validation.hpp"
+#include "VulkanEngine/Core/Base.hpp"
 
-#include <vulkan/vk_enum_string_helper.h>
+#if defined(VE_DEBUG)
+    #include <vulkan/vk_enum_string_helper.h>
+    #include <stdexcept>
+    #include <format>
+#endif
 
-#include <stdexcept>
 #include <cstring>
-#include <format>
 
 namespace ve::validation
 {
     void CheckVk(VkResult result, const std::string &operation)
     {
-        if (result != VK_SUCCESS)
-            throw std::runtime_error(std::format("failed to {} ({})", operation, string_VkResult(result)));
+#if defined(VE_DEBUG)
+            if (result != VK_SUCCESS)
+                throw std::runtime_error(std::format("failed to {} ({})", operation, string_VkResult(result)));
+#endif
     }
 
     void CheckValidationLayerSupport(const std::vector<const char *> &validationLayers)
