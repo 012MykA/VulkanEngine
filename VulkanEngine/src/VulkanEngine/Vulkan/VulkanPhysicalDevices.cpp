@@ -29,6 +29,19 @@ namespace ve
 
             m_PhysicalDevices.push_back(physicalDevice);
         }
+
+        // Logging
+        VE_CORE_TRACE("Found {0} physical device(s) with Vulkan support:", m_PhysicalDevices.size());
+        for (const auto &device : m_PhysicalDevices)
+        {
+            VE_CORE_TRACE("\tName: {0}", device.Properties.deviceName);
+            VE_CORE_TRACE("\tType: {0}", VulkanDeviceTypeToString(device.Properties.deviceType));
+            VE_CORE_TRACE("\tAPI Version: {0}.{1}.{2}",
+                          VK_VERSION_MAJOR(device.Properties.apiVersion),
+                          VK_VERSION_MINOR(device.Properties.apiVersion),
+                          VK_VERSION_PATCH(device.Properties.apiVersion));
+        }
+        // ---
     }
 
 } // namespace ve
