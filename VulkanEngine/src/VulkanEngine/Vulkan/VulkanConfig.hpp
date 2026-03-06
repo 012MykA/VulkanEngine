@@ -10,7 +10,7 @@ namespace ve
 {
     struct DebugCallbackConfig
     {
-        bool EnableDebugMessenger = true;
+        bool EnableDebugMessenger = false;
 
         VkDebugUtilsMessageSeverityFlagsEXT MessageSeverity =
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
@@ -31,9 +31,9 @@ namespace ve
         std::string EngineName;
         uint32_t EngineVersion;
         uint32_t ApiVersion;
-        std::vector<const char *> InstanceExtensions;
-        bool EnableValidationLayers;
-        std::vector<const char *> ValidationLayers;
+        std::vector<const char *> InstanceExtensions = {};
+        bool EnableValidationLayers = false;
+        std::vector<const char *> ValidationLayers = {};
         DebugCallbackConfig DebugConfig;
     };
 

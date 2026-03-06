@@ -72,18 +72,21 @@ namespace ve
 
     void VulkanCore::Init(const VulkanConfig &config, GLFWwindow *window)
     {
+        VE_CORE_INFO("Initializing VulkanCore...");
         CreateInstance(config);
         CreateDebugCallback(config);
         CreateSurface(window);
+        VE_CORE_INFO("VulkanCore initialized successfully");
     }
 
     void VulkanCore::CreateInstance(const VulkanConfig &config)
     {
-        VE_CORE_TRACE("Instance extensions:");
+        VE_CORE_TRACE("Instance extensions ({0}):", config.InstanceExtensions.size());
         for (auto extension : config.InstanceExtensions)
             VE_CORE_TRACE("\t{0}", extension);
 
-        VE_CORE_TRACE("Validation layers:");
+        VE_CORE_TRACE("Enable validation layers: {0}", config.EnableValidationLayers);
+        VE_CORE_TRACE("Validation layers ({0}):", config.ValidationLayers.size());
         for (auto layer : config.ValidationLayers)
             VE_CORE_TRACE("\t{0}", layer);
 
