@@ -77,7 +77,7 @@ namespace ve
         CreateInstance(config);
         CreateDebugCallback(config);
         CreateSurface(window);
-        m_PhysicalDevices.Init(m_Instance, m_Surface);
+        m_PhysicalDevices.Init(m_Instance, m_Surface, config.PhysicalDeviceRequirements_);
         VE_CORE_INFO("VulkanCore initialized successfully");
     }
 

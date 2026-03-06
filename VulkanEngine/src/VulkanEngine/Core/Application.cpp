@@ -32,6 +32,7 @@ namespace ve
         config.EngineVersion = VK_MAKE_VERSION(1, 0, 0);
         config.ApiVersion = VK_API_VERSION_1_3;
         config.InstanceExtensions = m_Window->GetRequiredVulkanExtensions();
+        config.PhysicalDeviceRequirements_.Extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 #if defined(VE_DEBUG)
         config.EnableValidationLayers = true;
         config.ValidationLayers = {"VK_LAYER_KHRONOS_validation"};

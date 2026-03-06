@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VulkanPhysicalDevices.hpp"
+
 #include <vulkan/vulkan.h>
 
 #include <string>
@@ -34,7 +36,10 @@ namespace ve
         std::vector<const char *> InstanceExtensions = {};
         bool EnableValidationLayers = false;
         std::vector<const char *> ValidationLayers = {};
+
         DebugCallbackConfig DebugConfig;
+
+        PhysicalDeviceRequirements PhysicalDeviceRequirements_;
     };
 
 } // namespace ve
