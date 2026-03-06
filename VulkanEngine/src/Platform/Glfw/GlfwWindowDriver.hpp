@@ -22,6 +22,7 @@ namespace ve
         virtual void *GetNativeWindow() const override;
 
         virtual void SetEventCallback(const EventCallbackFn &callback) override;
+        virtual std::vector<const char *> GetRequiredVulkanExtensions() const override;
 
     private:
         GLFWwindow *m_WindowHandle;

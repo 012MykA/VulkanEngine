@@ -15,6 +15,22 @@ namespace ve
             const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
             void *pUserData)
         {
+            if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
+            {
+                VE_CORE_TRACE("Vulkan Validation: {0}", pCallbackData->pMessage);
+            }
+            else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
+            {
+                VE_CORE_INFO("Vulkan Validation: {0}", pCallbackData->pMessage);
+            }
+            else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+            {
+                VE_CORE_WARN("Vulkan Validation: {0}", pCallbackData->pMessage);
+            }
+            else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+            {
+                VE_CORE_ERROR("Vulkan Validation: {0}", pCallbackData->pMessage);
+            }
             return VK_FALSE;
         }
 
@@ -44,8 +60,8 @@ namespace ve
     {
         VE_CORE_TRACE("---------------------------------------");
 
-        vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
-        VE_CORE_TRACE("VkSurfaceKHR destroyed");
+        // vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
+        // VE_CORE_TRACE("VkSurfaceKHR destroyed");
 
         DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
         VE_CORE_TRACE("VkDebugUtilsMessengerEXT destroyed");
@@ -54,79 +70,79 @@ namespace ve
         VE_CORE_TRACE("VkInstance destroyed");
     }
 
-    void VulkanCore::Init(const std::string &appName, GLFWwindow *window)
+    void VulkanCore::Init(const VulkanConfig &config, GLFWwindow *window)
     {
-        CreateInstance(appName);
-        CreateDebugCallback();
+        CreateInstance(config);
+        CreateDebugCallback(config);
         CreateSurface(window);
     }
 
-    void VulkanCore::CreateInstance(const std::string &appName)
+    void VulkanCore::CreateInstance(const VulkanConfig &config)
     {
-        const std::vector<const char *> validationLayers = std::vector<const char *>{"VK_LAYER_KHRONOS_validation"};
-
-        // CheckValidationLayerSupport(validationLayers); // TODO
-
-        std::vector<const char *> extensions = {
-            VK_KHR_SURFACE_EXTENSION_NAME,
-            VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
-#if defined(VE_PLATFORM_WINDOWS)
-            "VK_KHR_win32_surface",
-#elif defined(VE_PLATFORM_LINUX)
-            "VK_KHR_wayland_surface",
-#elif defined(VE_PLATFORM_APPLE)
-            "VK_MVK_macos_surface",
-#endif
-        };
-
         VE_CORE_TRACE("Instance extensions:");
-        for (auto extension : extensions)
-        {
+        for (auto extension : config.InstanceExtensions)
             VE_CORE_TRACE("\t{0}", extension);
-        }
+
+        VE_CORE_TRACE("Validation layers:");
+        for (auto layer : config.ValidationLayers)
+            VE_CORE_TRACE("\t{0}", layer);
 
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.pApplicationName = appName.c_str();
-        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.pEngineName = "VulkanEngine";
-        appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion = VK_API_VERSION_1_3;
+        appInfo.pApplicationName = config.AppName.c_str();
+        appInfo.applicationVersion = config.AppVersion;
+        appInfo.pEngineName = config.EngineName.c_str();
+        appInfo.engineVersion = config.EngineVersion;
+        appInfo.apiVersion = config.ApiVersion;
+        appInfo.pNext = nullptr;
 
         VkInstanceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
-        createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-        createInfo.ppEnabledExtensionNames = extensions.data();
-        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(config.InstanceExtensions.size());
+        createInfo.ppEnabledExtensionNames = config.InstanceExtensions.data();
 
-        vkCreateInstance(&createInfo, nullptr, &m_Instance);
+        uint32_t layerCount = config.EnableValidationLayers ? static_cast<uint32_t>(config.ValidationLayers.size()) : 0;
+        createInfo.enabledLayerCount = layerCount;
+        createInfo.ppEnabledLayerNames = layerCount > 0 ? config.ValidationLayers.data() : nullptr;
+
+        VkResult result = vkCreateInstance(&createInfo, nullptr, &m_Instance);
+        if (result != VK_SUCCESS)
+        {
+            VE_CORE_ERROR("Failed to create VkInstance! Error code: {0}", static_cast<int>(result));
+        }
         VE_CORE_TRACE("VkInstance created");
     }
 
-    void VulkanCore::CreateDebugCallback()
+    void VulkanCore::CreateDebugCallback(const VulkanConfig &config)
     {
+        if (!config.EnableValidationLayers || !config.DebugConfig.EnableDebugMessenger)
+        {
+            VE_CORE_TRACE("Debug messenger is disabled");
+            return;
+        }
+
         VkDebugUtilsMessengerCreateInfoEXT createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-                                     VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
-                                     VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                                     VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-                                 VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                                 VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        createInfo.messageSeverity = config.DebugConfig.MessageSeverity;
+        createInfo.messageType = config.DebugConfig.MessageType;
         createInfo.pfnUserCallback = DebugCallback;
-        createInfo.pUserData = nullptr; // Optional
+        createInfo.pUserData = nullptr;
 
-        CreateDebugUtilsMessengerEXT(m_Instance, &createInfo, nullptr, &m_DebugMessenger);
+        VkResult result = CreateDebugUtilsMessengerEXT(m_Instance, &createInfo, nullptr, &m_DebugMessenger);
+        if (result != VK_SUCCESS)
+        {
+            VE_CORE_ERROR("Failed to create debug messenger! Error code: {0}", static_cast<int>(result));
+            return;
+        }
+
         VE_CORE_TRACE("VkDebugUtilsMessengerEXT created");
     }
 
     void VulkanCore::CreateSurface(GLFWwindow *window)
     {
-        glfwCreateWindowSurface(m_Instance, window, nullptr, &m_Surface);
-        VE_CORE_TRACE("VkSurfaceKHR created");
+        // glfwCreateWindowSurface(m_Instance, window, nullptr, &m_Surface);
+        // VE_CORE_TRACE("VkSurfaceKHR created");
     }
 
 } // namespace ve

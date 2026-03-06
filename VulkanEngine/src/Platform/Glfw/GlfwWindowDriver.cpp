@@ -174,6 +174,17 @@ namespace ve
         m_Data.EventCallback = callback;
     }
 
+    std::vector<const char *> GlfwWindowDriver::GetRequiredVulkanExtensions() const
+    {
+        uint32_t glfwExtensionCount = 0;
+        const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+        std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
+        return extensions;
+    }
+
 } // namespace ve
 
 #endif // VE_PLATFORM_WINDOWS || VE_PLATFORM_LINUX

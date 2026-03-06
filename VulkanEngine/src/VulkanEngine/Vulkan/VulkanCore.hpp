@@ -1,25 +1,25 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
+#include "VulkanConfig.hpp"
 
-#include <string>
+#include <vulkan/vulkan.h>
 
 struct GLFWwindow;
 
 namespace ve
-{    
+{
     class VulkanCore
     {
     public:
         VulkanCore();
         ~VulkanCore();
 
-        void Init(const std::string &appName, GLFWwindow* window);
+        void Init(const VulkanConfig &config, GLFWwindow *window);
 
     private:
-        void CreateInstance(const std::string &appName);
-        void CreateDebugCallback();
-        void CreateSurface(GLFWwindow* window);
+        void CreateInstance(const VulkanConfig &config);
+        void CreateDebugCallback(const VulkanConfig &config);
+        void CreateSurface(GLFWwindow *window);
 
     private:
         VkInstance m_Instance = VK_NULL_HANDLE;
