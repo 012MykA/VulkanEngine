@@ -21,6 +21,7 @@ namespace ve
         bool RequiresGraphicsQueue = true;
         bool RequiresPresentQueue = true;
         std::vector<const char *> Extensions;
+        VkPhysicalDeviceFeatures Features{};
     };
 
     struct PhysicalDeviceQueueFamilyIndices
@@ -44,6 +45,7 @@ namespace ve
 
         const PhysicalDevice &Selected() const { return m_PhysicalDevices[m_SelectedDeviceIndex]; }
         void SelectDevice(VkSurfaceKHR surface, const PhysicalDeviceRequirements &requirements);
+        PhysicalDeviceQueueFamilyIndices GetQueueIndices(VkSurfaceKHR surface) const;
 
     private:
         // Helpers used during initialization / device selection

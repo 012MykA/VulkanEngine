@@ -21,11 +21,13 @@ namespace ve
         void CreateInstance(const VulkanConfig &config);
         void CreateDebugCallback(const VulkanConfig &config);
         void CreateSurface(GLFWwindow *window);
+        void CreateDevice(const PhysicalDeviceRequirements &requirements);
 
     private:
         VkInstance m_Instance = VK_NULL_HANDLE;
         VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
         VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
+        VkDevice m_Device = VK_NULL_HANDLE;
         VulkanPhysicalDevices m_PhysicalDevices;
     };
 

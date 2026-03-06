@@ -53,7 +53,7 @@ namespace ve
             if (IsDeviceSuitable(m_PhysicalDevices[i], surface, requirements))
             {
                 m_SelectedDeviceIndex = static_cast<uint32_t>(i);
-                VE_CORE_INFO("Selected physical device: {0}", m_PhysicalDevices[i].Properties.deviceName);
+                VE_CORE_TRACE("Selected physical device: {0}", m_PhysicalDevices[i].Properties.deviceName);
                 return;
             }
         }
@@ -126,6 +126,11 @@ namespace ve
         }
 
         return requiredSet.empty();
+    }
+
+    PhysicalDeviceQueueFamilyIndices VulkanPhysicalDevices::GetQueueIndices(VkSurfaceKHR surface) const
+    {
+        return FindQueueIndices(m_PhysicalDevices[m_SelectedDeviceIndex].Device, surface);
     }
 
 } // namespace ve

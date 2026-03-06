@@ -5,6 +5,7 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <set>
 
 namespace ve
 {
@@ -61,6 +62,9 @@ namespace ve
     {
         VE_CORE_TRACE("---------------------------------------");
 
+        vkDestroyDevice(m_Device, nullptr);
+        VE_CORE_TRACE("VkDevice destroyed");
+
         vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
         VE_CORE_TRACE("VkSurfaceKHR destroyed");
 
@@ -77,7 +81,9 @@ namespace ve
         CreateInstance(config);
         CreateDebugCallback(config);
         CreateSurface(window);
-        m_PhysicalDevices.Init(m_Instance, m_Surface, config.PhysicalDeviceRequirements_);
+        m_PhysicalDevices.Init(m_Instance);
+        m_PhysicalDevices.SelectDevice(m_Surface, config.PhysicalDeviceRequirements_);
+        CreateDevice(config.PhysicalDeviceRequirements_);
         VE_CORE_INFO("VulkanCore initialized successfully");
     }
 
@@ -145,4 +151,49 @@ namespace ve
         VE_CORE_TRACE("VkSurfaceKHR created");
     }
 
+    void VulkanCore::CreateDevice(const PhysicalDeviceRequirements &requirements)
+    {
+        VE_CORE_TRACE("Creating logical device...");
+
+        const auto &physicalDevice = m_PhysicalDevices.Selected();
+        PhysicalDeviceQueueFamilyIndices queueIndices = m_PhysicalDevices.GetQueueIndices(m_Surface);
+
+        // Create queue create infos
+        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+        std::set<uint32_t> uniqueQueueFamilies;
+
+        if (requirements.RequiresGraphicsQueue && queueIndices.GraphicsFamily.has_value())
+            uniqueQueueFamilies.insert(queueIndices.GraphicsFamily.value());
+        if (requirements.RequiresPresentQueue && queueIndices.PresentFamily.has_value())
+            uniqueQueueFamilies.insert(queueIndices.PresentFamily.value());
+
+        float queuePriority = 1.0f;
+        for (uint32_t queueFamily : uniqueQueueFamilies)
+        {
+            VkDeviceQueueCreateInfo queueCreateInfo{};
+            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueCreateInfo.queueFamilyIndex = queueFamily;
+            queueCreateInfo.queueCount = 1;
+            queueCreateInfo.pQueuePriorities = &queuePriority;
+            queueCreateInfos.push_back(queueCreateInfo);
+        }
+
+        // Specify used device features
+        VkPhysicalDeviceFeatures deviceFeatures{};
+        deviceFeatures.geometryShader = VK_TRUE;
+
+        // Create device
+        VkDeviceCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        createInfo.pQueueCreateInfos = queueCreateInfos.data();
+        createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+        createInfo.pEnabledFeatures = &requirements.Features;
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(requirements.Extensions.size());
+        createInfo.ppEnabledExtensionNames = requirements.Extensions.empty() ? nullptr : requirements.Extensions.data();
+
+        VkResult result = vkCreateDevice(physicalDevice.Device, &createInfo, nullptr, &m_Device);
+        CHECK_VK_RESULT(result);
+
+        VE_CORE_TRACE("VkDevice created");
+    }
 } // namespace ve
