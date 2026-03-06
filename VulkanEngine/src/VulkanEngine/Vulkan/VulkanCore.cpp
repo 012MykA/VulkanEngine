@@ -1,6 +1,7 @@
 #include "VulkanCore.hpp"
 #include "VulkanEngine/Core/Base.hpp"
 #include "VulkanEngine/Core/Log.hpp"
+#include "Validation.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -60,8 +61,8 @@ namespace ve
     {
         VE_CORE_TRACE("---------------------------------------");
 
-        // vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
-        // VE_CORE_TRACE("VkSurfaceKHR destroyed");
+        vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
+        VE_CORE_TRACE("VkSurfaceKHR destroyed");
 
         DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
         VE_CORE_TRACE("VkDebugUtilsMessengerEXT destroyed");
@@ -110,10 +111,8 @@ namespace ve
         createInfo.ppEnabledLayerNames = layerCount > 0 ? config.ValidationLayers.data() : nullptr;
 
         VkResult result = vkCreateInstance(&createInfo, nullptr, &m_Instance);
-        if (result != VK_SUCCESS)
-        {
-            VE_CORE_ERROR("Failed to create VkInstance! Error code: {0}", static_cast<int>(result));
-        }
+        CHECK_VK_RESULT(result);
+
         VE_CORE_TRACE("VkInstance created");
     }
 
@@ -133,19 +132,16 @@ namespace ve
         createInfo.pUserData = nullptr;
 
         VkResult result = CreateDebugUtilsMessengerEXT(m_Instance, &createInfo, nullptr, &m_DebugMessenger);
-        if (result != VK_SUCCESS)
-        {
-            VE_CORE_ERROR("Failed to create debug messenger! Error code: {0}", static_cast<int>(result));
-            return;
-        }
+        CHECK_VK_RESULT(result);
 
         VE_CORE_TRACE("VkDebugUtilsMessengerEXT created");
     }
 
     void VulkanCore::CreateSurface(GLFWwindow *window)
     {
-        // glfwCreateWindowSurface(m_Instance, window, nullptr, &m_Surface);
-        // VE_CORE_TRACE("VkSurfaceKHR created");
+        VkResult result = glfwCreateWindowSurface(m_Instance, window, nullptr, &m_Surface);
+        CHECK_VK_RESULT(result);
+        VE_CORE_TRACE("VkSurfaceKHR created");
     }
 
 } // namespace ve
