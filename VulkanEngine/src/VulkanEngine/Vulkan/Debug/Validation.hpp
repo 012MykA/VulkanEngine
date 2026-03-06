@@ -10,7 +10,7 @@
 #define CHECK_VK_RESULT(result)                                                                         \
     do                                                                                                  \
     {                                                                                                   \
-        if (result == VK_SUCCESS)                                                                       \
+        if (result != VK_SUCCESS)                                                                       \
         {                                                                                               \
             VE_CORE_ERROR("Vulkan error: {0} at {1}:{2}", string_VkResult(result), __FILE__, __LINE__); \
             throw std::runtime_error("Vulkan error occurred!");                                         \

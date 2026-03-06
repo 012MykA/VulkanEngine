@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VulkanConfig.hpp"
+#include "VulkanPhysicalDevices.hpp"
 
 #include <vulkan/vulkan.h>
 
@@ -25,6 +26,7 @@ namespace ve
         VkInstance m_Instance = VK_NULL_HANDLE;
         VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
         VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
+        VulkanPhysicalDevices m_PhysicalDevices;
     };
 
 } // namespace ve

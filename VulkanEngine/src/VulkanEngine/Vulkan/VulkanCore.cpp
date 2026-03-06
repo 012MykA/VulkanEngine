@@ -1,7 +1,7 @@
 #include "VulkanCore.hpp"
 #include "VulkanEngine/Core/Base.hpp"
 #include "VulkanEngine/Core/Log.hpp"
-#include "Validation.hpp"
+#include "Debug/Validation.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -77,6 +77,7 @@ namespace ve
         CreateInstance(config);
         CreateDebugCallback(config);
         CreateSurface(window);
+        m_PhysicalDevices.Init(m_Instance, m_Surface);
         VE_CORE_INFO("VulkanCore initialized successfully");
     }
 
