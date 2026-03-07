@@ -62,6 +62,9 @@ namespace ve
     {
         VE_CORE_TRACE("---------------------------------------");
 
+        vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
+        VE_CORE_TRACE("VkCommandPool destroyed");
+
         for (auto imageView : m_SwapchainImageViews)
         {
             vkDestroyImageView(m_Device, imageView, nullptr);
@@ -106,8 +109,22 @@ namespace ve
         CreateDevice(deviceRequirements);
         CreateSwapchain();
         CreateImageViews();
+        CreateCommandPool();
 
         VE_CORE_INFO("VulkanCore initialized successfully");
+    }
+
+    void VulkanCore::CreateCommandBuffers(uint32_t count, VkCommandBuffer *commandBuffers)
+    {
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.commandPool = m_CommandPool;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandBufferCount = count;
+
+        VkResult result = vkAllocateCommandBuffers(m_Device, &allocInfo, commandBuffers);
+        CHECK_VK_RESULT(result);
+        VE_CORE_TRACE("Allocated {0} command buffers", count);
     }
 
     void VulkanCore::CreateInstance(const VulkanConfig &config)
@@ -348,6 +365,18 @@ namespace ve
         }
 
         VE_CORE_TRACE("Created {0} swapchain VkImageView", m_SwapchainImageViews.size());
+    }
+
+    void VulkanCore::CreateCommandPool()
+    {
+        VkCommandPoolCreateInfo poolInfo{};
+        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        poolInfo.queueFamilyIndex = m_PhysicalDevices.GetQueueIndices(m_Surface).GraphicsFamily.value();
+
+        VkResult result = vkCreateCommandPool(m_Device, &poolInfo, nullptr, &m_CommandPool);
+        CHECK_VK_RESULT(result);
+
+        VE_CORE_TRACE("VkCommandPool created");
     }
 
     VkSurfaceFormatKHR VulkanCore::ChooseSwapchainFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) const

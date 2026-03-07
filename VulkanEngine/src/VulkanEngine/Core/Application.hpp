@@ -63,7 +63,11 @@ namespace ve
 
     private: // TODO: refactor
         void InitializeVulkan(const std::string &appName);
+        void CreateCommandBuffers();
+
         VulkanCore m_VulkanCore;
+        const uint32_t MAX_FRAMES_IN_FLIGHT = 3;
+        std::vector<VkCommandBuffer> m_CommandBuffers;
 
     private:
         static Application *s_Instance;

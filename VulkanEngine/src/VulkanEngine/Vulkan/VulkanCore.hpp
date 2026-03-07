@@ -18,6 +18,9 @@ namespace ve
 
         void Init(const VulkanConfig &config, GLFWwindow *window);
 
+        void CreateCommandBuffers(uint32_t count, VkCommandBuffer *commandBuffers);
+
+    public:
         // Getters
         VkDevice GetDevice() const { return m_Device; }
         VkSwapchainKHR GetSwapchain() const { return m_Swapchain; }
@@ -34,6 +37,7 @@ namespace ve
         void CreateDevice(const PhysicalDeviceRequirements &requirements);
         void CreateSwapchain();
         void CreateImageViews();
+        void CreateCommandPool();
 
         // Helper methods for swapchain creation
         VkSurfaceFormatKHR ChooseSwapchainFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) const;
@@ -54,6 +58,7 @@ namespace ve
         VkFormat m_SwapchainImageFormat = VK_FORMAT_UNDEFINED;
         VkExtent2D m_SwapchainExtent = {0, 0};
         std::vector<VkImageView> m_SwapchainImageViews;
+        VkCommandPool m_CommandPool = VK_NULL_HANDLE;
     };
 
 } // namespace ve

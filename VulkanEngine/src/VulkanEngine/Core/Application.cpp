@@ -26,6 +26,7 @@ namespace ve
         m_Window->SetEventCallback(VE_BIND_EVENT_FN(OnEvent));
 
         InitializeVulkan(createInfo.Name);
+        CreateCommandBuffers();
     }
 
     void Application::Run()
@@ -114,6 +115,12 @@ namespace ve
 #endif
 
         m_VulkanCore.Init(config, static_cast<GLFWwindow *>(m_Window->GetNativeWindow()));
+    }
+
+    void Application::CreateCommandBuffers()
+    {
+        m_CommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+        m_VulkanCore.CreateCommandBuffers(MAX_FRAMES_IN_FLIGHT, m_CommandBuffers.data());
     }
 
 } // namespace ve
