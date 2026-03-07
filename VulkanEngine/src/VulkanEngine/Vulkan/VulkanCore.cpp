@@ -81,9 +81,19 @@ namespace ve
         CreateInstance(config);
         CreateDebugCallback(config);
         CreateSurface(window);
+
         m_PhysicalDevices.Init(m_Instance);
-        m_PhysicalDevices.SelectDevice(m_Surface, config.PhysicalDeviceRequirements_);
-        CreateDevice(config.PhysicalDeviceRequirements_);
+        PhysicalDeviceRequirements deviceRequirements;
+        deviceRequirements.Extensions = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+            VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
+        };
+        deviceRequirements.Features.geometryShader = VK_TRUE;
+        deviceRequirements.Features.tessellationShader = VK_TRUE;
+
+        m_PhysicalDevices.SelectDevice(m_Surface, deviceRequirements);
+
+        CreateDevice(deviceRequirements);
         VE_CORE_INFO("VulkanCore initialized successfully");
     }
 
@@ -177,10 +187,6 @@ namespace ve
             queueCreateInfo.pQueuePriorities = &queuePriority;
             queueCreateInfos.push_back(queueCreateInfo);
         }
-
-        // Specify used device features
-        VkPhysicalDeviceFeatures deviceFeatures{};
-        deviceFeatures.geometryShader = VK_TRUE;
 
         // Create device
         VkDeviceCreateInfo createInfo{};

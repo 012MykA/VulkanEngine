@@ -25,22 +25,7 @@ namespace ve
         m_Window = Window::Create(createInfo.WindowInfo);
         m_Window->SetEventCallback(VE_BIND_EVENT_FN(OnEvent));
 
-        VulkanConfig config{};
-        config.AppName = createInfo.Name;
-        config.AppVersion = VK_MAKE_VERSION(1, 0, 0);
-        config.EngineName = "VulkanEngine";
-        config.EngineVersion = VK_MAKE_VERSION(1, 0, 0);
-        config.ApiVersion = VK_API_VERSION_1_3;
-        config.InstanceExtensions = m_Window->GetRequiredVulkanExtensions();
-        config.PhysicalDeviceRequirements_.Extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-        config.PhysicalDeviceRequirements_.Features.geometryShader = VK_TRUE;
-#if defined(VE_DEBUG)
-        config.EnableValidationLayers = true;
-        config.ValidationLayers = {"VK_LAYER_KHRONOS_validation"};
-        config.DebugConfig.EnableDebugMessenger = true;
-#endif
-
-        m_VulkanCore.Init(config, static_cast<GLFWwindow *>(m_Window->GetNativeWindow()));
+        InitializeVulkan(createInfo.Name);
     }
 
     void Application::Run()
@@ -109,6 +94,26 @@ namespace ve
         // Renderer::OnWindowResize(e.GetWidth(), e.GetHeight());
 
         return false;
+    }
+
+    void Application::InitializeVulkan(const std::string &appName)
+    {
+        VulkanConfig config{};
+        config.AppName = appName;
+        config.AppVersion = VK_MAKE_VERSION(1, 0, 0);
+        config.EngineName = "VulkanEngine";
+        config.EngineVersion = VK_MAKE_VERSION(1, 0, 0);
+        config.ApiVersion = VK_API_VERSION_1_3;
+        config.InstanceExtensions = m_Window->GetRequiredVulkanExtensions();
+#if defined(VE_DEBUG)
+        config.EnableValidationLayers = true;
+        config.ValidationLayers = {"VK_LAYER_KHRONOS_validation"};
+        config.DebugConfig.EnableDebugMessenger = true;
+        config.DebugConfig.MessageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                                             VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+#endif
+
+        m_VulkanCore.Init(config, static_cast<GLFWwindow *>(m_Window->GetNativeWindow()));
     }
 
 } // namespace ve

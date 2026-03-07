@@ -62,6 +62,7 @@ namespace ve
         float m_LastFrameTime = 0.0f;
 
     private: // TODO: refactor
+        void InitializeVulkan(const std::string &appName);
         VulkanCore m_VulkanCore;
 
     private:

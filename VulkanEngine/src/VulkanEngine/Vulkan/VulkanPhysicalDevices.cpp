@@ -65,20 +65,57 @@ namespace ve
                                                  VkSurfaceKHR surface,
                                                  const PhysicalDeviceRequirements &requirements) const
     {
+        // Queue family support
         PhysicalDeviceQueueFamilyIndices indices = FindQueueIndices(device.Device, surface);
         if (requirements.RequiresGraphicsQueue && !indices.GraphicsFamily.has_value())
+        {
+            VE_CORE_WARN("Device {0} rejected: does not support graphics queue", device.Properties.deviceName);
             return false;
+        }
         if (requirements.RequiresPresentQueue && !indices.PresentFamily.has_value())
+        {
+            VE_CORE_WARN("Device {0} rejected: does not support present queue", device.Properties.deviceName);
             return false;
+        }
 
+        // Swapchain support
+        if (requirements.RequiresSwapchainSupport)
+        {
+            uint32_t formatCount;
+            vkGetPhysicalDeviceSurfaceFormatsKHR(device.Device, surface, &formatCount, nullptr);
+            uint32_t presentModeCount;
+            vkGetPhysicalDeviceSurfacePresentModesKHR(device.Device, surface, &presentModeCount, nullptr);
+
+            if (formatCount == 0 || presentModeCount == 0)
+            {
+                VE_CORE_WARN("Device {0} rejected: does not support swapchain", device.Properties.deviceName);
+                return false;
+            }
+        }
+
+        // Extensions
         if (!CheckDeviceExtensionSupport(device.Device, requirements.Extensions))
+        {
+            VE_CORE_WARN("Device {0} rejected: does not support required extensions", device.Properties.deviceName);
             return false;
+        }
 
-        if (!device.Features.geometryShader)
+        // Features
+        if (!CheckDeviceFeatureSupport(device.Features, requirements.Features))
+        {
+            VE_CORE_WARN("Device {0} rejected: does not support required features", device.Properties.deviceName);
             return false;
+        }
 
-        if (device.Properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+        // Preferred device type
+        if (device.Properties.deviceType != requirements.PreferredDeviceType)
+        {
+            VE_CORE_WARN("Device {0} rejected: device type {1} does not match preferred type {2}",
+                         device.Properties.deviceName,
+                         VulkanDeviceTypeToString(device.Properties.deviceType),
+                         VulkanDeviceTypeToString(requirements.PreferredDeviceType));
             return false;
+        }
 
         return true;
     }
@@ -126,6 +163,20 @@ namespace ve
         }
 
         return requiredSet.empty();
+    }
+
+    bool VulkanPhysicalDevices::CheckDeviceFeatureSupport(const VkPhysicalDeviceFeatures &supported, const VkPhysicalDeviceFeatures &required) const
+    {
+        auto supportedPtr = reinterpret_cast<const VkBool32 *>(&supported);
+        auto requiredPtr = reinterpret_cast<const VkBool32 *>(&required);
+
+        for (size_t i = 0; i < sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32); i++)
+        {
+            if (requiredPtr[i] && !supportedPtr[i])
+                return false;
+        }
+
+        return true;
     }
 
     PhysicalDeviceQueueFamilyIndices VulkanPhysicalDevices::GetQueueIndices(VkSurfaceKHR surface) const

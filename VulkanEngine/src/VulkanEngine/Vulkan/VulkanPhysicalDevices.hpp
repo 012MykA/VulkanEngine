@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan.h>
 
 #include <vector>
 #include <cstdint>
@@ -19,7 +19,9 @@ namespace ve
     struct PhysicalDeviceRequirements
     {
         bool RequiresGraphicsQueue = true;
-        bool RequiresPresentQueue = true;
+        bool RequiresPresentQueue = false;
+        bool RequiresSwapchainSupport = true;
+        VkPhysicalDeviceType PreferredDeviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         std::vector<const char *> Extensions;
         VkPhysicalDeviceFeatures Features{};
     };
@@ -48,11 +50,11 @@ namespace ve
         PhysicalDeviceQueueFamilyIndices GetQueueIndices(VkSurfaceKHR surface) const;
 
     private:
-        // Helpers used during initialization / device selection
-        void PickPhysicalDevice(VkSurfaceKHR surface, const PhysicalDeviceRequirements &requirements);
         bool IsDeviceSuitable(const PhysicalDevice &device, VkSurfaceKHR surface, const PhysicalDeviceRequirements &requirements) const;
+
         PhysicalDeviceQueueFamilyIndices FindQueueIndices(VkPhysicalDevice device, VkSurfaceKHR surface) const;
         bool CheckDeviceExtensionSupport(VkPhysicalDevice device, const std::vector<const char *> &requiredExtensions) const;
+        bool CheckDeviceFeatureSupport(const VkPhysicalDeviceFeatures &supported, const VkPhysicalDeviceFeatures &required) const;
 
     private:
         std::vector<PhysicalDevice> m_PhysicalDevices;
