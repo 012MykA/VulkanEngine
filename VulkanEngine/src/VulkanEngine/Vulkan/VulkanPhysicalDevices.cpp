@@ -78,17 +78,14 @@ namespace ve
             return false;
         }
 
-        // Swapchain support
-        if (requirements.RequiresSwapchainSupport)
+        // Swapchain adequate
+        if (requirements.SwapchainAdequate)
         {
-            uint32_t formatCount;
-            vkGetPhysicalDeviceSurfaceFormatsKHR(device.Device, surface, &formatCount, nullptr);
-            uint32_t presentModeCount;
-            vkGetPhysicalDeviceSurfacePresentModesKHR(device.Device, surface, &presentModeCount, nullptr);
-
-            if (formatCount == 0 || presentModeCount == 0)
+            SwapchainSupportDetails swapchainSupport = QuerySwapchainSupport(device.Device, surface);
+            
+            if (swapchainSupport.Formats.empty() || swapchainSupport.PresentModes.empty())
             {
-                VE_CORE_WARN("Device {0} rejected: does not support swapchain", device.Properties.deviceName);
+                VE_CORE_WARN("Device {0} rejected: swapchain support is inadequate", device.Properties.deviceName);
                 return false;
             }
         }
@@ -177,6 +174,30 @@ namespace ve
         }
 
         return true;
+    }
+
+    SwapchainSupportDetails VulkanPhysicalDevices::QuerySwapchainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) const
+    {
+        SwapchainSupportDetails details;
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.Capabilities);
+
+        uint32_t formatCount;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+        if (formatCount != 0)
+        {
+            details.Formats.resize(formatCount);
+            vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.Formats.data());
+        }
+
+        uint32_t presentModeCount;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+        if (presentModeCount != 0)
+        {
+            details.PresentModes.resize(presentModeCount);
+            vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.PresentModes.data());
+        }
+
+        return details;
     }
 
     PhysicalDeviceQueueFamilyIndices VulkanPhysicalDevices::GetQueueIndices(VkSurfaceKHR surface) const

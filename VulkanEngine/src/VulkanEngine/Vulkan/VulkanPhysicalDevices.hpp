@@ -20,7 +20,7 @@ namespace ve
     {
         bool RequiresGraphicsQueue = true;
         bool RequiresPresentQueue = false;
-        bool RequiresSwapchainSupport = true;
+        bool SwapchainAdequate = true;
         VkPhysicalDeviceType PreferredDeviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         std::vector<const char *> Extensions;
         VkPhysicalDeviceFeatures Features{};
@@ -35,6 +35,13 @@ namespace ve
         {
             return GraphicsFamily.has_value() && PresentFamily.has_value();
         }
+    };
+
+    struct SwapchainSupportDetails
+    {
+        VkSurfaceCapabilitiesKHR Capabilities;
+        std::vector<VkSurfaceFormatKHR> Formats;
+        std::vector<VkPresentModeKHR> PresentModes;
     };
 
     class VulkanPhysicalDevices
@@ -55,6 +62,7 @@ namespace ve
         PhysicalDeviceQueueFamilyIndices FindQueueIndices(VkPhysicalDevice device, VkSurfaceKHR surface) const;
         bool CheckDeviceExtensionSupport(VkPhysicalDevice device, const std::vector<const char *> &requiredExtensions) const;
         bool CheckDeviceFeatureSupport(const VkPhysicalDeviceFeatures &supported, const VkPhysicalDeviceFeatures &required) const;
+        SwapchainSupportDetails QuerySwapchainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) const;
 
     private:
         std::vector<PhysicalDevice> m_PhysicalDevices;
