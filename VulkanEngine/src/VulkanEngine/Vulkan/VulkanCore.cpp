@@ -163,8 +163,6 @@ namespace ve
 
     void VulkanCore::CreateDevice(const PhysicalDeviceRequirements &requirements)
     {
-        VE_CORE_TRACE("Creating logical device...");
-
         const auto &physicalDevice = m_PhysicalDevices.Selected();
         PhysicalDeviceQueueFamilyIndices queueIndices = m_PhysicalDevices.GetQueueIndices(m_Surface);
 
@@ -201,5 +199,19 @@ namespace ve
         CHECK_VK_RESULT(result);
 
         VE_CORE_TRACE("VkDevice created");
+
+        // Initialize graphics and present queues
+        if (queueIndices.GraphicsFamily.has_value())
+        {
+            vkGetDeviceQueue(m_Device, queueIndices.GraphicsFamily.value(), 0, &m_GraphicsQueue);
+            VE_CORE_TRACE("Graphics queue initialized");
+        }
+
+        if (queueIndices.PresentFamily.has_value())
+        {
+            vkGetDeviceQueue(m_Device, queueIndices.PresentFamily.value(), 0, &m_PresentQueue);
+            VE_CORE_TRACE("Present queue initialized");
+        }
     }
+
 } // namespace ve

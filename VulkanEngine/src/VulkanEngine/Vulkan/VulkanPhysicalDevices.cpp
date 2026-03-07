@@ -38,7 +38,7 @@ namespace ve
         {
             VE_CORE_TRACE("\tName: {0}", device.Properties.deviceName);
             VE_CORE_TRACE("\tType: {0}", VulkanDeviceTypeToString(device.Properties.deviceType));
-            VE_CORE_TRACE("\tAPI Version: {0}.{1}.{2}",
+            VE_CORE_TRACE("\tVulkan API: v{0}.{1}.{2}",
                           VK_VERSION_MAJOR(device.Properties.apiVersion),
                           VK_VERSION_MINOR(device.Properties.apiVersion),
                           VK_VERSION_PATCH(device.Properties.apiVersion));
