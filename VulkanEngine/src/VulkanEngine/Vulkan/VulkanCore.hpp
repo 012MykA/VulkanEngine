@@ -29,10 +29,11 @@ namespace ve
 
     private:
         void CreateInstance(const VulkanConfig &config);
-        void CreateDebugCallback(const VulkanConfig &config);   
+        void CreateDebugCallback(const VulkanConfig &config);
         void CreateSurface(GLFWwindow *window);
         void CreateDevice(const PhysicalDeviceRequirements &requirements);
         void CreateSwapchain();
+        void CreateImageViews();
 
         // Helper methods for swapchain creation
         VkSurfaceFormatKHR ChooseSwapchainFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) const;
@@ -40,6 +41,7 @@ namespace ve
         VkExtent2D ChooseSwapchainExtent(const VkSurfaceCapabilitiesKHR &capabilities, GLFWwindow *window) const;
 
     private:
+        GLFWwindow *m_Window = nullptr;
         VkInstance m_Instance = VK_NULL_HANDLE;
         VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
         VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
@@ -51,7 +53,7 @@ namespace ve
         std::vector<VkImage> m_SwapchainImages;
         VkFormat m_SwapchainImageFormat = VK_FORMAT_UNDEFINED;
         VkExtent2D m_SwapchainExtent = {0, 0};
-        GLFWwindow *m_Window = nullptr;
+        std::vector<VkImageView> m_SwapchainImageViews;
     };
 
 } // namespace ve

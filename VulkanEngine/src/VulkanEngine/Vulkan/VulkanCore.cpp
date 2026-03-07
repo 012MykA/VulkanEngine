@@ -62,6 +62,12 @@ namespace ve
     {
         VE_CORE_TRACE("---------------------------------------");
 
+        for (auto imageView : m_SwapchainImageViews)
+        {
+            vkDestroyImageView(m_Device, imageView, nullptr);
+        }
+        VE_CORE_TRACE("Destroyed {0} swapchain VkImageView", m_SwapchainImageViews.size());
+
         vkDestroySwapchainKHR(m_Device, m_Swapchain, nullptr);
         VE_CORE_TRACE("VkSwapchainKHR destroyed");
 
@@ -99,6 +105,8 @@ namespace ve
 
         CreateDevice(deviceRequirements);
         CreateSwapchain();
+        CreateImageViews();
+
         VE_CORE_INFO("VulkanCore initialized successfully");
     }
 
@@ -272,7 +280,7 @@ namespace ve
         createInfo.imageColorSpace = surfaceFormat.colorSpace;
         createInfo.imageExtent = extent;
         createInfo.imageArrayLayers = 1;
-        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT; // For post-processing
         createInfo.preTransform = swapchainSupport.Capabilities.currentTransform;
         createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
         createInfo.presentMode = presentMode;
@@ -307,6 +315,39 @@ namespace ve
         VE_CORE_TRACE("\tFormat: {0}", static_cast<uint32_t>(m_SwapchainImageFormat));
         VE_CORE_TRACE("\tExtent: {0}x{1}", m_SwapchainExtent.width, m_SwapchainExtent.height);
         VE_CORE_TRACE("\tPresent Mode: {0}", static_cast<uint32_t>(presentMode));
+    }
+
+    void VulkanCore::CreateImageViews()
+    {
+        uint32_t layerCount = 1;
+        uint32_t mipLevels = 1;
+        m_SwapchainImageViews.resize(m_SwapchainImages.size());
+
+        VkImageViewType viewFormat = VK_IMAGE_VIEW_TYPE_2D;
+        VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+        for (uint32_t i = 0; i < m_SwapchainImages.size(); i++)
+        {
+            VkImageViewCreateInfo createInfo{};
+            createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            createInfo.image = m_SwapchainImages[i];
+            createInfo.viewType = viewFormat;
+            createInfo.format = m_SwapchainImageFormat;
+            createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+            createInfo.subresourceRange.aspectMask = aspectMask;
+            createInfo.subresourceRange.baseMipLevel = 0;
+            createInfo.subresourceRange.levelCount = mipLevels;
+            createInfo.subresourceRange.baseArrayLayer = 0;
+            createInfo.subresourceRange.layerCount = layerCount;
+
+            VkResult result = vkCreateImageView(m_Device, &createInfo, nullptr, &m_SwapchainImageViews[i]);
+            CHECK_VK_RESULT(result);
+        }
+
+        VE_CORE_TRACE("Created {0} swapchain VkImageView", m_SwapchainImageViews.size());
     }
 
     VkSurfaceFormatKHR VulkanCore::ChooseSwapchainFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) const
