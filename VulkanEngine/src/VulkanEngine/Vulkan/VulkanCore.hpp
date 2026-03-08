@@ -27,8 +27,10 @@ namespace ve
         VkInstance m_Instance = VK_NULL_HANDLE;
         VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
         VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
-        VkDevice m_Device = VK_NULL_HANDLE;
         VulkanPhysicalDevices m_PhysicalDevices;
+        VkDevice m_Device = VK_NULL_HANDLE;
+        VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
+        VkQueue m_PresentQueue = VK_NULL_HANDLE;
     };
 
 } // namespace ve

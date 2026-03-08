@@ -69,41 +69,44 @@ namespace ve
         PhysicalDeviceQueueFamilyIndices indices = FindQueueIndices(device.Device, surface);
         if (requirements.RequiresGraphicsQueue && !indices.GraphicsFamily.has_value())
         {
-            VE_CORE_WARN("Device {0} rejected: does not support graphics queue", device.Properties.deviceName);
+            VE_CORE_WARN("Device {0} rejected: missing graphics queue", device.Properties.deviceName);
             return false;
         }
         if (requirements.RequiresPresentQueue && !indices.PresentFamily.has_value())
         {
-            VE_CORE_WARN("Device {0} rejected: does not support present queue", device.Properties.deviceName);
+            VE_CORE_WARN("Device {0} rejected: missing present queue", device.Properties.deviceName);
             return false;
-        }
-
-        // Swapchain support
-        if (requirements.RequiresSwapchainSupport)
-        {
-            uint32_t formatCount;
-            vkGetPhysicalDeviceSurfaceFormatsKHR(device.Device, surface, &formatCount, nullptr);
-            uint32_t presentModeCount;
-            vkGetPhysicalDeviceSurfacePresentModesKHR(device.Device, surface, &presentModeCount, nullptr);
-
-            if (formatCount == 0 || presentModeCount == 0)
-            {
-                VE_CORE_WARN("Device {0} rejected: does not support swapchain", device.Properties.deviceName);
-                return false;
-            }
         }
 
         // Extensions
         if (!CheckDeviceExtensionSupport(device.Device, requirements.Extensions))
         {
-            VE_CORE_WARN("Device {0} rejected: does not support required extensions", device.Properties.deviceName);
+            VE_CORE_WARN("Device {0} rejected: missing required extensions", device.Properties.deviceName);
             return false;
+        }
+
+        // Swapchain adequate
+        if (requirements.SwapchainAdequate)
+        {
+            SwapchainSupportDetails swapchainSupport = QuerySwapchainSupport(device.Device, surface);
+
+            bool swapchainAdequate = !swapchainSupport.Formats.empty() &&
+                                     !swapchainSupport.PresentModes.empty();
+
+            if (!swapchainAdequate)
+            {
+                VE_CORE_WARN("Device {0} rejected: swapchain inadequate (formats: {1}, present modes: {2})",
+                             device.Properties.deviceName,
+                             swapchainSupport.Formats.size(),
+                             swapchainSupport.PresentModes.size());
+                return false;
+            }
         }
 
         // Features
         if (!CheckDeviceFeatureSupport(device.Features, requirements.Features))
         {
-            VE_CORE_WARN("Device {0} rejected: does not support required features", device.Properties.deviceName);
+            VE_CORE_WARN("Device {0} rejected: missing required features", device.Properties.deviceName);
             return false;
         }
 
@@ -177,6 +180,31 @@ namespace ve
         }
 
         return true;
+    }
+
+    SwapchainSupportDetails VulkanPhysicalDevices::QuerySwapchainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) const
+    {
+        SwapchainSupportDetails details;
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.Capabilities);
+
+        uint32_t formatCount;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+
+        if (formatCount != 0)
+        {
+            details.Formats.resize(formatCount);
+            vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.Formats.data());
+        }
+
+        uint32_t presentModeCount;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+        if (presentModeCount != 0)
+        {
+            details.PresentModes.resize(presentModeCount);
+            vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.PresentModes.data());
+        }
+
+        return details;
     }
 
     PhysicalDeviceQueueFamilyIndices VulkanPhysicalDevices::GetQueueIndices(VkSurfaceKHR surface) const

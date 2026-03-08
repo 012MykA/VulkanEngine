@@ -163,8 +163,6 @@ namespace ve
 
     void VulkanCore::CreateDevice(const PhysicalDeviceRequirements &requirements)
     {
-        VE_CORE_TRACE("Creating logical device...");
-
         const auto &physicalDevice = m_PhysicalDevices.Selected();
         PhysicalDeviceQueueFamilyIndices queueIndices = m_PhysicalDevices.GetQueueIndices(m_Surface);
 
@@ -202,4 +200,5 @@ namespace ve
 
         VE_CORE_TRACE("VkDevice created");
     }
+
 } // namespace ve
