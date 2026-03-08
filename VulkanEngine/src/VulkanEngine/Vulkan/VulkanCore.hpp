@@ -4,6 +4,7 @@
 #include "VulkanConfig.hpp"
 #include "VulkanPhysicalDevice.hpp"
 #include "VulkanSwapchain.hpp"
+#include "VulkanRenderPass.hpp"
 
 #include <vulkan/vulkan.h>
 
@@ -34,6 +35,7 @@ namespace ve
         VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
         VkQueue m_PresentQueue = VK_NULL_HANDLE;
         Scope<VulkanSwapchain> m_Swapchain = nullptr;
+        Scope<VulkanRenderPass> m_RenderPass = nullptr;
     };
 
 } // namespace ve

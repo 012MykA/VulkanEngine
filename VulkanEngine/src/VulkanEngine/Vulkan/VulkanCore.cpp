@@ -65,8 +65,9 @@ namespace ve
         if (m_Device != VK_NULL_HANDLE)
             vkDeviceWaitIdle(m_Device);
 
+        m_RenderPass.reset();
+        
         m_Swapchain.reset();
-        VE_CORE_TRACE("VulkanSwapchain destroyed");
 
         vkDestroyDevice(m_Device, nullptr);
         VE_CORE_TRACE("VkDevice destroyed");
@@ -110,6 +111,8 @@ namespace ve
         m_Swapchain = CreateScope<VulkanSwapchain>(
             m_Device, m_Surface, *m_PhysicalDevice,
             VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)});
+
+        m_RenderPass = CreateScope<VulkanRenderPass>(m_Device, m_Swapchain->GetImageFormat());
 
         VE_CORE_INFO("VulkanCore initialized successfully");
     }
@@ -211,7 +214,7 @@ namespace ve
         createInfo.enabledExtensionCount = static_cast<uint32_t>(requirements.Extensions.size());
         createInfo.ppEnabledExtensionNames = requirements.Extensions.data();
 
-        VkResult result = vkCreateDevice(m_PhysicalDevice->GetVulkanHandle(), &createInfo, nullptr, &m_Device);
+        VkResult result = vkCreateDevice(m_PhysicalDevice->GetPhysicalDevice(), &createInfo, nullptr, &m_Device);
         CHECK_VK_RESULT(result);
 
         vkGetDeviceQueue(m_Device, queueIndices.GraphicsFamily.value(), 0, &m_GraphicsQueue);

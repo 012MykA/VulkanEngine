@@ -43,7 +43,7 @@ namespace ve
 
     public:
         // Getters
-        VkPhysicalDevice GetVulkanHandle() const { return m_Device; }
+        VkPhysicalDevice GetPhysicalDevice() const { return m_Device; }
         const VkPhysicalDeviceProperties &GetProperties() const { return m_Properties; }
         const VkPhysicalDeviceFeatures &GetFeatures() const { return m_Features; }
         const VkPhysicalDeviceMemoryProperties &GetMemoryProperties() const { return m_MemoryProperties; }
