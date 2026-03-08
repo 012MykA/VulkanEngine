@@ -1,7 +1,9 @@
 #pragma once
 
+#include "VulkanEngine/Core/Base.hpp"
 #include "VulkanConfig.hpp"
-#include "VulkanPhysicalDevices.hpp"
+#include "VulkanPhysicalDevice.hpp"
+#include "VulkanSwapchain.hpp"
 
 #include <vulkan/vulkan.h>
 
@@ -27,7 +29,7 @@ namespace ve
         VkInstance m_Instance = VK_NULL_HANDLE;
         VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
         VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
-        VulkanPhysicalDevices m_PhysicalDevices;
+        Scope<VulkanPhysicalDevice> m_PhysicalDevice;
         VkDevice m_Device = VK_NULL_HANDLE;
         VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
         VkQueue m_PresentQueue = VK_NULL_HANDLE;

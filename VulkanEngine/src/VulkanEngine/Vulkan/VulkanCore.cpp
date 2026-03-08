@@ -62,6 +62,9 @@ namespace ve
     {
         VE_CORE_TRACE("---------------------------------------");
 
+        if (m_Device != VK_NULL_HANDLE)
+            vkDeviceWaitIdle(m_Device);
+
         vkDestroyDevice(m_Device, nullptr);
         VE_CORE_TRACE("VkDevice destroyed");
 
@@ -82,18 +85,21 @@ namespace ve
         CreateDebugCallback(config);
         CreateSurface(window);
 
-        m_PhysicalDevices.Init(m_Instance);
-        PhysicalDeviceRequirements deviceRequirements;
-        deviceRequirements.Extensions = {
+        // Physical device
+        PhysicalDeviceRequirements devReq;
+        devReq.RequiresGraphicsQueue = true;
+        devReq.RequiresPresentQueue = true;
+        devReq.SwapchainAdequate = true;
+        devReq.Extensions = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME,
             VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
         };
-        deviceRequirements.Features.geometryShader = VK_TRUE;
-        deviceRequirements.Features.tessellationShader = VK_TRUE;
+        devReq.Features.geometryShader = VK_TRUE;
+        devReq.Features.tessellationShader = VK_TRUE;
+        devReq.PreferredDeviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+        m_PhysicalDevice = CreateScope<VulkanPhysicalDevice>(VulkanPhysicalDevice::Select(m_Instance, m_Surface, devReq));
 
-        m_PhysicalDevices.SelectDevice(m_Surface, deviceRequirements);
-
-        CreateDevice(deviceRequirements);
+        CreateDevice(devReq);
         VE_CORE_INFO("VulkanCore initialized successfully");
     }
 
@@ -163,16 +169,14 @@ namespace ve
 
     void VulkanCore::CreateDevice(const PhysicalDeviceRequirements &requirements)
     {
-        const auto &physicalDevice = m_PhysicalDevices.Selected();
-        PhysicalDeviceQueueFamilyIndices queueIndices = m_PhysicalDevices.GetQueueIndices(m_Surface);
+        auto queueIndices = m_PhysicalDevice->GetQueueIndices();
 
-        // Create queue create infos
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
         std::set<uint32_t> uniqueQueueFamilies;
 
-        if (requirements.RequiresGraphicsQueue && queueIndices.GraphicsFamily.has_value())
+        if (queueIndices.GraphicsFamily.has_value())
             uniqueQueueFamilies.insert(queueIndices.GraphicsFamily.value());
-        if (requirements.RequiresPresentQueue && queueIndices.PresentFamily.has_value())
+        if (queueIndices.PresentFamily.has_value())
             uniqueQueueFamilies.insert(queueIndices.PresentFamily.value());
 
         float queuePriority = 1.0f;
@@ -186,17 +190,21 @@ namespace ve
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        // Create device
         VkDeviceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
         createInfo.pQueueCreateInfos = queueCreateInfos.data();
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-        createInfo.pEnabledFeatures = &requirements.Features;
-        createInfo.enabledExtensionCount = static_cast<uint32_t>(requirements.Extensions.size());
-        createInfo.ppEnabledExtensionNames = requirements.Extensions.empty() ? nullptr : requirements.Extensions.data();
 
-        VkResult result = vkCreateDevice(physicalDevice.Device, &createInfo, nullptr, &m_Device);
+        createInfo.pEnabledFeatures = &requirements.Features;
+
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(requirements.Extensions.size());
+        createInfo.ppEnabledExtensionNames = requirements.Extensions.data();
+
+        VkResult result = vkCreateDevice(m_PhysicalDevice->GetVulkanHandle(), &createInfo, nullptr, &m_Device);
         CHECK_VK_RESULT(result);
+
+        vkGetDeviceQueue(m_Device, queueIndices.GraphicsFamily.value(), 0, &m_GraphicsQueue);
+        vkGetDeviceQueue(m_Device, queueIndices.PresentFamily.value(), 0, &m_PresentQueue);
 
         VE_CORE_TRACE("VkDevice created");
     }
