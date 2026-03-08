@@ -22,6 +22,7 @@ namespace ve
         VkFormat GetImageFormat() const { return m_ImageFormat; }
         VkExtent2D GetExtent() const { return m_Extent; }
 
+        uint32_t GetImageCount() const { return static_cast<uint32_t>(m_ImageViews.size()); }
         VkImageView GetImageView(uint32_t index) const { return m_ImageViews[index]; }
         const std::vector<VkImageView> &GetImageViews() const { return m_ImageViews; }
 
@@ -31,7 +32,7 @@ namespace ve
         VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, VkExtent2D extent);
 
     private:
-        VkDevice m_Device = VK_NULL_HANDLE;
+        VkDevice m_Device;
         VkSwapchainKHR m_Swapchain = VK_NULL_HANDLE;
 
         VkFormat m_ImageFormat;

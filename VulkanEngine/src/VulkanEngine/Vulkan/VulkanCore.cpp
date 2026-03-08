@@ -65,8 +65,12 @@ namespace ve
         if (m_Device != VK_NULL_HANDLE)
             vkDeviceWaitIdle(m_Device);
 
+        uint32_t framebuffersSize = static_cast<uint32_t>(m_Framebuffers.size());
+        m_Framebuffers.clear();
+        VE_CORE_TRACE("Destroyed {0} VkFramebuffer objects", framebuffersSize);
+
         m_RenderPass.reset();
-        
+
         m_Swapchain.reset();
 
         vkDestroyDevice(m_Device, nullptr);
@@ -75,8 +79,11 @@ namespace ve
         vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
         VE_CORE_TRACE("VkSurfaceKHR destroyed");
 
-        DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
-        VE_CORE_TRACE("VkDebugUtilsMessengerEXT destroyed");
+        if (m_DebugMessenger != VK_NULL_HANDLE)
+        {
+            DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
+            VE_CORE_TRACE("VkDebugUtilsMessengerEXT destroyed");
+        }
 
         vkDestroyInstance(m_Instance, nullptr);
         VE_CORE_TRACE("VkInstance destroyed");
@@ -113,6 +120,17 @@ namespace ve
             VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)});
 
         m_RenderPass = CreateScope<VulkanRenderPass>(m_Device, m_Swapchain->GetImageFormat());
+
+        uint32_t imageCount = m_Swapchain->GetImageCount();
+        m_Framebuffers.resize(imageCount);
+        for (uint32_t i = 0; i < imageCount; i++)
+        {
+            std::vector<VkImageView> attachments = {m_Swapchain->GetImageView(i)};
+            m_Framebuffers[i] = CreateScope<VulkanFramebuffer>(
+                m_Device, m_RenderPass->GetRenderPass(),
+                m_Swapchain->GetExtent(), attachments);
+        }
+        VE_CORE_TRACE("Created {0} VkFramebuffer objects", m_Framebuffers.size());
 
         VE_CORE_INFO("VulkanCore initialized successfully");
     }
@@ -157,7 +175,7 @@ namespace ve
     {
         if (!config.EnableValidationLayers || !config.DebugConfig.EnableDebugMessenger)
         {
-            VE_CORE_TRACE("Debug messenger is disabled");
+            VE_CORE_TRACE("Debug messenger disabled");
             return;
         }
 
