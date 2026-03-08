@@ -201,6 +201,10 @@ namespace ve
 
     void VulkanCore::CreateDevice(const PhysicalDeviceRequirements &requirements)
     {
+        VE_CORE_TRACE("Device extensions ({0}):", requirements.Extensions.size());
+        for (auto extension : requirements.Extensions)
+            VE_CORE_TRACE("\t{0}", extension);
+
         auto queueIndices = m_PhysicalDevice->GetQueueIndices();
 
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
