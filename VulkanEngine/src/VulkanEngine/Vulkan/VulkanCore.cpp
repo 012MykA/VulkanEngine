@@ -19,19 +19,19 @@ namespace ve
         {
             if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
             {
-                VE_CORE_TRACE("Vulkan Validation: {0}", pCallbackData->pMessage);
+                VE_CORE_TRACE("Vulkan Validation:\n{0}", pCallbackData->pMessage);
             }
             else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
             {
-                VE_CORE_INFO("Vulkan Validation: {0}", pCallbackData->pMessage);
+                VE_CORE_INFO("Vulkan Validation:\n{0}", pCallbackData->pMessage);
             }
             else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
             {
-                VE_CORE_WARN("Vulkan Validation: {0}", pCallbackData->pMessage);
+                VE_CORE_WARN("Vulkan Validation:\n{0}", pCallbackData->pMessage);
             }
             else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
             {
-                VE_CORE_ERROR("Vulkan Validation: {0}", pCallbackData->pMessage);
+                VE_CORE_ERROR("Vulkan Validation:\n{0}", pCallbackData->pMessage);
             }
             return VK_FALSE;
         }
@@ -60,10 +60,13 @@ namespace ve
 
     VulkanCore::~VulkanCore()
     {
-        VE_CORE_TRACE("---------------------------------------");
+        VE_CORE_TRACE("----------------------------------------");
 
         if (m_Device != VK_NULL_HANDLE)
             vkDeviceWaitIdle(m_Device);
+
+        m_Swapchain.reset();
+        VE_CORE_TRACE("VulkanSwapchain destroyed");
 
         vkDestroyDevice(m_Device, nullptr);
         VE_CORE_TRACE("VkDevice destroyed");
@@ -80,7 +83,7 @@ namespace ve
 
     void VulkanCore::Init(const VulkanConfig &config, GLFWwindow *window)
     {
-        VE_CORE_INFO("Initializing VulkanCore...");
+        VE_CORE_TRACE("Initializing VulkanCore...");
         CreateInstance(config);
         CreateDebugCallback(config);
         CreateSurface(window);
@@ -98,8 +101,16 @@ namespace ve
         devReq.Features.tessellationShader = VK_TRUE;
         devReq.PreferredDeviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         m_PhysicalDevice = CreateScope<VulkanPhysicalDevice>(VulkanPhysicalDevice::Select(m_Instance, m_Surface, devReq));
+        // ---
 
         CreateDevice(devReq);
+
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+        m_Swapchain = CreateScope<VulkanSwapchain>(
+            m_Device, m_Surface, *m_PhysicalDevice,
+            VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)});
+
         VE_CORE_INFO("VulkanCore initialized successfully");
     }
 

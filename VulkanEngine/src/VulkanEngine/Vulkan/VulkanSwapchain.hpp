@@ -26,16 +26,12 @@ namespace ve
         const std::vector<VkImageView> &GetImageViews() const { return m_ImageViews; }
 
     private:
-        void CreateSwapchain(VkExtent2D windowExtent);
-        void CreateImageViews();
-
-    private:
         VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
         VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
         VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, VkExtent2D extent);
 
     private:
-        VkDevice m_Device;
+        VkDevice m_Device = VK_NULL_HANDLE;
         VkSwapchainKHR m_Swapchain = VK_NULL_HANDLE;
 
         VkFormat m_ImageFormat;

@@ -29,10 +29,11 @@ namespace ve
         VkInstance m_Instance = VK_NULL_HANDLE;
         VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
         VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
-        Scope<VulkanPhysicalDevice> m_PhysicalDevice;
+        Scope<VulkanPhysicalDevice> m_PhysicalDevice = nullptr;
         VkDevice m_Device = VK_NULL_HANDLE;
         VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
         VkQueue m_PresentQueue = VK_NULL_HANDLE;
+        Scope<VulkanSwapchain> m_Swapchain = nullptr;
     };
 
 } // namespace ve

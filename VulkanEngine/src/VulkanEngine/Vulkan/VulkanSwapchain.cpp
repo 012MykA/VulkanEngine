@@ -6,11 +6,84 @@
 
 namespace ve
 {
-    VulkanSwapchain::VulkanSwapchain(VkDevice device, VkSurfaceKHR surface, const VulkanPhysicalDevice &physicalDevice,
-                        VkExtent2D windowExtent, VkSwapchainKHR oldSwapchain)
+    VulkanSwapchain::VulkanSwapchain(
+        VkDevice device, VkSurfaceKHR surface, const VulkanPhysicalDevice &physicalDevice,
+        VkExtent2D windowExtent, VkSwapchainKHR oldSwapchain) : m_Device(device)
     {
-        CreateSwapchain(windowExtent);
-        CreateImageViews();
+        SwapchainSupportDetails details = physicalDevice.GetSwapchainSupport(surface);
+
+        VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(details.Formats);
+        VkPresentModeKHR presentMode = ChooseSwapPresentMode(details.PresentModes);
+        VkExtent2D extent = ChooseSwapExtent(details.Capabilities, windowExtent);
+
+        uint32_t imageCount = details.Capabilities.minImageCount + 1;
+        if (details.Capabilities.maxImageCount > 0 && imageCount > details.Capabilities.maxImageCount)
+        {
+            imageCount = details.Capabilities.maxImageCount;
+        }
+
+        VkSwapchainCreateInfoKHR createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        createInfo.surface = surface;
+        createInfo.minImageCount = imageCount;
+        createInfo.imageFormat = surfaceFormat.format;
+        createInfo.imageColorSpace = surfaceFormat.colorSpace;
+        createInfo.imageExtent = extent;
+        createInfo.imageArrayLayers = 1;
+        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+        auto indices = physicalDevice.GetQueueIndices();
+        uint32_t queueFamilyIndices[] = {indices.GraphicsFamily.value(), indices.PresentFamily.value()};
+
+        if (indices.GraphicsFamily != indices.PresentFamily)
+        {
+            createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+            createInfo.queueFamilyIndexCount = 2;
+            createInfo.pQueueFamilyIndices = queueFamilyIndices;
+        }
+        else
+        {
+            createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        }
+
+        createInfo.preTransform = details.Capabilities.currentTransform;
+        createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        createInfo.presentMode = presentMode;
+        createInfo.clipped = VK_TRUE;
+        createInfo.oldSwapchain = oldSwapchain;
+
+        VkResult result = vkCreateSwapchainKHR(m_Device, &createInfo, nullptr, &m_Swapchain);
+        CHECK_VK_RESULT(result);
+
+        vkGetSwapchainImagesKHR(m_Device, m_Swapchain, &imageCount, nullptr);
+        m_Images.resize(imageCount);
+        vkGetSwapchainImagesKHR(m_Device, m_Swapchain, &imageCount, m_Images.data());
+
+        m_ImageFormat = surfaceFormat.format;
+        m_Extent = extent;
+
+        VE_CORE_TRACE("VkSwapchainKHR created");
+        VE_CORE_TRACE("\tImage count: {0}", m_Images.size());
+        VE_CORE_TRACE("\tExtent: {0}x{1}", m_Extent.width, m_Extent.height);
+
+        m_ImageViews.resize(m_Images.size());
+        for (size_t i = 0; i < m_Images.size(); i++)
+        {
+            VkImageViewCreateInfo viewInfo{};
+            viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            viewInfo.image = m_Images[i];
+            viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            viewInfo.format = m_ImageFormat;
+            viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            viewInfo.subresourceRange.baseMipLevel = 0;
+            viewInfo.subresourceRange.levelCount = 1;
+            viewInfo.subresourceRange.baseArrayLayer = 0;
+            viewInfo.subresourceRange.layerCount = 1;
+
+            result = vkCreateImageView(m_Device, &viewInfo, nullptr, &m_ImageViews[i]);
+            CHECK_VK_RESULT(result);
+        }
+        VE_CORE_TRACE("Created {0} swapchain image views", m_ImageViews.size());
     }
 
     VulkanSwapchain::~VulkanSwapchain()
@@ -46,7 +119,7 @@ namespace ve
         {
             if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
             {
-                VE_CORE_TRACE("Selected swapchain present mode: VK_FORMAT_B8G8R8A8_SRGB");
+                VE_CORE_TRACE("Selected swapchain present mode: VK_PRESENT_MODE_MAILBOX_KHR");
                 return availablePresentMode;
             }
         }
@@ -69,14 +142,6 @@ namespace ve
             actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
             return actualExtent;
-        }
-    }
-
-    void VulkanSwapchain::CreateImageViews()
-    {
-        m_ImageViews.resize(m_Images.size());
-        for (size_t i = 0; i < m_Images.size(); i++)
-        {
         }
     }
 
