@@ -8,6 +8,7 @@
 #include "VulkanPipelineLayout.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanFramebuffer.hpp"
+#include "VulkanCommandPool.hpp"
 
 #include <vulkan/vulkan.h>
 
@@ -29,6 +30,8 @@ namespace ve
         void CreateSurface(GLFWwindow *window);
         void CreateDevice(const PhysicalDeviceRequirements &requirements);
         void CreateFramebuffers();
+        void CreateCommandBuffer();
+        void RecordCommandbuffer();
 
     private:
         VkInstance m_Instance = VK_NULL_HANDLE;
@@ -43,6 +46,8 @@ namespace ve
         Scope<VulkanPipelineLayout> m_PipelineLayout = nullptr;
         Scope<VulkanPipeline> m_Pipeline = nullptr;
         std::vector<Scope<VulkanFramebuffer>> m_Framebuffers;
+        Scope<VulkanCommandPool> m_CommandPool = nullptr;
+        VkCommandBuffer m_CommandBuffer = VK_NULL_HANDLE;
     };
 
 } // namespace ve

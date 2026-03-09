@@ -65,6 +65,8 @@ namespace ve
         if (m_Device != VK_NULL_HANDLE)
             vkDeviceWaitIdle(m_Device);
 
+        m_CommandPool.reset();
+
         uint32_t framebuffersSize = static_cast<uint32_t>(m_Framebuffers.size());
         m_Framebuffers.clear();
         VE_CORE_TRACE("Destroyed {0} VkFramebuffer objects", framebuffersSize);
@@ -138,6 +140,11 @@ namespace ve
             pipelineConfig, "MainGraphics");
 
         CreateFramebuffers();
+
+        auto queueIndices = m_PhysicalDevice->GetQueueIndices();
+        m_CommandPool = CreateScope<VulkanCommandPool>(m_Device, queueIndices.GraphicsFamily.value(), "MainCommandPool");
+
+        CreateCommandBuffer();
 
         VE_CORE_INFO("VulkanCore initialized successfully");
     }
@@ -264,6 +271,10 @@ namespace ve
                 m_Swapchain->GetExtent(), attachments);
         }
         VE_CORE_TRACE("Created {0} VkFramebuffer objects", m_Framebuffers.size());
+    }
+
+    void VulkanCore::CreateCommandBuffer()
+    {
     }
 
 } // namespace ve
