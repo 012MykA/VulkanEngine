@@ -7,7 +7,7 @@
 #include <string>
 
 namespace ve
-{
+{    
     class VulkanShaderModule
     {
     public:
