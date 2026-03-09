@@ -1,7 +1,7 @@
 #include "VulkanCore.hpp"
 #include "VulkanEngine/Core/Base.hpp"
 #include "VulkanEngine/Core/Log.hpp"
-#include "Debug/Validation.hpp"
+#include "Debug/VulkanValidation.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
