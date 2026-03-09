@@ -7,13 +7,13 @@
 
 namespace ve
 {
-    VulkanShaderModule::VulkanShaderModule(VkDevice device, const std::filesystem::path &filename)
-        : VulkanShaderModule(device, ReadFile(filename))
+    VulkanShaderModule::VulkanShaderModule(VkDevice device, const std::filesystem::path &filename, const std::string &debugName)
+        : VulkanShaderModule(device, ReadFile(filename), debugName)
     {
     }
 
-    VulkanShaderModule::VulkanShaderModule(VkDevice device, const std::vector<char> &code)
-        : m_Device(device)
+    VulkanShaderModule::VulkanShaderModule(VkDevice device, const std::vector<char> &code, const std::string &debugName)
+        : m_Device(device), m_DebugName(debugName)
     {
         VkShaderModuleCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -25,22 +25,22 @@ namespace ve
         VkResult result = vkCreateShaderModule(m_Device, &createInfo, nullptr, &m_ShaderModule);
         CHECK_VK_RESULT(result);
 
-        VE_CORE_TRACE("VkShaderModule created");
+        VE_CORE_TRACE("VulkanShaderModule ({0}) created", m_DebugName);
     }
 
     VulkanShaderModule::~VulkanShaderModule()
     {
         vkDestroyShaderModule(m_Device, m_ShaderModule, nullptr);
-        VE_CORE_TRACE("VkShaderModule destroyed");
+        VE_CORE_TRACE("VulkanShaderModule ({0}) destroyed", m_DebugName);
     }
 
-    VkPipelineShaderStageCreateInfo VulkanShaderModule::CreateShaderStage(VkShaderStageFlagBits stage, const std::string &name) const
+    VkPipelineShaderStageCreateInfo VulkanShaderModule::CreateShaderStage(VkShaderStageFlagBits stage, const char *name) const
     {
         VkPipelineShaderStageCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         createInfo.stage = stage;
         createInfo.module = m_ShaderModule;
-        createInfo.pName = name.c_str();
+        createInfo.pName = name;
 
         return createInfo;
     }
@@ -48,6 +48,7 @@ namespace ve
     std::vector<char> VulkanShaderModule::ReadFile(const std::filesystem::path &filename)
     {
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
         if (!file.is_open())
             throw std::runtime_error("failed to open file: " + filename.string());
 

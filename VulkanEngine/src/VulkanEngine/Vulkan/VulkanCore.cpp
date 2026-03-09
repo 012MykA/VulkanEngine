@@ -69,6 +69,10 @@ namespace ve
         m_Framebuffers.clear();
         VE_CORE_TRACE("Destroyed {0} VkFramebuffer objects", framebuffersSize);
 
+        m_Pipeline.reset();
+
+        m_PipelineLayout.reset();
+
         m_RenderPass.reset();
 
         m_Swapchain.reset();
@@ -121,16 +125,19 @@ namespace ve
 
         m_RenderPass = CreateScope<VulkanRenderPass>(m_Device, m_Swapchain->GetImageFormat());
 
-        uint32_t imageCount = m_Swapchain->GetImageCount();
-        m_Framebuffers.resize(imageCount);
-        for (uint32_t i = 0; i < imageCount; i++)
-        {
-            std::vector<VkImageView> attachments = {m_Swapchain->GetImageView(i)};
-            m_Framebuffers[i] = CreateScope<VulkanFramebuffer>(
-                m_Device, m_RenderPass->GetRenderPass(),
-                m_Swapchain->GetExtent(), attachments);
-        }
-        VE_CORE_TRACE("Created {0} VkFramebuffer objects", m_Framebuffers.size());
+        m_PipelineLayout = CreateScope<VulkanPipelineLayout>(m_Device, "MainGraphics");
+
+        PipelineConfig pipelineConfig{};
+        VulkanPipeline::DefaultPipelineConfig(pipelineConfig);
+        pipelineConfig.pipelineLayout = m_PipelineLayout->GetPipelineLayout();
+        pipelineConfig.renderPass = m_RenderPass->GetRenderPass();
+        m_Pipeline = CreateScope<VulkanPipeline>(
+            m_Device,
+            "../VulkanEngine/assets/shaders/shader.vert.spv",
+            "../VulkanEngine/assets/shaders/shader.frag.spv",
+            pipelineConfig, "MainGraphics");
+
+        CreateFramebuffers();
 
         VE_CORE_INFO("VulkanCore initialized successfully");
     }
@@ -243,6 +250,20 @@ namespace ve
         vkGetDeviceQueue(m_Device, queueIndices.PresentFamily.value(), 0, &m_PresentQueue);
 
         VE_CORE_TRACE("VkDevice created");
+    }
+
+    void VulkanCore::CreateFramebuffers()
+    {
+        uint32_t imageCount = m_Swapchain->GetImageCount();
+        m_Framebuffers.resize(imageCount);
+        for (uint32_t i = 0; i < imageCount; i++)
+        {
+            std::vector<VkImageView> attachments = {m_Swapchain->GetImageView(i)};
+            m_Framebuffers[i] = CreateScope<VulkanFramebuffer>(
+                m_Device, m_RenderPass->GetRenderPass(),
+                m_Swapchain->GetExtent(), attachments);
+        }
+        VE_CORE_TRACE("Created {0} VkFramebuffer objects", m_Framebuffers.size());
     }
 
 } // namespace ve

@@ -7,15 +7,15 @@
 #include <string>
 
 namespace ve
-{    
+{
     class VulkanShaderModule
     {
     public:
-        VulkanShaderModule(VkDevice device, const std::filesystem::path &filename);
-        VulkanShaderModule(VkDevice device, const std::vector<char> &code);
+        VulkanShaderModule(VkDevice device, const std::filesystem::path &filename, const std::string &debugName = "Unnamed");
+        VulkanShaderModule(VkDevice device, const std::vector<char> &code, const std::string &debugName = "Unnamed");
         ~VulkanShaderModule();
 
-        VkPipelineShaderStageCreateInfo CreateShaderStage(VkShaderStageFlagBits stage, const std::string &name = "main") const;
+        VkPipelineShaderStageCreateInfo CreateShaderStage(VkShaderStageFlagBits stage, const char *name = "main") const;
 
     private:
         static std::vector<char> ReadFile(const std::filesystem::path &filename);
@@ -23,6 +23,8 @@ namespace ve
     private:
         VkDevice m_Device;
         VkShaderModule m_ShaderModule = VK_NULL_HANDLE;
+
+        std::string m_DebugName;
     };
 
 } // namespace ve

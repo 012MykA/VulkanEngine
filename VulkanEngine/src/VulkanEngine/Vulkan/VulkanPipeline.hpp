@@ -8,7 +8,7 @@
 
 namespace ve
 {
-    struct PipelineConfigInfo
+    struct PipelineConfig
     {
         std::vector<VkVertexInputBindingDescription> bindingDescriptions;
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
@@ -32,8 +32,8 @@ namespace ve
         VulkanPipeline(VkDevice device,
                        const std::filesystem::path &vertPath,
                        const std::filesystem::path &fragPath,
-                       const PipelineConfigInfo &configInfo,
-                       const std::string &debugName = "Unnamed pipeline");
+                       const PipelineConfig &configInfo,
+                       const std::string &debugName = "Unnamed");
         ~VulkanPipeline();
 
         VulkanPipeline(const VulkanPipeline &) = delete;
@@ -42,7 +42,7 @@ namespace ve
     public:
         void Bind(VkCommandBuffer commandBuffer);
 
-        static void DefaultPipelineConfigInfo(PipelineConfigInfo& config);
+        static void DefaultPipelineConfig(PipelineConfig &config);
 
     private:
         VkDevice m_Device;

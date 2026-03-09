@@ -11,7 +11,7 @@ namespace ve
         VkDevice device,
         const std::filesystem::path &vertPath,
         const std::filesystem::path &fragPath,
-        const PipelineConfigInfo &configInfo,
+        const PipelineConfig &configInfo,
         const std::string &debugName)
         : m_Device(device), m_DebugName(debugName)
     {
@@ -19,8 +19,8 @@ namespace ve
         assert(configInfo.renderPass != VK_NULL_HANDLE && "Render pass is null");
 
         // Shader modules
-        VulkanShaderModule vertModule(m_Device, vertPath);
-        VulkanShaderModule fragModule(m_Device, fragPath);
+        VulkanShaderModule vertModule(m_Device, vertPath, m_DebugName + " Vertex");
+        VulkanShaderModule fragModule(m_Device, fragPath, m_DebugName + " Fragment");
 
         VkPipelineShaderStageCreateInfo shaderStages[] = {
             vertModule.CreateShaderStage(VK_SHADER_STAGE_VERTEX_BIT),
@@ -63,13 +63,13 @@ namespace ve
         VkResult result = vkCreateGraphicsPipelines(m_Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);
         CHECK_VK_RESULT(result);
 
-        VE_CORE_TRACE("VkPipeline ({0}) created", m_DebugName);
+        VE_CORE_TRACE("VulkanPipeline ({0}) created", m_DebugName);
     }
 
     VulkanPipeline::~VulkanPipeline()
     {
         vkDestroyPipeline(m_Device, m_Pipeline, nullptr);
-        VE_CORE_TRACE("VkPipeline ({0}) destroyed", m_DebugName);
+        VE_CORE_TRACE("VulkanPipeline ({0}) destroyed", m_DebugName);
     }
 
     void VulkanPipeline::Bind(VkCommandBuffer commandBuffer)
@@ -77,7 +77,7 @@ namespace ve
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
     }
 
-    void VulkanPipeline::DefaultPipelineConfigInfo(PipelineConfigInfo &config)
+    void VulkanPipeline::DefaultPipelineConfig(PipelineConfig &config)
     {
         // Input assembly
         config.inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
