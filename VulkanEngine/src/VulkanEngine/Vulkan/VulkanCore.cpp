@@ -5,7 +5,9 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+
 #include <set>
+#include <limits>
 
 namespace ve
 {
@@ -64,6 +66,15 @@ namespace ve
 
         if (m_Device != VK_NULL_HANDLE)
             vkDeviceWaitIdle(m_Device);
+
+        vkDestroyFence(m_Device, m_InFlightFence, nullptr);
+        VE_CORE_TRACE("VkFence (in flight) destroyed");
+
+        vkDestroySemaphore(m_Device, m_RenderFinishedSemaphore, nullptr);
+        VE_CORE_TRACE("VkSemaphore (render finished) destroyed");
+
+        vkDestroySemaphore(m_Device, m_ImageAvailableSemaphore, nullptr);
+        VE_CORE_TRACE("VkSemaphore (image available) destroyed");
 
         m_CommandPool.reset();
 
@@ -141,12 +152,60 @@ namespace ve
 
         CreateFramebuffers();
 
-        auto queueIndices = m_PhysicalDevice->GetQueueIndices();
-        m_CommandPool = CreateScope<VulkanCommandPool>(m_Device, queueIndices.GraphicsFamily.value(), "MainCommandPool");
-
+        CreateCommandPool();
         CreateCommandBuffer();
 
+        CreateSyncObjects();
+
         VE_CORE_INFO("VulkanCore initialized successfully");
+    }
+
+    void VulkanCore::DrawFrame()
+    {
+        constexpr uint64_t noTimeout = std::numeric_limits<uint64_t>::max();
+
+        vkWaitForFences(m_Device, 1, &m_InFlightFence, VK_TRUE, noTimeout);
+        vkResetFences(m_Device, 1, &m_InFlightFence);
+
+        uint32_t imageIndex;
+        VkResult result = vkAcquireNextImageKHR(m_Device, m_Swapchain->GetSwapchain(), noTimeout,
+                                                m_ImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+        CHECK_VK_RESULT(result);
+
+        vkResetCommandBuffer(m_CommandBuffer, 0);
+        RecordCommandBuffer(m_CommandBuffer, imageIndex);
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+        VkSemaphore waitSemaphores[] = {m_ImageAvailableSemaphore};
+        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &m_CommandBuffer;
+
+        VkSemaphore signalSemaphores[] = {m_RenderFinishedSemaphore};
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = signalSemaphores;
+
+        result = vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, m_InFlightFence);
+        CHECK_VK_RESULT(result);
+
+        VkPresentInfoKHR presentInfo{};
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = signalSemaphores;
+
+        VkSwapchainKHR swapchains[] = {m_Swapchain->GetSwapchain()};
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = swapchains;
+        presentInfo.pImageIndices = &imageIndex;
+
+        result = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
+        CHECK_VK_RESULT(result);
     }
 
     void VulkanCore::CreateInstance(const VulkanConfig &config)
@@ -273,8 +332,93 @@ namespace ve
         VE_CORE_TRACE("Created {0} VkFramebuffer objects", m_Framebuffers.size());
     }
 
+    void VulkanCore::CreateCommandPool()
+    {
+        auto queueIndices = m_PhysicalDevice->GetQueueIndices();
+
+        m_CommandPool = CreateScope<VulkanCommandPool>(m_Device, queueIndices.GraphicsFamily.value(), "MainCommandPool");
+    }
+
     void VulkanCore::CreateCommandBuffer()
     {
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.commandPool = m_CommandPool->GetCommandPool();
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandBufferCount = 1;
+
+        VkResult result = vkAllocateCommandBuffers(m_Device, &allocInfo, &m_CommandBuffer);
+        CHECK_VK_RESULT(result);
+        VE_CORE_TRACE("VkCommandBuffer created");
+    }
+
+    void VulkanCore::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+    {
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = 0;                  // Optional
+        beginInfo.pInheritanceInfo = nullptr; // Optional
+
+        VkResult result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
+        CHECK_VK_RESULT(result);
+
+        VkRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = m_RenderPass->GetRenderPass();
+        renderPassInfo.framebuffer = m_Framebuffers[imageIndex]->GetFramebuffer();
+        renderPassInfo.renderArea.offset = {0, 0};
+        renderPassInfo.renderArea.extent = m_Swapchain->GetExtent();
+
+        VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+        renderPassInfo.clearValueCount = 1;
+        renderPassInfo.pClearValues = &clearColor;
+
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        m_Pipeline->Bind(m_CommandBuffer);
+
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = static_cast<float>(m_Swapchain->GetExtent().width);
+        viewport.height = static_cast<float>(m_Swapchain->GetExtent().height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+        VkRect2D scissor{};
+        scissor.offset = {0, 0};
+        scissor.extent = m_Swapchain->GetExtent();
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+        vkCmdEndRenderPass(commandBuffer);
+
+        result = vkEndCommandBuffer(commandBuffer);
+        CHECK_VK_RESULT(result);
+    }
+
+    void VulkanCore::CreateSyncObjects()
+    {
+        VkSemaphoreCreateInfo semaphoreInfo{};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        VkFenceCreateInfo fenceInfo{};
+        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+        VkResult result = vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_ImageAvailableSemaphore);
+        CHECK_VK_RESULT(result);
+        VE_CORE_TRACE("VkSemaphore (image available) created");
+
+        result = vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_RenderFinishedSemaphore);
+        CHECK_VK_RESULT(result);
+        VE_CORE_TRACE("VkSemaphore (render finished) created");
+
+        result = vkCreateFence(m_Device, &fenceInfo, nullptr, &m_InFlightFence);
+        CHECK_VK_RESULT(result);
+        VE_CORE_TRACE("VkFence (in flight) created");
     }
 
 } // namespace ve

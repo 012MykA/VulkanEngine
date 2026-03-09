@@ -42,6 +42,8 @@ namespace ve
                 {
                     layer->OnUpdate(timestep);
                 }
+
+                m_VulkanCore.DrawFrame();
             }
 
             m_Window->OnUpdate();

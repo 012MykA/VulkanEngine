@@ -9,7 +9,7 @@ namespace ve
     class VulkanCommandPool
     {
     public:
-        VulkanCommandPool(VkDevice device, uint32_t queueFamilyIndex, const std::string& debugName = "Unnamed");
+        VulkanCommandPool(VkDevice device, uint32_t queueFamilyIndex, const std::string &debugName = "Unnamed");
         ~VulkanCommandPool();
 
         VkCommandPool GetCommandPool() const { return m_CommandPool; }

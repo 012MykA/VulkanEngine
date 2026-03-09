@@ -24,14 +24,18 @@ namespace ve
 
         void Init(const VulkanConfig &config, GLFWwindow *window);
 
+        void DrawFrame();
+
     private:
         void CreateInstance(const VulkanConfig &config);
         void CreateDebugCallback(const VulkanConfig &config);
         void CreateSurface(GLFWwindow *window);
         void CreateDevice(const PhysicalDeviceRequirements &requirements);
         void CreateFramebuffers();
+        void CreateCommandPool();
         void CreateCommandBuffer();
-        void RecordCommandbuffer();
+        void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+        void CreateSyncObjects();
 
     private:
         VkInstance m_Instance = VK_NULL_HANDLE;
@@ -48,6 +52,9 @@ namespace ve
         std::vector<Scope<VulkanFramebuffer>> m_Framebuffers;
         Scope<VulkanCommandPool> m_CommandPool = nullptr;
         VkCommandBuffer m_CommandBuffer = VK_NULL_HANDLE;
+        VkSemaphore m_ImageAvailableSemaphore;
+        VkSemaphore m_RenderFinishedSemaphore;
+        VkFence m_InFlightFence;
     };
 
 } // namespace ve
