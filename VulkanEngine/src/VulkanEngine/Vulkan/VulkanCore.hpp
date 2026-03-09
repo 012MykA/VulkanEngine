@@ -26,6 +26,8 @@ namespace ve
 
         void DrawFrame();
 
+        void OnWindowResize(uint32_t width, uint32_t height);
+
     private:
         void CreateInstance(const VulkanConfig &config);
         void CreateDebugCallback(const VulkanConfig &config);
@@ -33,9 +35,11 @@ namespace ve
         void CreateDevice(const PhysicalDeviceRequirements &requirements);
         void CreateFramebuffers();
         void CreateCommandPool();
-        void CreateCommandBuffer();
+        void CreateCommandBuffers();
         void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
         void CreateSyncObjects();
+
+        void RecreateSwapchain();
 
     private:
         VkInstance m_Instance = VK_NULL_HANDLE;
@@ -51,10 +55,16 @@ namespace ve
         Scope<VulkanPipeline> m_Pipeline = nullptr;
         std::vector<Scope<VulkanFramebuffer>> m_Framebuffers;
         Scope<VulkanCommandPool> m_CommandPool = nullptr;
-        VkCommandBuffer m_CommandBuffer = VK_NULL_HANDLE;
-        VkSemaphore m_ImageAvailableSemaphore;
-        VkSemaphore m_RenderFinishedSemaphore;
-        VkFence m_InFlightFence;
+
+        const int MAX_FRAMES_IN_FLIGHT = 3;
+        uint32_t m_CurrentFrame = 0;
+        std::vector<VkCommandBuffer> m_CommandBuffers;
+        std::vector<VkSemaphore> m_ImageAvailableSemaphores;
+        std::vector<VkSemaphore> m_RenderFinishedSemaphores;
+        std::vector<VkFence> m_InFlightFences;
+
+        bool m_FramebufferResized = false;
+        VkExtent2D m_FramebufferExtent = {0, 0};
     };
 
 } // namespace ve

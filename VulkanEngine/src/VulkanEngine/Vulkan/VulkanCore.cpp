@@ -67,14 +67,15 @@ namespace ve
         if (m_Device != VK_NULL_HANDLE)
             vkDeviceWaitIdle(m_Device);
 
-        vkDestroyFence(m_Device, m_InFlightFence, nullptr);
-        VE_CORE_TRACE("VkFence (in flight) destroyed");
-
-        vkDestroySemaphore(m_Device, m_RenderFinishedSemaphore, nullptr);
-        VE_CORE_TRACE("VkSemaphore (render finished) destroyed");
-
-        vkDestroySemaphore(m_Device, m_ImageAvailableSemaphore, nullptr);
-        VE_CORE_TRACE("VkSemaphore (image available) destroyed");
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            vkDestroyFence(m_Device, m_InFlightFences[i], nullptr);
+            vkDestroySemaphore(m_Device, m_RenderFinishedSemaphores[i], nullptr);
+            vkDestroySemaphore(m_Device, m_ImageAvailableSemaphores[i], nullptr);
+        }
+        VE_CORE_TRACE("Created {0} VkFence (in flight) objects", MAX_FRAMES_IN_FLIGHT);
+        VE_CORE_TRACE("Created {0} VkSemaphore (render finished) objects", MAX_FRAMES_IN_FLIGHT);
+        VE_CORE_TRACE("Created {0} VkSemaphore (image available) objects", MAX_FRAMES_IN_FLIGHT);
 
         m_CommandPool.reset();
 
@@ -132,9 +133,9 @@ namespace ve
 
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
-        m_Swapchain = CreateScope<VulkanSwapchain>(
-            m_Device, m_Surface, *m_PhysicalDevice,
-            VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)});
+        m_FramebufferExtent = VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+
+        m_Swapchain = CreateScope<VulkanSwapchain>(m_Device, m_Surface, *m_PhysicalDevice, m_FramebufferExtent);
 
         m_RenderPass = CreateScope<VulkanRenderPass>(m_Device, m_Swapchain->GetImageFormat());
 
@@ -153,7 +154,7 @@ namespace ve
         CreateFramebuffers();
 
         CreateCommandPool();
-        CreateCommandBuffer();
+        CreateCommandBuffers();
 
         CreateSyncObjects();
 
@@ -164,34 +165,44 @@ namespace ve
     {
         constexpr uint64_t noTimeout = std::numeric_limits<uint64_t>::max();
 
-        vkWaitForFences(m_Device, 1, &m_InFlightFence, VK_TRUE, noTimeout);
-        vkResetFences(m_Device, 1, &m_InFlightFence);
+        vkWaitForFences(m_Device, 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, noTimeout);
 
         uint32_t imageIndex;
         VkResult result = vkAcquireNextImageKHR(m_Device, m_Swapchain->GetSwapchain(), noTimeout,
-                                                m_ImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
-        CHECK_VK_RESULT(result);
+                                                m_ImageAvailableSemaphores[m_CurrentFrame],
+                                                VK_NULL_HANDLE, &imageIndex);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            RecreateSwapchain();
+            return;
+        }
+        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        {
+            throw std::runtime_error("failed to acquire swap chainimage!");
+        }
 
-        vkResetCommandBuffer(m_CommandBuffer, 0);
-        RecordCommandBuffer(m_CommandBuffer, imageIndex);
+        vkResetFences(m_Device, 1, &m_InFlightFences[m_CurrentFrame]);
+
+        vkResetCommandBuffer(m_CommandBuffers[m_CurrentFrame], 0);
+        RecordCommandBuffer(m_CommandBuffers[m_CurrentFrame], imageIndex);
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore waitSemaphores[] = {m_ImageAvailableSemaphore};
+        VkSemaphore waitSemaphores[] = {m_ImageAvailableSemaphores[m_CurrentFrame]};
         VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &m_CommandBuffer;
+        submitInfo.pCommandBuffers = &m_CommandBuffers[m_CurrentFrame];
 
-        VkSemaphore signalSemaphores[] = {m_RenderFinishedSemaphore};
+        VkSemaphore signalSemaphores[] = {m_RenderFinishedSemaphores[m_CurrentFrame]};
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        result = vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, m_InFlightFence);
+        result = vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, m_InFlightFences[m_CurrentFrame]);
         CHECK_VK_RESULT(result);
 
         VkPresentInfoKHR presentInfo{};
@@ -205,7 +216,23 @@ namespace ve
         presentInfo.pImageIndices = &imageIndex;
 
         result = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
-        CHECK_VK_RESULT(result);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_FramebufferResized)
+        {
+            m_FramebufferResized = false;
+            RecreateSwapchain();
+        }
+        else if (result != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to present swapchain image!");
+        }
+
+        m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    }
+
+    void VulkanCore::OnWindowResize(uint32_t width, uint32_t height)
+    {
+        m_FramebufferResized = true;
+        m_FramebufferExtent = {width, height};
     }
 
     void VulkanCore::CreateInstance(const VulkanConfig &config)
@@ -339,15 +366,17 @@ namespace ve
         m_CommandPool = CreateScope<VulkanCommandPool>(m_Device, queueIndices.GraphicsFamily.value(), "MainCommandPool");
     }
 
-    void VulkanCore::CreateCommandBuffer()
+    void VulkanCore::CreateCommandBuffers()
     {
+        m_CommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocInfo.commandPool = m_CommandPool->GetCommandPool();
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = 1;
+        allocInfo.commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
 
-        VkResult result = vkAllocateCommandBuffers(m_Device, &allocInfo, &m_CommandBuffer);
+        VkResult result = vkAllocateCommandBuffers(m_Device, &allocInfo, m_CommandBuffers.data());
         CHECK_VK_RESULT(result);
         VE_CORE_TRACE("VkCommandBuffer created");
     }
@@ -375,7 +404,7 @@ namespace ve
 
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        m_Pipeline->Bind(m_CommandBuffer);
+        m_Pipeline->Bind(commandBuffer);
 
         VkViewport viewport{};
         viewport.x = 0.0f;
@@ -401,6 +430,10 @@ namespace ve
 
     void VulkanCore::CreateSyncObjects()
     {
+        m_ImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+        m_RenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+        m_InFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
         VkSemaphoreCreateInfo semaphoreInfo{};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -408,17 +441,42 @@ namespace ve
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        VkResult result = vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_ImageAvailableSemaphore);
-        CHECK_VK_RESULT(result);
-        VE_CORE_TRACE("VkSemaphore (image available) created");
+        VkResult result;
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            result = vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_ImageAvailableSemaphores[i]);
+            CHECK_VK_RESULT(result);
 
-        result = vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_RenderFinishedSemaphore);
-        CHECK_VK_RESULT(result);
-        VE_CORE_TRACE("VkSemaphore (render finished) created");
+            result = vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_RenderFinishedSemaphores[i]);
+            CHECK_VK_RESULT(result);
 
-        result = vkCreateFence(m_Device, &fenceInfo, nullptr, &m_InFlightFence);
-        CHECK_VK_RESULT(result);
-        VE_CORE_TRACE("VkFence (in flight) created");
+            result = vkCreateFence(m_Device, &fenceInfo, nullptr, &m_InFlightFences[i]);
+            CHECK_VK_RESULT(result);
+        }
+
+        VE_CORE_TRACE("Created {0} VkSemaphore (image available) objects", MAX_FRAMES_IN_FLIGHT);
+        VE_CORE_TRACE("Created {0} VkSemaphore (render finished) objects", MAX_FRAMES_IN_FLIGHT);
+        VE_CORE_TRACE("Created {0} VkFence (in flight) objects", MAX_FRAMES_IN_FLIGHT);
+    }
+
+    void VulkanCore::RecreateSwapchain()
+    {
+        assert(m_FramebufferExtent.width != 0 || m_FramebufferExtent.height != 0);
+
+        VE_CORE_INFO("Recreating swapchain for extent: {0}x{1}...", m_FramebufferExtent.width, m_FramebufferExtent.height);
+
+        vkDeviceWaitIdle(m_Device);
+
+        uint32_t framebuffersSize = static_cast<uint32_t>(m_Framebuffers.size());
+        m_Framebuffers.clear();
+        VE_CORE_TRACE("Destroyed {0} VkFramebuffer objects", framebuffersSize);
+        m_Swapchain.reset();
+
+        m_Swapchain = CreateScope<VulkanSwapchain>(m_Device, m_Surface, *m_PhysicalDevice, m_FramebufferExtent);
+
+        CreateFramebuffers();
+
+        VE_CORE_INFO("Swapchain recreated successfully.");
     }
 
 } // namespace ve

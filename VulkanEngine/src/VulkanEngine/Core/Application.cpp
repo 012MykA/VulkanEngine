@@ -92,9 +92,10 @@ namespace ve
             m_Minimized = true;
             return false;
         }
-
-        // Renderer::OnWindowResize(e.GetWidth(), e.GetHeight());
-
+        m_Minimized = false;
+        
+        m_VulkanCore.OnWindowResize(e.GetWidth(), e.GetHeight());
+        
         return false;
     }
 
