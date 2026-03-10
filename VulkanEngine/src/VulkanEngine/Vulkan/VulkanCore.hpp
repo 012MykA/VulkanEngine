@@ -10,6 +10,11 @@
 #include "VulkanFramebuffer.hpp"
 #include "VulkanCommandPool.hpp"
 
+// TODO: remove
+#include "Vertex.hpp"
+#include "VulkanBuffer.hpp"
+// ---
+
 #include <vulkan/vulkan.h>
 
 struct GLFWwindow;
@@ -33,6 +38,7 @@ namespace ve
         void CreateDebugCallback(const VulkanConfig &config);
         void CreateSurface(GLFWwindow *window);
         void CreateDevice(const PhysicalDeviceRequirements &requirements);
+        void CreateGraphicsPipeline();
         void CreateFramebuffers();
         void CreateCommandPool();
         void CreateCommandBuffers();
@@ -65,6 +71,10 @@ namespace ve
 
         bool m_FramebufferResized = false;
         VkExtent2D m_FramebufferExtent = {0, 0};
+
+    private:
+        Scope<VulkanBuffer> m_VertexBuffer;
+        void CreateVertexBuffer();
     };
 
 } // namespace ve

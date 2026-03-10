@@ -8,6 +8,13 @@
 
 #include <set>
 #include <limits>
+#include <vector>
+
+static const std::vector<ve::Vertex> s_Vertices = {
+    {{0.0f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+    {{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+};
 
 namespace ve
 {
@@ -66,6 +73,10 @@ namespace ve
 
         if (m_Device != VK_NULL_HANDLE)
             vkDeviceWaitIdle(m_Device);
+
+        // TODO: remove
+        m_VertexBuffer.reset();
+        // ---
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -141,19 +152,16 @@ namespace ve
 
         m_PipelineLayout = CreateScope<VulkanPipelineLayout>(m_Device, "MainGraphics");
 
-        PipelineConfig pipelineConfig{};
-        VulkanPipeline::DefaultPipelineConfig(pipelineConfig);
-        pipelineConfig.pipelineLayout = m_PipelineLayout->GetPipelineLayout();
-        pipelineConfig.renderPass = m_RenderPass->GetRenderPass();
-        m_Pipeline = CreateScope<VulkanPipeline>(
-            m_Device,
-            "../VulkanEngine/assets/shaders/shader.vert.spv",
-            "../VulkanEngine/assets/shaders/shader.frag.spv",
-            pipelineConfig, "MainGraphics");
+        CreateGraphicsPipeline();
 
         CreateFramebuffers();
 
         CreateCommandPool();
+
+        // TODO: remove
+        CreateVertexBuffer();
+        //
+
         CreateCommandBuffers();
 
         CreateSyncObjects();
@@ -345,6 +353,27 @@ namespace ve
         VE_CORE_TRACE("VkDevice created");
     }
 
+    void VulkanCore::CreateGraphicsPipeline()
+    {
+        PipelineConfig pipelineConfig{};
+        VulkanPipeline::DefaultPipelineConfig(pipelineConfig);
+
+        pipelineConfig.bindingDescriptions = {
+            Vertex::GetBindingDescription(),
+        };
+
+        auto attributeDescriptions = Vertex::GetAttributeDescriptions();
+        pipelineConfig.attributeDescriptions.assign(attributeDescriptions.begin(), attributeDescriptions.end());
+
+        pipelineConfig.pipelineLayout = m_PipelineLayout->GetPipelineLayout();
+        pipelineConfig.renderPass = m_RenderPass->GetRenderPass();
+        m_Pipeline = CreateScope<VulkanPipeline>(
+            m_Device,
+            "../VulkanEngine/assets/shaders/shader.vert.spv",
+            "../VulkanEngine/assets/shaders/shader.frag.spv",
+            pipelineConfig, "MainGraphics");
+    }
+
     void VulkanCore::CreateFramebuffers()
     {
         uint32_t imageCount = m_Swapchain->GetImageCount();
@@ -420,7 +449,11 @@ namespace ve
         scissor.extent = m_Swapchain->GetExtent();
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+        VkBuffer vertexBuffers[] = {m_VertexBuffer->GetBuffer()};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+        vkCmdDraw(commandBuffer, static_cast<uint32_t>(s_Vertices.size()), 1, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
 
@@ -477,6 +510,18 @@ namespace ve
         CreateFramebuffers();
 
         VE_CORE_INFO("Swapchain recreated successfully.");
+    }
+
+    void VulkanCore::CreateVertexBuffer()
+    {
+        m_VertexBuffer = CreateScope<VulkanBuffer>(
+            m_Device, m_PhysicalDevice->GetPhysicalDevice(),
+            sizeof(Vertex) * s_Vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        m_VertexBuffer->Map();
+        m_VertexBuffer->WriteToBuffer(s_Vertices.data());
+        m_VertexBuffer->Unmap();
     }
 
 } // namespace ve
