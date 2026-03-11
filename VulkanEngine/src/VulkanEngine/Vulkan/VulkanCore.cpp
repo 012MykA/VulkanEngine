@@ -11,10 +11,13 @@
 #include <vector>
 
 static const std::vector<ve::Vertex> s_Vertices = {
-    {{0.0f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
-    {{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5, 0.0f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
 };
+
+static const std::vector<uint32_t> s_Indices = {0, 1, 2, 2, 3, 0};
 
 namespace ve
 {
@@ -75,6 +78,7 @@ namespace ve
             vkDeviceWaitIdle(m_Device);
 
         // TODO: remove
+        m_IndexBuffer.reset();
         m_VertexBuffer.reset();
         // ---
 
@@ -160,6 +164,7 @@ namespace ve
 
         // TODO: remove
         CreateVertexBuffer();
+        CreateIndexBuffer();
         //
 
         CreateCommandBuffers();
@@ -452,8 +457,10 @@ namespace ve
         VkBuffer vertexBuffers[] = {m_VertexBuffer->GetBuffer()};
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-        vkCmdDraw(commandBuffer, static_cast<uint32_t>(s_Vertices.size()), 1, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(s_Indices.size()), 1, 0, 0, 0);
+        // vkCmdDraw(commandBuffer, static_cast<uint32_t>(s_Vertices.size()), 1, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
 
@@ -531,6 +538,27 @@ namespace ve
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         CopyBuffer(stagingBuffer.GetBuffer(), m_VertexBuffer->GetBuffer(), bufferSize);
+    }
+
+    void VulkanCore::CreateIndexBuffer()
+    {
+        VkDeviceSize bufferSize = sizeof(uint32_t) * s_Indices.size();
+
+        VulkanBuffer stagingBuffer(
+            m_Device, m_PhysicalDevice->GetPhysicalDevice(),
+            bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        stagingBuffer.Map();
+        stagingBuffer.WriteToBuffer(s_Indices.data());
+        stagingBuffer.Unmap();
+
+        m_IndexBuffer = CreateScope<VulkanBuffer>(
+            m_Device, m_PhysicalDevice->GetPhysicalDevice(),
+            bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        CopyBuffer(stagingBuffer.GetBuffer(), m_IndexBuffer->GetBuffer(), bufferSize);
     }
 
     void VulkanCore::CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)

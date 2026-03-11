@@ -73,9 +73,11 @@ namespace ve
         VkExtent2D m_FramebufferExtent = {0, 0};
 
     private:
-        Scope<VulkanBuffer> m_VertexBuffer;
-        void CreateVertexBuffer();
         void CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
+        Scope<VulkanBuffer> m_VertexBuffer;
+        Scope<VulkanBuffer> m_IndexBuffer;
+        void CreateVertexBuffer();
+        void CreateIndexBuffer();
     };
 
 } // namespace ve
