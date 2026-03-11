@@ -514,14 +514,64 @@ namespace ve
 
     void VulkanCore::CreateVertexBuffer()
     {
-        m_VertexBuffer = CreateScope<VulkanBuffer>(
+        VkDeviceSize bufferSize = sizeof(Vertex) * s_Vertices.size();
+
+        VulkanBuffer stagingBuffer(
             m_Device, m_PhysicalDevice->GetPhysicalDevice(),
-            sizeof(Vertex) * s_Vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        m_VertexBuffer->Map();
-        m_VertexBuffer->WriteToBuffer(s_Vertices.data());
-        m_VertexBuffer->Unmap();
+        stagingBuffer.Map();
+        stagingBuffer.WriteToBuffer(s_Vertices.data());
+        stagingBuffer.Unmap();
+
+        m_VertexBuffer = CreateScope<VulkanBuffer>(
+            m_Device, m_PhysicalDevice->GetPhysicalDevice(),
+            bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        CopyBuffer(stagingBuffer.GetBuffer(), m_VertexBuffer->GetBuffer(), bufferSize);
+    }
+
+    void VulkanCore::CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
+    {
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandPool = m_CommandPool->GetCommandPool();
+        allocInfo.commandBufferCount = 1;
+
+        VkCommandBuffer commandBuffer;
+        VkResult result = vkAllocateCommandBuffers(m_Device, &allocInfo, &commandBuffer);
+        CHECK_VK_RESULT(result);
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
+        CHECK_VK_RESULT(result);
+
+        VkBufferCopy copyRegion{};
+        copyRegion.size = size;
+
+        vkCmdCopyBuffer(commandBuffer, src, dst, 1, &copyRegion);
+
+        result = vkEndCommandBuffer(commandBuffer);
+        CHECK_VK_RESULT(result);
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+
+        result = vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+        CHECK_VK_RESULT(result);
+
+        result = vkQueueWaitIdle(m_GraphicsQueue);
+        CHECK_VK_RESULT(result);
+
+        vkFreeCommandBuffers(m_Device, m_CommandPool->GetCommandPool(), 1, &commandBuffer);
     }
 
 } // namespace ve

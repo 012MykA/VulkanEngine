@@ -75,6 +75,7 @@ namespace ve
     private:
         Scope<VulkanBuffer> m_VertexBuffer;
         void CreateVertexBuffer();
+        void CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
     };
 
 } // namespace ve
