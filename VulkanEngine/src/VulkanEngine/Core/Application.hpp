@@ -10,7 +10,7 @@
 #include <cassert>
 
 // TODO: refactor
-#include "VulkanEngine/Vulkan/VulkanCore.hpp"
+#include "VulkanEngine/Vulkan/VulkanContext.hpp"
 
 namespace ve
 {
@@ -63,7 +63,7 @@ namespace ve
 
     private: // TODO: refactor
         void InitializeVulkan(const std::string &appName);
-        VulkanCore m_VulkanCore;
+        VulkanContext m_VulkanContext;
 
     private:
         static Application *s_Instance;

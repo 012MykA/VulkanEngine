@@ -21,11 +21,11 @@ struct GLFWwindow;
 
 namespace ve
 {
-    class VulkanCore
+    class VulkanContext
     {
     public:
-        VulkanCore();
-        ~VulkanCore();
+        VulkanContext();
+        ~VulkanContext();
 
         void Init(const VulkanConfig &config, GLFWwindow *window);
 

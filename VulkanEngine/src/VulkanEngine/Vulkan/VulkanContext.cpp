@@ -1,4 +1,4 @@
-#include "VulkanCore.hpp"
+#include "VulkanContext.hpp"
 #include "VulkanEngine/Core/Base.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 #include "Debug/VulkanValidation.hpp"
@@ -66,11 +66,11 @@ namespace ve
         }
     }
 
-    VulkanCore::VulkanCore()
+    VulkanContext::VulkanContext()
     {
     }
 
-    VulkanCore::~VulkanCore()
+    VulkanContext::~VulkanContext()
     {
         VE_CORE_TRACE("----------------------------------------");
 
@@ -122,9 +122,9 @@ namespace ve
         VE_CORE_TRACE("VkInstance destroyed");
     }
 
-    void VulkanCore::Init(const VulkanConfig &config, GLFWwindow *window)
+    void VulkanContext::Init(const VulkanConfig &config, GLFWwindow *window)
     {
-        VE_CORE_TRACE("Initializing VulkanCore...");
+        VE_CORE_TRACE("Initializing VulkanContext...");
         CreateInstance(config);
         CreateDebugCallback(config);
         CreateSurface(window);
@@ -171,10 +171,10 @@ namespace ve
 
         CreateSyncObjects();
 
-        VE_CORE_INFO("VulkanCore initialized successfully");
+        VE_CORE_INFO("VulkanContext initialized successfully");
     }
 
-    void VulkanCore::DrawFrame()
+    void VulkanContext::DrawFrame()
     {
         constexpr uint64_t noTimeout = std::numeric_limits<uint64_t>::max();
 
@@ -242,13 +242,13 @@ namespace ve
         m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
-    void VulkanCore::OnWindowResize(uint32_t width, uint32_t height)
+    void VulkanContext::OnWindowResize(uint32_t width, uint32_t height)
     {
         m_FramebufferResized = true;
         m_FramebufferExtent = {width, height};
     }
 
-    void VulkanCore::CreateInstance(const VulkanConfig &config)
+    void VulkanContext::CreateInstance(const VulkanConfig &config)
     {
         VE_CORE_TRACE("Instance extensions ({0}):", config.InstanceExtensions.size());
         for (auto extension : config.InstanceExtensions)
@@ -284,7 +284,7 @@ namespace ve
         VE_CORE_TRACE("VkInstance created");
     }
 
-    void VulkanCore::CreateDebugCallback(const VulkanConfig &config)
+    void VulkanContext::CreateDebugCallback(const VulkanConfig &config)
     {
         if (!config.EnableValidationLayers || !config.DebugConfig.EnableDebugMessenger)
         {
@@ -305,14 +305,14 @@ namespace ve
         VE_CORE_TRACE("VkDebugUtilsMessengerEXT created");
     }
 
-    void VulkanCore::CreateSurface(GLFWwindow *window)
+    void VulkanContext::CreateSurface(GLFWwindow *window)
     {
         VkResult result = glfwCreateWindowSurface(m_Instance, window, nullptr, &m_Surface);
         CHECK_VK_RESULT(result);
         VE_CORE_TRACE("VkSurfaceKHR created");
     }
 
-    void VulkanCore::CreateDevice(const PhysicalDeviceRequirements &requirements)
+    void VulkanContext::CreateDevice(const PhysicalDeviceRequirements &requirements)
     {
         VE_CORE_TRACE("Device extensions ({0}):", requirements.Extensions.size());
         for (auto extension : requirements.Extensions)
@@ -358,7 +358,7 @@ namespace ve
         VE_CORE_TRACE("VkDevice created");
     }
 
-    void VulkanCore::CreateGraphicsPipeline()
+    void VulkanContext::CreateGraphicsPipeline()
     {
         PipelineConfig pipelineConfig{};
         VulkanPipeline::DefaultPipelineConfig(pipelineConfig);
@@ -379,7 +379,7 @@ namespace ve
             pipelineConfig, "MainGraphics");
     }
 
-    void VulkanCore::CreateFramebuffers()
+    void VulkanContext::CreateFramebuffers()
     {
         uint32_t imageCount = m_Swapchain->GetImageCount();
         m_Framebuffers.resize(imageCount);
@@ -393,14 +393,14 @@ namespace ve
         VE_CORE_TRACE("Created {0} VkFramebuffer objects", m_Framebuffers.size());
     }
 
-    void VulkanCore::CreateCommandPool()
+    void VulkanContext::CreateCommandPool()
     {
         auto queueIndices = m_PhysicalDevice->GetQueueIndices();
 
         m_CommandPool = CreateScope<VulkanCommandPool>(m_Device, queueIndices.GraphicsFamily.value(), "MainCommandPool");
     }
 
-    void VulkanCore::CreateCommandBuffers()
+    void VulkanContext::CreateCommandBuffers()
     {
         m_CommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
@@ -415,7 +415,7 @@ namespace ve
         VE_CORE_TRACE("VkCommandBuffer created");
     }
 
-    void VulkanCore::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+    void VulkanContext::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
     {
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -468,7 +468,7 @@ namespace ve
         CHECK_VK_RESULT(result);
     }
 
-    void VulkanCore::CreateSyncObjects()
+    void VulkanContext::CreateSyncObjects()
     {
         m_ImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         m_RenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -499,7 +499,7 @@ namespace ve
         VE_CORE_TRACE("Created {0} VkFence (in flight) objects", MAX_FRAMES_IN_FLIGHT);
     }
 
-    void VulkanCore::RecreateSwapchain()
+    void VulkanContext::RecreateSwapchain()
     {
         assert(m_FramebufferExtent.width != 0 || m_FramebufferExtent.height != 0);
 
@@ -519,7 +519,7 @@ namespace ve
         VE_CORE_INFO("Swapchain recreated successfully.");
     }
 
-    void VulkanCore::CreateVertexBuffer()
+    void VulkanContext::CreateVertexBuffer()
     {
         VkDeviceSize bufferSize = sizeof(Vertex) * s_Vertices.size();
 
@@ -540,7 +540,7 @@ namespace ve
         CopyBuffer(stagingBuffer.GetBuffer(), m_VertexBuffer->GetBuffer(), bufferSize);
     }
 
-    void VulkanCore::CreateIndexBuffer()
+    void VulkanContext::CreateIndexBuffer()
     {
         VkDeviceSize bufferSize = sizeof(uint32_t) * s_Indices.size();
 
@@ -561,7 +561,7 @@ namespace ve
         CopyBuffer(stagingBuffer.GetBuffer(), m_IndexBuffer->GetBuffer(), bufferSize);
     }
 
-    void VulkanCore::CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
+    void VulkanContext::CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
     {
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
