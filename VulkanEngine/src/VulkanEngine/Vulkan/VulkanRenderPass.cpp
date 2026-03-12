@@ -4,8 +4,8 @@
 
 namespace ve
 {
-    VulkanRenderPass::VulkanRenderPass(VkDevice device, VkFormat swapchainImageFormat)
-        : m_Device(device)
+    VulkanRenderPass::VulkanRenderPass(VkDevice device, VkFormat swapchainImageFormat, const std::string &debugName)
+        : m_Device(device), m_DebugName(debugName)
     {
         // Color Attachment
         VkAttachmentDescription colorAttachment{};
@@ -51,13 +51,13 @@ namespace ve
         VkResult result = vkCreateRenderPass(m_Device, &renderPassInfo, nullptr, &m_RenderPass);
         CHECK_VK_RESULT(result);
 
-        VE_CORE_TRACE("VkRenderPass created");
+        VE_CORE_TRACE("VkRenderPass ({0}) created", m_DebugName);
     }
 
     VulkanRenderPass::~VulkanRenderPass()
     {
         vkDestroyRenderPass(m_Device, m_RenderPass, nullptr);
-        VE_CORE_TRACE("VkRenderPass destroyed");
+        VE_CORE_TRACE("VkRenderPass ({0}) destroyed", m_DebugName);
     }
 
 } // namespace ve

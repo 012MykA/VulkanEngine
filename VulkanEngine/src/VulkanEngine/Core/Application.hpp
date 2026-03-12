@@ -9,8 +9,8 @@
 #include <string>
 #include <cassert>
 
-// TODO: refactor
 #include "VulkanEngine/Vulkan/VulkanContext.hpp"
+#include "VulkanEngine/Vulkan/Renderer.hpp"
 
 namespace ve
 {
@@ -64,6 +64,7 @@ namespace ve
     private: // TODO: refactor
         void InitializeVulkan(const std::string &appName);
         Scope<VulkanContext> m_VulkanContext;
+        Scope<Renderer> m_Renderer;
 
     private:
         static Application *s_Instance;

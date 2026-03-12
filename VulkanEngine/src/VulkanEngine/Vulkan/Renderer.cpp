@@ -1,15 +1,381 @@
 #include "Renderer.hpp"
+#include "VulkanEngine/Vulkan/Debug/VulkanValidation.hpp"
+#include "VulkanEngine/Vulkan/Vertex.hpp"
+
+static const std::vector<ve::Vertex> s_Vertices = {
+    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5, 0.0f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+};
+
+static const std::vector<uint32_t> s_Indices = {0, 1, 2, 2, 3, 0};
 
 namespace ve
 {
-    Renderer::Renderer(VulkanContext *context)
+    Renderer::Renderer(VulkanContext *context) : m_Context(context)
     {
+        VE_CORE_INFO("Initializing Renderer...");
 
+        m_Device = m_Context->GetDevice();
+
+        m_RenderPass = CreateScope<VulkanRenderPass>(m_Device, m_Context->GetSwapchainFormat());
+        CreateGraphicsPipeline();
+
+        CreateFramebuffers();
+
+        CreateCommandPool();
+        CreateCommandBuffers();
+
+        CreateVertexBuffer();
+        CreateIndexBuffer();
+
+        CreateSyncObjects();
+
+        VE_CORE_INFO("Renderer initialized successfully");
     }
 
     Renderer::~Renderer()
     {
+        VE_CORE_TRACE("----------------------------------------");
+
+        m_Context->DeviceWaitIdle();
+
+        m_IndexBuffer.reset();
+        m_VertexBuffer.reset();
+
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            vkDestroyFence(m_Device, m_InFlightFences[i], nullptr);
+            vkDestroySemaphore(m_Device, m_RenderFinishedSemaphores[i], nullptr);
+            vkDestroySemaphore(m_Device, m_ImageAvailableSemaphores[i], nullptr);
+        }
+        VE_CORE_TRACE("Created {0} VkFence (in flight) objects", MAX_FRAMES_IN_FLIGHT);
+        VE_CORE_TRACE("Created {0} VkSemaphore (render finished) objects", MAX_FRAMES_IN_FLIGHT);
+        VE_CORE_TRACE("Created {0} VkSemaphore (image available) objects", MAX_FRAMES_IN_FLIGHT);
+
+        m_CommandPool.reset();
+
+        uint32_t framebuffersSize = static_cast<uint32_t>(m_Framebuffers.size());
+        m_Framebuffers.clear();
+        VE_CORE_TRACE("Destroyed {0} VkFramebuffer objects", framebuffersSize);
+
+        m_GraphicsPipeline.reset();
+
+        m_PipelineLayout.reset();
+
+        m_RenderPass.reset();
+    }
+
+    void Renderer::DrawFrame()
+    {
+        constexpr uint64_t noTimeout = std::numeric_limits<uint64_t>::max();
+
+        vkWaitForFences(m_Device, 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, noTimeout);
+
+        uint32_t imageIndex;
+        VkResult result = vkAcquireNextImageKHR(m_Device, m_Context->GetSwapchain(), noTimeout,
+                                                m_ImageAvailableSemaphores[m_CurrentFrame],
+                                                VK_NULL_HANDLE, &imageIndex);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            RecreateSwapchain();
+            return;
+        }
+        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        {
+            throw std::runtime_error("failed to acquire swapchain image!");
+        }
+
+        vkResetFences(m_Device, 1, &m_InFlightFences[m_CurrentFrame]);
+
+        vkResetCommandBuffer(m_CommandBuffers[m_CurrentFrame], 0);
+        RecordCommandBuffer(m_CommandBuffers[m_CurrentFrame], imageIndex);
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+        VkSemaphore waitSemaphores[] = {m_ImageAvailableSemaphores[m_CurrentFrame]};
+        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &m_CommandBuffers[m_CurrentFrame];
+
+        VkSemaphore signalSemaphores[] = {m_RenderFinishedSemaphores[m_CurrentFrame]};
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = signalSemaphores;
+
+        result = vkQueueSubmit(m_Context->GetGraphicsQueue(), 1, &submitInfo, m_InFlightFences[m_CurrentFrame]);
+        CHECK_VK_RESULT(result);
+
+        VkPresentInfoKHR presentInfo{};
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = signalSemaphores;
+
+        VkSwapchainKHR swapchains[] = {m_Context->GetSwapchain()};
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = swapchains;
+        presentInfo.pImageIndices = &imageIndex;
+
+        result = vkQueuePresentKHR(m_Context->GetPresentQueue(), &presentInfo);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_Context->IsFramebufferResized())
+        {
+            m_Context->ResetFramebufferResized();
+            RecreateSwapchain();
+        }
+        else if (result != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to present swapchain image!");
+        }
+
+        m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    }
+
+    void Renderer::CreateGraphicsPipeline()
+    {
+        m_PipelineLayout = CreateScope<VulkanPipelineLayout>(m_Device, "Graphics");
+
+        PipelineConfig pipelineConfig{};
+        VulkanPipeline::DefaultPipelineConfig(pipelineConfig);
+
+        pipelineConfig.bindingDescriptions = {
+            Vertex::GetBindingDescription(),
+        };
+
+        auto attributeDescriptions = Vertex::GetAttributeDescriptions();
+        pipelineConfig.attributeDescriptions.assign(attributeDescriptions.begin(), attributeDescriptions.end());
+        pipelineConfig.pipelineLayout = m_PipelineLayout->GetPipelineLayout();
+        pipelineConfig.renderPass = m_RenderPass->GetRenderPass();
+
+        m_GraphicsPipeline = CreateScope<VulkanPipeline>(
+            m_Device,
+            "../VulkanEngine/assets/shaders/shader.vert.spv",
+            "../VulkanEngine/assets/shaders/shader.frag.spv",
+            pipelineConfig, "Graphics");
+    }
+
+    void Renderer::CreateFramebuffers()
+    {
+        uint32_t imageCount = m_Context->GetSwapchainImageCount();
+
+        m_Framebuffers.resize(imageCount);
+        for (uint32_t i = 0; i < imageCount; i++)
+        {
+            std::vector<VkImageView> attachments = {m_Context->GetSwapchainImageView(i)};
+            m_Framebuffers[i] = CreateScope<VulkanFramebuffer>(
+                m_Device, m_RenderPass->GetRenderPass(),
+                m_Context->GetSwapchainExtent(),
+                attachments);
+        }
+        VE_CORE_TRACE("Created {0} VkFramebuffer objects", m_Framebuffers.size());
+    }
+
+    void Renderer::CreateCommandPool()
+    {
+        auto queueIndices = m_Context->GetPhysicalDevice().GetQueueIndices();
+        m_CommandPool = CreateScope<VulkanCommandPool>(m_Device, queueIndices.GraphicsFamily.value());
+    }
+
+    void Renderer::CreateCommandBuffers()
+    {
+        m_CommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.commandPool = m_CommandPool->GetCommandPool();
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
+
+        VkResult result = vkAllocateCommandBuffers(m_Device, &allocInfo, m_CommandBuffers.data());
+        CHECK_VK_RESULT(result);
+        VE_CORE_TRACE("VkCommandBuffer created");
+    }
+
+    void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+    {
+        VkExtent2D swapchainExtent = m_Context->GetSwapchainExtent();
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = 0;                  // Optional
+        beginInfo.pInheritanceInfo = nullptr; // Optional
+
+        VkResult result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
+        CHECK_VK_RESULT(result);
+
+        VkRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = m_RenderPass->GetRenderPass();
+        renderPassInfo.framebuffer = m_Framebuffers[imageIndex]->GetFramebuffer();
+        renderPassInfo.renderArea.offset = {0, 0};
+        renderPassInfo.renderArea.extent = swapchainExtent;
+
+        VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+        renderPassInfo.clearValueCount = 1;
+        renderPassInfo.pClearValues = &clearColor;
+
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        m_GraphicsPipeline->Bind(commandBuffer);
+
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = static_cast<float>(swapchainExtent.width);
+        viewport.height = static_cast<float>(swapchainExtent.height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+        VkRect2D scissor{};
+        scissor.offset = {0, 0};
+        scissor.extent = swapchainExtent;
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+        VkBuffer vertexBuffers[] = {m_VertexBuffer->GetBuffer()};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(s_Indices.size()), 1, 0, 0, 0);
+
+        vkCmdEndRenderPass(commandBuffer);
+
+        result = vkEndCommandBuffer(commandBuffer);
+        CHECK_VK_RESULT(result);
+    }
+
+    void Renderer::CreateSyncObjects()
+    {
+        m_ImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+        m_RenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+        m_InFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
+        VkSemaphoreCreateInfo semaphoreInfo{};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        VkFenceCreateInfo fenceInfo{};
+        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+        VkResult result;
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            result = vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_ImageAvailableSemaphores[i]);
+            CHECK_VK_RESULT(result);
+
+            result = vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_RenderFinishedSemaphores[i]);
+            CHECK_VK_RESULT(result);
+
+            result = vkCreateFence(m_Device, &fenceInfo, nullptr, &m_InFlightFences[i]);
+            CHECK_VK_RESULT(result);
+        }
+
+        VE_CORE_TRACE("Created {0} VkSemaphore (image available) objects", MAX_FRAMES_IN_FLIGHT);
+        VE_CORE_TRACE("Created {0} VkSemaphore (render finished) objects", MAX_FRAMES_IN_FLIGHT);
+        VE_CORE_TRACE("Created {0} VkFence (in flight) objects", MAX_FRAMES_IN_FLIGHT);
+    }
+
+    void Renderer::CreateVertexBuffer()
+    {
+        VkPhysicalDevice physicalDevice = m_Context->GetPhysicalDevice().GetPhysicalDevice();
+        VkDeviceSize bufferSize = sizeof(Vertex) * s_Vertices.size();
+
+        VulkanBuffer stagingBuffer(
+            m_Device, physicalDevice,
+            bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        stagingBuffer.Map();
+        stagingBuffer.WriteToBuffer(s_Vertices.data());
+        stagingBuffer.Unmap();
+
+        m_VertexBuffer = CreateScope<VulkanBuffer>(
+            m_Device, physicalDevice,
+            bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        CopyBuffer(stagingBuffer.GetBuffer(), m_VertexBuffer->GetBuffer(), bufferSize);
+    }
+
+    void Renderer::CreateIndexBuffer()
+    {
+        VkPhysicalDevice physicalDevice = m_Context->GetPhysicalDevice().GetPhysicalDevice();
+        VkDeviceSize bufferSize = sizeof(uint32_t) * s_Indices.size();
+
+        VulkanBuffer stagingBuffer(
+            m_Device, physicalDevice,
+            bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        stagingBuffer.Map();
+        stagingBuffer.WriteToBuffer(s_Indices.data());
+        stagingBuffer.Unmap();
+
+        m_IndexBuffer = CreateScope<VulkanBuffer>(
+            m_Device, physicalDevice,
+            bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        CopyBuffer(stagingBuffer.GetBuffer(), m_IndexBuffer->GetBuffer(), bufferSize);
+    }
+
+    void Renderer::CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
+    {
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandPool = m_CommandPool->GetCommandPool();
+        allocInfo.commandBufferCount = 1;
+
+        VkCommandBuffer commandBuffer;
+        VkResult result = vkAllocateCommandBuffers(m_Device, &allocInfo, &commandBuffer);
+        CHECK_VK_RESULT(result);
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
+        CHECK_VK_RESULT(result);
+
+        VkBufferCopy copyRegion{};
+        copyRegion.size = size;
+
+        vkCmdCopyBuffer(commandBuffer, src, dst, 1, &copyRegion);
+
+        result = vkEndCommandBuffer(commandBuffer);
+        CHECK_VK_RESULT(result);
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+
+        result = vkQueueSubmit(m_Context->GetGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+        CHECK_VK_RESULT(result);
+
+        result = vkQueueWaitIdle(m_Context->GetGraphicsQueue());
+        CHECK_VK_RESULT(result);
+
+        vkFreeCommandBuffers(m_Device, m_CommandPool->GetCommandPool(), 1, &commandBuffer);
+    }
+
+    void Renderer::RecreateSwapchain()
+    {
+        m_Context->DeviceWaitIdle();
         
+        uint32_t framebuffersSize = static_cast<uint32_t>(m_Framebuffers.size());
+        m_Framebuffers.clear();
+        VE_CORE_TRACE("Destroyed {0} VkFramebuffer objects", framebuffersSize);
+
+        m_Context->RecreateSwapchain();
+
+        CreateFramebuffers();
     }
 
 } // namespace ve
