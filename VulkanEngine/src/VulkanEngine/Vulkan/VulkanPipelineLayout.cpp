@@ -4,13 +4,15 @@
 
 namespace ve
 {
-    VulkanPipelineLayout::VulkanPipelineLayout(VkDevice device, const std::string &debugName)
+    VulkanPipelineLayout::VulkanPipelineLayout(
+        VkDevice device, const std::vector<VkDescriptorSetLayout> &setLayouts,
+        const std::string &debugName)
         : m_Device(device), m_DebugName(debugName)
     {
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = 0;            // Optional
-        pipelineLayoutInfo.pSetLayouts = nullptr;         // Optional
+        pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
+        pipelineLayoutInfo.pSetLayouts = setLayouts.data();
         pipelineLayoutInfo.pushConstantRangeCount = 0;    // Optional
         pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 

@@ -2,13 +2,15 @@
 
 #include <vulkan/vulkan.h>
 
+#include <string>
+
 namespace ve
 {
     class VulkanBuffer
     {
     public:
         VulkanBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkDeviceSize size,
-                     VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
+                     VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, const std::string &debugName = "Unnamed");
         ~VulkanBuffer();
 
         VulkanBuffer(const VulkanBuffer &) = delete;
@@ -30,6 +32,8 @@ namespace ve
         VkDeviceMemory m_BufferMemory = VK_NULL_HANDLE;
         VkDeviceSize m_Size;
         void *m_MappedData = nullptr;
+
+        std::string m_DebugName;
     };
 
 } // namespace ve

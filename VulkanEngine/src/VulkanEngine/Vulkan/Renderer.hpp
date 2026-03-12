@@ -14,8 +14,17 @@
 #include <vector>
 #include <cstdint>
 
+#include <glm/glm.hpp>
+
 namespace ve
 {
+    struct UniformBufferObject
+    {
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 proj;
+    };
+
     class Renderer
     {
     public:
@@ -27,6 +36,8 @@ namespace ve
         void OnWindowResize(uint32_t width, uint32_t height);
 
     private:
+        void CreateDescriptorSetLayout();
+
         void CreateGraphicsPipeline();
         void CreateFramebuffers();
 
@@ -38,6 +49,7 @@ namespace ve
 
         void CreateVertexBuffer();
         void CreateIndexBuffer();
+        void CreateUniformBuffers();
         void CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
 
         void RecreateSwapchain();
@@ -62,6 +74,8 @@ namespace ve
 
         Scope<VulkanBuffer> m_VertexBuffer;
         Scope<VulkanBuffer> m_IndexBuffer;
+        VkDescriptorSetLayout m_DescriptorSetLayout = VK_NULL_HANDLE;
+        std::vector<Scope<VulkanBuffer>> m_UniformBuffers;
 
         const int MAX_FRAMES_IN_FLIGHT = 3;
         uint32_t m_CurrentFrame = 0;

@@ -10,8 +10,8 @@ namespace ve
 {
     VulkanBuffer::VulkanBuffer(
         VkDevice device, VkPhysicalDevice physicalDevice,
-        VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
-        : m_Device(device), m_PhysicalDevice(physicalDevice), m_Size(size)
+        VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, const std::string &debugName)
+        : m_Device(device), m_PhysicalDevice(physicalDevice), m_Size(size), m_DebugName(debugName)
     {
         // Create buffer
         VkBufferCreateInfo bufferInfo{};
@@ -40,7 +40,7 @@ namespace ve
         result = vkBindBufferMemory(m_Device, m_Buffer, m_BufferMemory, 0);
         CHECK_VK_RESULT(result);
 
-        VE_CORE_TRACE("VulkanBuffer created (size: {0} bytes)", m_Size);
+        VE_CORE_TRACE("VulkanBuffer ({0}) created (size: {1} bytes)", m_DebugName, m_Size);
     }
 
     VulkanBuffer::~VulkanBuffer()
@@ -48,7 +48,7 @@ namespace ve
         vkFreeMemory(m_Device, m_BufferMemory, nullptr);
         vkDestroyBuffer(m_Device, m_Buffer, nullptr);
 
-        VE_CORE_TRACE("VulkanBuffer destroyed");
+        VE_CORE_TRACE("VulkanBuffer ({0}) destroyed", m_DebugName, m_Size);
     }
 
     void VulkanBuffer::Map(VkDeviceSize size, VkDeviceSize offset)

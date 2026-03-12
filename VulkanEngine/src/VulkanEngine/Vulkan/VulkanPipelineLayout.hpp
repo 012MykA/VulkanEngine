@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <vector>
 #include <string>
 
 namespace ve
@@ -9,7 +10,9 @@ namespace ve
     class VulkanPipelineLayout
     {
     public:
-        VulkanPipelineLayout(VkDevice device, const std::string &debugName = "Unnamed");
+        VulkanPipelineLayout(
+            VkDevice device, const std::vector<VkDescriptorSetLayout> &setLayouts,
+            const std::string &debugName = "Unnamed");
         ~VulkanPipelineLayout();
 
         VkPipelineLayout GetPipelineLayout() const { return m_PipelineLayout; }

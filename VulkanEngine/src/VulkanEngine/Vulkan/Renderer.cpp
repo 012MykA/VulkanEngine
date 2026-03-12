@@ -1,6 +1,7 @@
 #include "Renderer.hpp"
 #include "VulkanEngine/Vulkan/Debug/VulkanValidation.hpp"
 #include "VulkanEngine/Vulkan/Vertex.hpp"
+#include "VulkanEngine/Core/Log.hpp"
 
 #include <cassert>
 
@@ -18,13 +19,15 @@ namespace ve
     Renderer::Renderer(VulkanContext *context, VkExtent2D windowExtent)
         : m_Context(context), m_Device(m_Context->GetDevice()), m_FramebufferExtent(windowExtent)
     {
-        VE_CORE_INFO("Initializing Renderer...");
+        VE_CORE_TRACE("--- Initializing Renderer --------------");
 
         m_Swapchain = CreateScope<VulkanSwapchain>(
             m_Device, m_Context->GetSurface(),
             m_Context->GetPhysicalDevice(), m_FramebufferExtent);
 
-        m_RenderPass = CreateScope<VulkanRenderPass>(m_Device, m_Swapchain->GetImageFormat());
+        m_RenderPass = CreateScope<VulkanRenderPass>(m_Device, m_Swapchain->GetImageFormat(), "Graphics");
+
+        CreateDescriptorSetLayout();
         CreateGraphicsPipeline();
 
         CreateFramebuffers();
@@ -34,6 +37,7 @@ namespace ve
 
         CreateVertexBuffer();
         CreateIndexBuffer();
+        CreateUniformBuffers();
 
         CreateSyncObjects();
 
@@ -42,7 +46,7 @@ namespace ve
 
     Renderer::~Renderer()
     {
-        VE_CORE_TRACE("----------------------------------------");
+        VE_CORE_TRACE("--- Destroying Renderer ----------------");
 
         m_Context->DeviceWaitIdle();
 
@@ -61,12 +65,20 @@ namespace ve
 
         m_CommandPool.reset();
 
-        uint32_t framebuffersSize = static_cast<uint32_t>(m_Framebuffers.size());
+        size_t framebuffersSize = m_Framebuffers.size();
         m_Framebuffers.clear();
         VE_CORE_TRACE("Destroyed {0} VkFramebuffer objects", framebuffersSize);
 
         m_GraphicsPipeline.reset();
         m_PipelineLayout.reset();
+
+        VE_CORE_TRACE("Destroying Uniformbuffers({0})...", MAX_FRAMES_IN_FLIGHT);
+        size_t uniformbuffersSize = m_UniformBuffers.size();
+        m_UniformBuffers.clear();
+        VE_CORE_TRACE("Destroyed {0} Uniformbuffers", uniformbuffersSize);
+
+        vkDestroyDescriptorSetLayout(m_Device, m_DescriptorSetLayout, nullptr);
+        VE_CORE_TRACE("VkDesciprtorSetLayout destroyed");
 
         m_RenderPass.reset();
 
@@ -147,19 +159,41 @@ namespace ve
         m_FramebufferExtent = {width, height};
     }
 
+    void Renderer::CreateDescriptorSetLayout()
+    {
+        VkDescriptorSetLayoutBinding uboLayoutBinding{};
+        uboLayoutBinding.binding = 0;
+        uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uboLayoutBinding.descriptorCount = 1;
+        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        uboLayoutBinding.pImmutableSamplers = nullptr;
+
+        VkDescriptorSetLayoutCreateInfo layoutInfo{};
+        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutInfo.bindingCount = 1;
+        layoutInfo.pBindings = &uboLayoutBinding;
+
+        VkResult result = vkCreateDescriptorSetLayout(m_Device, &layoutInfo, nullptr, &m_DescriptorSetLayout);
+        CHECK_VK_RESULT(result);
+
+        VE_CORE_TRACE("VkDesciprtorSetLayout created");
+    }
+
     void Renderer::CreateGraphicsPipeline()
     {
-        m_PipelineLayout = CreateScope<VulkanPipelineLayout>(m_Device, "Graphics");
+        // Pipeline layout
+        std::vector<VkDescriptorSetLayout> setLayouts = {m_DescriptorSetLayout};
+        m_PipelineLayout = CreateScope<VulkanPipelineLayout>(m_Device, setLayouts, "Graphics");
 
+        // Pipeline
         PipelineConfig pipelineConfig{};
         VulkanPipeline::DefaultPipelineConfig(pipelineConfig);
 
-        pipelineConfig.bindingDescriptions = {
-            Vertex::GetBindingDescription(),
-        };
+        pipelineConfig.bindingDescriptions = {Vertex::GetBindingDescription()};
 
         auto attributeDescriptions = Vertex::GetAttributeDescriptions();
         pipelineConfig.attributeDescriptions.assign(attributeDescriptions.begin(), attributeDescriptions.end());
+
         pipelineConfig.pipelineLayout = m_PipelineLayout->GetPipelineLayout();
         pipelineConfig.renderPass = m_RenderPass->GetRenderPass();
 
@@ -300,7 +334,8 @@ namespace ve
         VulkanBuffer stagingBuffer(
             m_Device, physicalDevice,
             bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            "VertexBuffer staging");
 
         stagingBuffer.Map();
         stagingBuffer.WriteToBuffer(s_Vertices.data());
@@ -309,7 +344,7 @@ namespace ve
         m_VertexBuffer = CreateScope<VulkanBuffer>(
             m_Device, physicalDevice,
             bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "VertexBuffer");
 
         CopyBuffer(stagingBuffer.GetBuffer(), m_VertexBuffer->GetBuffer(), bufferSize);
     }
@@ -322,7 +357,8 @@ namespace ve
         VulkanBuffer stagingBuffer(
             m_Device, physicalDevice,
             bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            "IndexBuffer staging");
 
         stagingBuffer.Map();
         stagingBuffer.WriteToBuffer(s_Indices.data());
@@ -331,9 +367,29 @@ namespace ve
         m_IndexBuffer = CreateScope<VulkanBuffer>(
             m_Device, physicalDevice,
             bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "IndexBuffer");
 
         CopyBuffer(stagingBuffer.GetBuffer(), m_IndexBuffer->GetBuffer(), bufferSize);
+    }
+
+    void Renderer::CreateUniformBuffers()
+    {
+        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+        m_UniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+
+        VE_CORE_TRACE("Creating UniformBuffers({0})...", MAX_FRAMES_IN_FLIGHT);
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            VkPhysicalDevice physicalDevice = m_Context->GetPhysicalDevice().GetPhysicalDevice();
+            m_UniformBuffers[i] = CreateScope<VulkanBuffer>(
+                m_Device, physicalDevice,
+                bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                "UniformBuffer " + std::to_string(i));
+        }
+
+        VE_CORE_TRACE("Created {0} UniformBuffers", m_UniformBuffers.size());
     }
 
     void Renderer::CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)

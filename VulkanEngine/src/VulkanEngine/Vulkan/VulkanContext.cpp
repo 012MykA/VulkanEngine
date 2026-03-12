@@ -59,7 +59,7 @@ namespace ve
 
     VulkanContext::VulkanContext(const VulkanConfig &config, GLFWwindow *window)
     {
-        VE_CORE_INFO("Initializing VulkanContext...");
+        VE_CORE_TRACE("--- Initializing VulkanContext ---------");
         CreateInstance(config);
         CreateDebugCallback(config);
         CreateSurface(window);
@@ -86,7 +86,7 @@ namespace ve
 
     VulkanContext::~VulkanContext()
     {
-        VE_CORE_TRACE("----------------------------------------");
+        VE_CORE_TRACE("--- Destroying VulkanContext -----------");
 
         if (m_Device != VK_NULL_HANDLE)
             vkDeviceWaitIdle(m_Device);
