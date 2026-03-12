@@ -63,7 +63,7 @@ namespace ve
 
     private: // TODO: refactor
         void InitializeVulkan(const std::string &appName);
-        VulkanContext m_VulkanContext;
+        Scope<VulkanContext> m_VulkanContext;
 
     private:
         static Application *s_Instance;

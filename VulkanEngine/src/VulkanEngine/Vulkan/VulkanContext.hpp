@@ -24,10 +24,8 @@ namespace ve
     class VulkanContext
     {
     public:
-        VulkanContext();
+        VulkanContext(const VulkanConfig &config, GLFWwindow *window);
         ~VulkanContext();
-
-        void Init(const VulkanConfig &config, GLFWwindow *window);
 
         void DrawFrame();
 

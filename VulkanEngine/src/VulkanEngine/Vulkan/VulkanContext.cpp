@@ -66,8 +66,56 @@ namespace ve
         }
     }
 
-    VulkanContext::VulkanContext()
+    VulkanContext::VulkanContext(const VulkanConfig &config, GLFWwindow *window)
     {
+        VE_CORE_TRACE("Initializing VulkanContext...");
+        CreateInstance(config);
+        CreateDebugCallback(config);
+        CreateSurface(window);
+
+        // Physical device
+        PhysicalDeviceRequirements devReq;
+        devReq.RequiresGraphicsQueue = true;
+        devReq.RequiresPresentQueue = true;
+        devReq.SwapchainAdequate = true;
+        devReq.Extensions = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+            VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
+        };
+        devReq.Features.geometryShader = VK_TRUE;
+        devReq.Features.tessellationShader = VK_TRUE;
+        devReq.PreferredDeviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+        m_PhysicalDevice = CreateScope<VulkanPhysicalDevice>(VulkanPhysicalDevice::Select(m_Instance, m_Surface, devReq));
+        // ---
+
+        CreateDevice(devReq);
+
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+        m_FramebufferExtent = VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+
+        m_Swapchain = CreateScope<VulkanSwapchain>(m_Device, m_Surface, *m_PhysicalDevice, m_FramebufferExtent);
+
+        m_RenderPass = CreateScope<VulkanRenderPass>(m_Device, m_Swapchain->GetImageFormat());
+
+        m_PipelineLayout = CreateScope<VulkanPipelineLayout>(m_Device, "MainGraphics");
+
+        CreateGraphicsPipeline();
+
+        CreateFramebuffers();
+
+        CreateCommandPool();
+
+        // TODO: remove
+        CreateVertexBuffer();
+        CreateIndexBuffer();
+        //
+
+        CreateCommandBuffers();
+
+        CreateSyncObjects();
+
+        VE_CORE_INFO("VulkanContext initialized successfully");
     }
 
     VulkanContext::~VulkanContext()
@@ -120,58 +168,6 @@ namespace ve
 
         vkDestroyInstance(m_Instance, nullptr);
         VE_CORE_TRACE("VkInstance destroyed");
-    }
-
-    void VulkanContext::Init(const VulkanConfig &config, GLFWwindow *window)
-    {
-        VE_CORE_TRACE("Initializing VulkanContext...");
-        CreateInstance(config);
-        CreateDebugCallback(config);
-        CreateSurface(window);
-
-        // Physical device
-        PhysicalDeviceRequirements devReq;
-        devReq.RequiresGraphicsQueue = true;
-        devReq.RequiresPresentQueue = true;
-        devReq.SwapchainAdequate = true;
-        devReq.Extensions = {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-            VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
-        };
-        devReq.Features.geometryShader = VK_TRUE;
-        devReq.Features.tessellationShader = VK_TRUE;
-        devReq.PreferredDeviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
-        m_PhysicalDevice = CreateScope<VulkanPhysicalDevice>(VulkanPhysicalDevice::Select(m_Instance, m_Surface, devReq));
-        // ---
-
-        CreateDevice(devReq);
-
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
-        m_FramebufferExtent = VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
-
-        m_Swapchain = CreateScope<VulkanSwapchain>(m_Device, m_Surface, *m_PhysicalDevice, m_FramebufferExtent);
-
-        m_RenderPass = CreateScope<VulkanRenderPass>(m_Device, m_Swapchain->GetImageFormat());
-
-        m_PipelineLayout = CreateScope<VulkanPipelineLayout>(m_Device, "MainGraphics");
-
-        CreateGraphicsPipeline();
-
-        CreateFramebuffers();
-
-        CreateCommandPool();
-
-        // TODO: remove
-        CreateVertexBuffer();
-        CreateIndexBuffer();
-        //
-
-        CreateCommandBuffers();
-
-        CreateSyncObjects();
-
-        VE_CORE_INFO("VulkanContext initialized successfully");
     }
 
     void VulkanContext::DrawFrame()

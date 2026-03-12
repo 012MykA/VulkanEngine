@@ -43,7 +43,7 @@ namespace ve
                     layer->OnUpdate(timestep);
                 }
 
-                m_VulkanContext.DrawFrame();
+                m_VulkanContext->DrawFrame();
             }
 
             m_Window->OnUpdate();
@@ -94,7 +94,7 @@ namespace ve
         }
         m_Minimized = false;
         
-        m_VulkanContext.OnWindowResize(e.GetWidth(), e.GetHeight());
+        m_VulkanContext->OnWindowResize(e.GetWidth(), e.GetHeight());
         
         return false;
     }
@@ -116,7 +116,7 @@ namespace ve
                                              VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 #endif
 
-        m_VulkanContext.Init(config, static_cast<GLFWwindow *>(m_Window->GetNativeWindow()));
+        m_VulkanContext = CreateScope<VulkanContext>(config, static_cast<GLFWwindow *>(m_Window->GetNativeWindow()));
     }
 
 } // namespace ve
