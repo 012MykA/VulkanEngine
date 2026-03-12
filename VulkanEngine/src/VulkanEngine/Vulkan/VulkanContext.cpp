@@ -81,12 +81,6 @@ namespace ve
 
         CreateDevice(devReq);
 
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
-        m_FramebufferExtent = VkExtent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
-
-        m_Swapchain = CreateScope<VulkanSwapchain>(m_Device, m_Surface, *m_PhysicalDevice, m_FramebufferExtent);
-
         VE_CORE_INFO("VulkanContext initialized successfully");
     }
 
@@ -96,8 +90,6 @@ namespace ve
 
         if (m_Device != VK_NULL_HANDLE)
             vkDeviceWaitIdle(m_Device);
-
-        m_Swapchain.reset();
 
         vkDestroyDevice(m_Device, nullptr);
         VE_CORE_TRACE("VkDevice destroyed");
@@ -119,12 +111,6 @@ namespace ve
     {
         if (m_Device != VK_NULL_HANDLE)
             vkDeviceWaitIdle(m_Device);
-    }
-
-    void VulkanContext::OnWindowResize(uint32_t width, uint32_t height)
-    {
-        m_FramebufferResized = true;
-        m_FramebufferExtent = {width, height};
     }
 
     void VulkanContext::CreateInstance(const VulkanConfig &config)
@@ -235,21 +221,6 @@ namespace ve
         vkGetDeviceQueue(m_Device, queueIndices.PresentFamily.value(), 0, &m_PresentQueue);
 
         VE_CORE_TRACE("VkDevice created");
-    }
-
-    void VulkanContext::RecreateSwapchain()
-    {
-        assert(m_FramebufferExtent.width != 0 || m_FramebufferExtent.height != 0);
-
-        VE_CORE_INFO("Recreating swapchain for extent: {0}x{1}...", m_FramebufferExtent.width, m_FramebufferExtent.height);
-        
-        vkDeviceWaitIdle(m_Device);
-        
-        m_Swapchain.reset();
-
-        m_Swapchain = CreateScope<VulkanSwapchain>(m_Device, m_Surface, *m_PhysicalDevice, m_FramebufferExtent);
-
-        VE_CORE_INFO("Swapchain recreated successfully.");
     }
 
 } // namespace ve

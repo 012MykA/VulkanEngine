@@ -3,7 +3,6 @@
 #include "VulkanEngine/Core/Base.hpp"
 #include "VulkanConfig.hpp"
 #include "VulkanPhysicalDevice.hpp"
-#include "VulkanSwapchain.hpp"
 
 #include <vulkan/vulkan.h>
 
@@ -19,12 +18,6 @@ namespace ve
 
         void DeviceWaitIdle() const;
 
-        bool IsFramebufferResized() const { return m_FramebufferResized; }
-        void ResetFramebufferResized() { m_FramebufferResized = false; }
-        void RecreateSwapchain();
-
-        void OnWindowResize(uint32_t width, uint32_t height);
-
     public:
         // Getters
         const VulkanPhysicalDevice &GetPhysicalDevice() const { return *m_PhysicalDevice; }
@@ -32,11 +25,8 @@ namespace ve
         VkQueue GetGraphicsQueue() const { return m_GraphicsQueue; }
         VkQueue GetPresentQueue() const { return m_PresentQueue; }
 
-        VkSwapchainKHR GetSwapchain() const { return m_Swapchain->GetSwapchain(); }
-        VkExtent2D GetSwapchainExtent() const { return m_Swapchain->GetExtent(); }
-        VkFormat GetSwapchainFormat() const { return m_Swapchain->GetImageFormat(); }
-        uint32_t GetSwapchainImageCount() const { return m_Swapchain->GetImageCount(); }
-        VkImageView GetSwapchainImageView(uint32_t index) const { return m_Swapchain->GetImageView(index); }
+        VkSurfaceKHR GetSurface() const { return m_Surface; }
+        VkExtent2D GetWindowExtent() const;
 
     private:
         void CreateInstance(const VulkanConfig &config);
@@ -49,16 +39,11 @@ namespace ve
         VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
         VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
 
-        Scope<VulkanPhysicalDevice> m_PhysicalDevice = nullptr;
+        Scope<VulkanPhysicalDevice> m_PhysicalDevice;
 
         VkDevice m_Device = VK_NULL_HANDLE;
         VkQueue m_GraphicsQueue = VK_NULL_HANDLE;
         VkQueue m_PresentQueue = VK_NULL_HANDLE;
-
-        Scope<VulkanSwapchain> m_Swapchain = nullptr;
-
-        bool m_FramebufferResized = false;
-        VkExtent2D m_FramebufferExtent = {0, 0};
     };
 
 } // namespace ve

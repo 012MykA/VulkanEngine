@@ -2,6 +2,8 @@
 #include "VulkanEngine/Vulkan/Debug/VulkanValidation.hpp"
 #include "VulkanEngine/Vulkan/Vertex.hpp"
 
+#include <cassert>
+
 static const std::vector<ve::Vertex> s_Vertices = {
     {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
     {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
@@ -13,13 +15,16 @@ static const std::vector<uint32_t> s_Indices = {0, 1, 2, 2, 3, 0};
 
 namespace ve
 {
-    Renderer::Renderer(VulkanContext *context) : m_Context(context)
+    Renderer::Renderer(VulkanContext *context, VkExtent2D windowExtent)
+        : m_Context(context), m_Device(m_Context->GetDevice()), m_FramebufferExtent(windowExtent)
     {
         VE_CORE_INFO("Initializing Renderer...");
 
-        m_Device = m_Context->GetDevice();
+        m_Swapchain = CreateScope<VulkanSwapchain>(
+            m_Device, m_Context->GetSurface(),
+            m_Context->GetPhysicalDevice(), m_FramebufferExtent);
 
-        m_RenderPass = CreateScope<VulkanRenderPass>(m_Device, m_Context->GetSwapchainFormat());
+        m_RenderPass = CreateScope<VulkanRenderPass>(m_Device, m_Swapchain->GetImageFormat());
         CreateGraphicsPipeline();
 
         CreateFramebuffers();
@@ -61,10 +66,11 @@ namespace ve
         VE_CORE_TRACE("Destroyed {0} VkFramebuffer objects", framebuffersSize);
 
         m_GraphicsPipeline.reset();
-
         m_PipelineLayout.reset();
 
         m_RenderPass.reset();
+
+        m_Swapchain.reset();
     }
 
     void Renderer::DrawFrame()
@@ -74,7 +80,7 @@ namespace ve
         vkWaitForFences(m_Device, 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, noTimeout);
 
         uint32_t imageIndex;
-        VkResult result = vkAcquireNextImageKHR(m_Device, m_Context->GetSwapchain(), noTimeout,
+        VkResult result = vkAcquireNextImageKHR(m_Device, m_Swapchain->GetSwapchain(), noTimeout,
                                                 m_ImageAvailableSemaphores[m_CurrentFrame],
                                                 VK_NULL_HANDLE, &imageIndex);
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
@@ -116,15 +122,15 @@ namespace ve
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = signalSemaphores;
 
-        VkSwapchainKHR swapchains[] = {m_Context->GetSwapchain()};
+        VkSwapchainKHR swapchains[] = {m_Swapchain->GetSwapchain()};
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapchains;
         presentInfo.pImageIndices = &imageIndex;
 
         result = vkQueuePresentKHR(m_Context->GetPresentQueue(), &presentInfo);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_Context->IsFramebufferResized())
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_FramebufferResized)
         {
-            m_Context->ResetFramebufferResized();
+            m_FramebufferResized = false;
             RecreateSwapchain();
         }
         else if (result != VK_SUCCESS)
@@ -133,6 +139,12 @@ namespace ve
         }
 
         m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    }
+
+    void Renderer::OnWindowResize(uint32_t width, uint32_t height)
+    {
+        m_FramebufferResized = true;
+        m_FramebufferExtent = {width, height};
     }
 
     void Renderer::CreateGraphicsPipeline()
@@ -160,15 +172,15 @@ namespace ve
 
     void Renderer::CreateFramebuffers()
     {
-        uint32_t imageCount = m_Context->GetSwapchainImageCount();
+        uint32_t imageCount = m_Swapchain->GetImageCount();
 
         m_Framebuffers.resize(imageCount);
         for (uint32_t i = 0; i < imageCount; i++)
         {
-            std::vector<VkImageView> attachments = {m_Context->GetSwapchainImageView(i)};
+            std::vector<VkImageView> attachments = {m_Swapchain->GetImageView(i)};
             m_Framebuffers[i] = CreateScope<VulkanFramebuffer>(
                 m_Device, m_RenderPass->GetRenderPass(),
-                m_Context->GetSwapchainExtent(),
+                m_Swapchain->GetExtent(),
                 attachments);
         }
         VE_CORE_TRACE("Created {0} VkFramebuffer objects", m_Framebuffers.size());
@@ -197,7 +209,7 @@ namespace ve
 
     void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
     {
-        VkExtent2D swapchainExtent = m_Context->GetSwapchainExtent();
+        VkExtent2D swapchainExtent = m_Swapchain->GetExtent();
 
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -367,15 +379,21 @@ namespace ve
 
     void Renderer::RecreateSwapchain()
     {
+        assert(m_FramebufferExtent.width != 0 || m_FramebufferExtent.height != 0);
+
+        VE_CORE_INFO("Recreating swapchain for extent: {0}x{1}...", m_FramebufferExtent.width, m_FramebufferExtent.height);
+
         m_Context->DeviceWaitIdle();
-        
+
         uint32_t framebuffersSize = static_cast<uint32_t>(m_Framebuffers.size());
         m_Framebuffers.clear();
         VE_CORE_TRACE("Destroyed {0} VkFramebuffer objects", framebuffersSize);
+        m_Swapchain.reset();
 
-        m_Context->RecreateSwapchain();
-
+        m_Swapchain = CreateScope<VulkanSwapchain>(m_Device, m_Context->GetSurface(), m_Context->GetPhysicalDevice(), m_FramebufferExtent);
         CreateFramebuffers();
+
+        VE_CORE_INFO("Swapchain recreated successfully.");
     }
 
 } // namespace ve

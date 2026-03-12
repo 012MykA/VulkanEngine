@@ -3,6 +3,7 @@
 #include "VulkanEngine/Core/Base.hpp"
 #include "VulkanEngine/Vulkan/VulkanContext.hpp"
 
+#include "VulkanSwapchain.hpp"
 #include "VulkanRenderPass.hpp"
 #include "VulkanPipelineLayout.hpp"
 #include "VulkanPipeline.hpp"
@@ -18,10 +19,12 @@ namespace ve
     class Renderer
     {
     public:
-        Renderer(VulkanContext *context);
+        Renderer(VulkanContext *context, VkExtent2D windowExtent);
         ~Renderer();
 
         void DrawFrame();
+
+        void OnWindowResize(uint32_t width, uint32_t height);
 
     private:
         void CreateGraphicsPipeline();
@@ -42,6 +45,10 @@ namespace ve
     private:
         VulkanContext *m_Context;
         VkDevice m_Device;
+
+        bool m_FramebufferResized = false;
+        VkExtent2D m_FramebufferExtent = {0, 0};
+        Scope<VulkanSwapchain> m_Swapchain;
 
         Scope<VulkanRenderPass> m_RenderPass;
         Scope<VulkanPipelineLayout> m_PipelineLayout;

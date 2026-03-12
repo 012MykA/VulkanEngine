@@ -94,7 +94,7 @@ namespace ve
         }
         m_Minimized = false;
 
-        m_VulkanContext->OnWindowResize(e.GetWidth(), e.GetHeight());
+        m_Renderer->OnWindowResize(e.GetWidth(), e.GetHeight());
 
         return false;
     }
@@ -117,7 +117,7 @@ namespace ve
 #endif
 
         m_VulkanContext = CreateScope<VulkanContext>(config, static_cast<GLFWwindow *>(m_Window->GetNativeWindow()));
-        m_Renderer = CreateScope<Renderer>(m_VulkanContext.get());
+        m_Renderer = CreateScope<Renderer>(m_VulkanContext.get(), VkExtent2D{m_Window->GetWidth(), m_Window->GetHeight()});
     }
 
 } // namespace ve
