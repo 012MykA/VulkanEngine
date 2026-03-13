@@ -116,8 +116,8 @@ namespace ve
                                              VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 #endif
 
-        m_VulkanContext = CreateScope<VulkanContext>(config, static_cast<GLFWwindow *>(m_Window->GetNativeWindow()));
-        m_Renderer = CreateScope<Renderer>(m_VulkanContext.get(), VkExtent2D{m_Window->GetWidth(), m_Window->GetHeight()});
+        m_VulkanContext = CreateRef<VulkanContext>(config, static_cast<GLFWwindow *>(m_Window->GetNativeWindow()));
+        m_Renderer = CreateScope<Renderer>(m_VulkanContext, VkExtent2D{m_Window->GetWidth(), m_Window->GetHeight()});
     }
 
 } // namespace ve

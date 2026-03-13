@@ -16,8 +16,8 @@ static const std::vector<uint32_t> s_Indices = {0, 1, 2, 2, 3, 0};
 
 namespace ve
 {
-    Renderer::Renderer(VulkanContext *context, VkExtent2D windowExtent)
-        : m_Context(context), m_Device(m_Context->GetDevice()), m_FramebufferExtent(windowExtent)
+    Renderer::Renderer(Ref<VulkanContext> context, VkExtent2D windowExtent)
+        : m_Context(std::move(context)), m_Device(m_Context->GetDevice()), m_FramebufferExtent(windowExtent)
     {
         VE_CORE_TRACE("--- Initializing Renderer --------------");
 

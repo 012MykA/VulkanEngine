@@ -28,7 +28,7 @@ namespace ve
     class Renderer
     {
     public:
-        Renderer(VulkanContext *context, VkExtent2D windowExtent);
+        Renderer(Ref<VulkanContext> context, VkExtent2D windowExtent);
         ~Renderer();
 
         void DrawFrame();
@@ -55,7 +55,7 @@ namespace ve
         void RecreateSwapchain();
 
     private:
-        VulkanContext *m_Context;
+        Ref<VulkanContext> m_Context;
         VkDevice m_Device;
 
         bool m_FramebufferResized = false;
