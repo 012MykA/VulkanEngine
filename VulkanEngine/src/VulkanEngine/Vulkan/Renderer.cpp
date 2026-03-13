@@ -3,11 +3,14 @@
 #include "VulkanEngine/Vulkan/Vertex.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 
+#include <cassert>
+
+// TODO: remove
+#define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-#include <cassert>
 #include <chrono>
+// ---
 
 static const std::vector<ve::Vertex> s_Vertices = {
     {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
@@ -42,6 +45,8 @@ namespace ve
         CreateVertexBuffer();
         CreateIndexBuffer();
         CreateUniformBuffers();
+        CreateDescriptorPool();
+        CreateDescriptorSets();
 
         CreateSyncObjects();
 
@@ -54,18 +59,26 @@ namespace ve
 
         m_Context->DeviceWaitIdle();
 
-        m_IndexBuffer.reset();
-        m_VertexBuffer.reset();
-
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
             vkDestroyFence(m_Device, m_InFlightFences[i], nullptr);
             vkDestroySemaphore(m_Device, m_RenderFinishedSemaphores[i], nullptr);
             vkDestroySemaphore(m_Device, m_ImageAvailableSemaphores[i], nullptr);
         }
-        VE_CORE_TRACE("Created {0} VkFence (in flight) objects", MAX_FRAMES_IN_FLIGHT);
-        VE_CORE_TRACE("Created {0} VkSemaphore (render finished) objects", MAX_FRAMES_IN_FLIGHT);
-        VE_CORE_TRACE("Created {0} VkSemaphore (image available) objects", MAX_FRAMES_IN_FLIGHT);
+        VE_CORE_TRACE("Destroyed {0} VkFence (in flight) objects", MAX_FRAMES_IN_FLIGHT);
+        VE_CORE_TRACE("Destroyed {0} VkSemaphore (render finished) objects", MAX_FRAMES_IN_FLIGHT);
+        VE_CORE_TRACE("Destroyed {0} VkSemaphore (image available) objects", MAX_FRAMES_IN_FLIGHT);
+
+        vkDestroyDescriptorPool(m_Device, m_DescriptorPool, nullptr);
+        VE_CORE_TRACE("VkDescriptorPool destroy");
+
+        VE_CORE_TRACE("Destroying Uniformbuffers({0})...", MAX_FRAMES_IN_FLIGHT);
+        size_t uniformbuffersSize = m_UniformBuffers.size();
+        m_UniformBuffers.clear();
+        VE_CORE_TRACE("Destroyed {0} Uniformbuffers", uniformbuffersSize);
+
+        m_IndexBuffer.reset();
+        m_VertexBuffer.reset();
 
         m_CommandPool.reset();
 
@@ -75,11 +88,6 @@ namespace ve
 
         m_GraphicsPipeline.reset();
         m_PipelineLayout.reset();
-
-        VE_CORE_TRACE("Destroying Uniformbuffers({0})...", MAX_FRAMES_IN_FLIGHT);
-        size_t uniformbuffersSize = m_UniformBuffers.size();
-        m_UniformBuffers.clear();
-        VE_CORE_TRACE("Destroyed {0} Uniformbuffers", uniformbuffersSize);
 
         vkDestroyDescriptorSetLayout(m_Device, m_DescriptorSetLayout, nullptr);
         VE_CORE_TRACE("VkDesciprtorSetLayout destroyed");
@@ -293,6 +301,10 @@ namespace ve
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                m_PipelineLayout->GetPipelineLayout(), 0, 1, &m_DescriptorSets[m_CurrentFrame],
+                                0, nullptr);
+
         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(s_Indices.size()), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
@@ -396,6 +408,56 @@ namespace ve
         }
 
         VE_CORE_TRACE("Created {0} UniformBuffers", m_UniformBuffers.size());
+    }
+
+    void Renderer::CreateDescriptorPool()
+    {
+        VkDescriptorPoolSize poolSize{};
+        poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+        VkDescriptorPoolCreateInfo poolInfo{};
+        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolInfo.poolSizeCount = 1;
+        poolInfo.pPoolSizes = &poolSize;
+        poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+        VkResult result = vkCreateDescriptorPool(m_Device, &poolInfo, nullptr, &m_DescriptorPool);
+        CHECK_VK_RESULT(result);
+        VE_CORE_TRACE("VkDescriptorPool created");
+    }
+
+    void Renderer::CreateDescriptorSets()
+    {
+        std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_DescriptorSetLayout);
+        VkDescriptorSetAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = m_DescriptorPool;
+        allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        allocInfo.pSetLayouts = layouts.data();
+
+        m_DescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+        VkResult result = vkAllocateDescriptorSets(m_Device, &allocInfo, m_DescriptorSets.data());
+        CHECK_VK_RESULT(result);
+
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            VkDescriptorBufferInfo bufferInfo{};
+            bufferInfo.buffer = m_UniformBuffers[i]->GetBuffer();
+            bufferInfo.offset = 0;
+            bufferInfo.range = sizeof(UniformBufferObject);
+
+            VkWriteDescriptorSet descriptorWrite{};
+            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet = m_DescriptorSets[i];
+            descriptorWrite.dstBinding = 0;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pBufferInfo = &bufferInfo;
+
+            vkUpdateDescriptorSets(m_Device, 1, &descriptorWrite, 0, nullptr);
+        }
     }
 
     void Renderer::CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)

@@ -47,10 +47,12 @@ namespace ve
 
         void CreateSyncObjects();
 
+        void CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
         void CreateVertexBuffer();
         void CreateIndexBuffer();
         void CreateUniformBuffers();
-        void CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
+        void CreateDescriptorPool();
+        void CreateDescriptorSets();
 
         void RecreateSwapchain();
 
@@ -77,6 +79,8 @@ namespace ve
         VkDescriptorSetLayout m_DescriptorSetLayout = VK_NULL_HANDLE;
         std::vector<Scope<VulkanBuffer>> m_UniformBuffers;
         void UpdateUniformBuffers();
+        VkDescriptorPool m_DescriptorPool;
+        std::vector<VkDescriptorSet> m_DescriptorSets;
 
         const int MAX_FRAMES_IN_FLIGHT = 3;
         uint32_t m_CurrentFrame = 0;
