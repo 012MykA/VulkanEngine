@@ -76,6 +76,7 @@ namespace ve
         Scope<VulkanBuffer> m_IndexBuffer;
         VkDescriptorSetLayout m_DescriptorSetLayout = VK_NULL_HANDLE;
         std::vector<Scope<VulkanBuffer>> m_UniformBuffers;
+        void UpdateUniformBuffers();
 
         const int MAX_FRAMES_IN_FLIGHT = 3;
         uint32_t m_CurrentFrame = 0;
