@@ -2,99 +2,61 @@
 #include "VulkanEngine/Core/Log.hpp"
 #include "Debug/VulkanValidation.hpp"
 
-#include <cassert>
-#include <stdexcept>
-#include <cstring>
-
 namespace ve
 {
-    VulkanBuffer::VulkanBuffer(
-        VkDevice device, VkPhysicalDevice physicalDevice,
-        VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, const std::string &debugName)
-        : m_Device(device), m_PhysicalDevice(physicalDevice), m_Size(size), m_DebugName(debugName)
+    VulkanBuffer::VulkanBuffer(VkDevice device, VkDeviceSize size, VkBufferUsageFlags usage, const std::string &debugName)
+        : m_Device(device), m_DebugName(debugName)
     {
         // Create buffer
         VkBufferCreateInfo bufferInfo{};
         bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = m_Size;
+        bufferInfo.size = size;
         bufferInfo.usage = usage;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         VkResult result = vkCreateBuffer(m_Device, &bufferInfo, nullptr, &m_Buffer);
         CHECK_VK_RESULT(result);
 
-        // Memory requirements
-        VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(m_Device, m_Buffer, &memRequirements);
-
-        // Allocate memory
-        VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-        result = vkAllocateMemory(m_Device, &allocInfo, nullptr, &m_BufferMemory);
-        CHECK_VK_RESULT(result);
-
-        // Bind buffer to memory
-        result = vkBindBufferMemory(m_Device, m_Buffer, m_BufferMemory, 0);
-        CHECK_VK_RESULT(result);
-
-        VE_CORE_TRACE("VulkanBuffer ({0}) created (size: {1} bytes)", m_DebugName, m_Size);
+        VE_CORE_TRACE("VulkanBuffer ({0}) created (size: {1} bytes)", m_DebugName, size);
     }
 
     VulkanBuffer::~VulkanBuffer()
     {
-        vkFreeMemory(m_Device, m_BufferMemory, nullptr);
         vkDestroyBuffer(m_Device, m_Buffer, nullptr);
-
-        VE_CORE_TRACE("VulkanBuffer ({0}) destroyed", m_DebugName, m_Size);
+        VE_CORE_TRACE("VulkanBuffer ({0}) destroyed", m_DebugName);
     }
 
-    void VulkanBuffer::Map(VkDeviceSize size, VkDeviceSize offset)
+    VulkanDeviceMemory VulkanBuffer::AllocateMemory(VkPhysicalDevice physicalDevice, const VkMemoryPropertyFlags propertyFlags)
     {
-        assert(m_BufferMemory && "Cannot map buffer before memory allocation");
+        return AllocateMemory(physicalDevice, 0, propertyFlags);
+    }
 
-        VkResult result = vkMapMemory(m_Device, m_BufferMemory, offset, size, 0, &m_MappedData);
+    VulkanDeviceMemory VulkanBuffer::AllocateMemory(VkPhysicalDevice physicalDevice, const VkMemoryAllocateFlags allocateFlags, const VkMemoryPropertyFlags propertyFlags)
+    {
+        const auto requirements = GetMemoryRequirements();
+        VulkanDeviceMemory memory(m_Device, physicalDevice, requirements.size, requirements.memoryTypeBits, allocateFlags, propertyFlags, m_DebugName);
+
+        VkResult result = vkBindBufferMemory(m_Device, m_Buffer, memory.Handle(), 0);
         CHECK_VK_RESULT(result);
+
+        return memory;
     }
 
-    void VulkanBuffer::Unmap()
+    VkMemoryRequirements VulkanBuffer::GetMemoryRequirements() const
     {
-        assert(m_MappedData != nullptr && "Nothing to unmap");
-
-        vkUnmapMemory(m_Device, m_BufferMemory);
-        m_MappedData = nullptr;
+        VkMemoryRequirements requirements;
+        vkGetBufferMemoryRequirements(m_Device, m_Buffer, &requirements);
+        return requirements;
     }
 
-    void VulkanBuffer::WriteToBuffer(const void *data, VkDeviceSize size, VkDeviceSize offset)
+    VkDeviceAddress VulkanBuffer::GetDeviceAddress() const
     {
-        assert(m_MappedData && "Cannot copy to unmapped buffer");
+        VkBufferDeviceAddressInfo info{};
+        info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        info.pNext = nullptr;
+        info.buffer = m_Buffer;
 
-        if (size == VK_WHOLE_SIZE)
-            size = m_Size;
-
-        assert(offset + size <= m_Size);
-
-        char *memOffset = static_cast<char *>(m_MappedData) + offset;
-        std::memcpy(memOffset, data, size);
-    }
-
-    uint32_t VulkanBuffer::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
-    {
-        VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &memProperties);
-
-        for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
-        {
-            if ((typeFilter & (1 << i)) &&
-                (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
-            {
-                return i;
-            }
-        }
-
-        throw std::runtime_error("failed to find suitable memory type!");
+        return vkGetBufferDeviceAddress(m_Device, &info);
     }
 
 } // namespace ve

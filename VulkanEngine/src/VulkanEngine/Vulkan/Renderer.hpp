@@ -16,6 +16,7 @@
 #include <cstdint>
 
 #include <glm/glm.hpp>
+#include <stb_image.h>
 
 namespace ve
 {
@@ -49,6 +50,9 @@ namespace ve
         void CreateSyncObjects();
 
         void CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
+
+        void CreateTextureImage();
+
         void CreateVertexBuffer();
         void CreateIndexBuffer();
         void CreateUniformBuffers();
@@ -75,9 +79,15 @@ namespace ve
 
         std::vector<VkCommandBuffer> m_CommandBuffers;
 
+        VkImage m_TextureImage;
+        VkDeviceMemory m_TextureImageMemory;
         Scope<VulkanBuffer> m_VertexBuffer;
+        Scope<VulkanDeviceMemory> m_VertexBufferMemory;
         Scope<VulkanBuffer> m_IndexBuffer;
+        Scope<VulkanDeviceMemory> m_IndexBufferMemory;
+
         std::vector<Scope<VulkanBuffer>> m_UniformBuffers;
+        std::vector<Scope<VulkanDeviceMemory>> m_UniformBuffersMemory;
         void UpdateUniformBuffers();
 
         const int MAX_FRAMES_IN_FLIGHT = 3;

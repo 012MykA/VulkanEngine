@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VulkanDeviceMemory.hpp"
+
 #include <vulkan/vulkan.h>
 
 #include <string>
@@ -9,29 +11,23 @@ namespace ve
     class VulkanBuffer
     {
     public:
-        VulkanBuffer(VkDevice device, VkPhysicalDevice physicalDevice, VkDeviceSize size,
-                     VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, const std::string &debugName = "Unnamed");
+        VulkanBuffer(VkDevice device, VkDeviceSize size, VkBufferUsageFlags usage, const std::string &debugName = "Unnamed");
         ~VulkanBuffer();
 
         VulkanBuffer(const VulkanBuffer &) = delete;
         VulkanBuffer &operator=(const VulkanBuffer &) = delete;
 
-        void Map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
-        void Unmap();
-        void WriteToBuffer(const void *data, VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
-
         VkBuffer GetBuffer() const { return m_Buffer; }
 
-    private:
-        uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+        VulkanDeviceMemory AllocateMemory(VkPhysicalDevice physicalDevice, const VkMemoryPropertyFlags propertyFlags);
+        VulkanDeviceMemory AllocateMemory(VkPhysicalDevice physicalDevice, const VkMemoryAllocateFlags allocateFlags, const VkMemoryPropertyFlags propertyFlags);
+
+        VkMemoryRequirements GetMemoryRequirements() const;
+        VkDeviceAddress GetDeviceAddress() const;
 
     private:
         VkDevice m_Device;
-        VkPhysicalDevice m_PhysicalDevice;
         VkBuffer m_Buffer = VK_NULL_HANDLE;
-        VkDeviceMemory m_BufferMemory = VK_NULL_HANDLE;
-        VkDeviceSize m_Size;
-        void *m_MappedData = nullptr;
 
         std::string m_DebugName;
     };

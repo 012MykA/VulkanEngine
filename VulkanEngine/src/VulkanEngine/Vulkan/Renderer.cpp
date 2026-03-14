@@ -4,12 +4,14 @@
 #include "VulkanEngine/Core/Log.hpp"
 
 #include <cassert>
+#include <cstring> // std::memcpy
 
 // TODO: remove
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
+#include <stdexcept>
 // ---
 
 static const std::vector<ve::Vertex> s_Vertices = {
@@ -42,10 +44,12 @@ namespace ve
         CreateCommandPool();
         CreateCommandBuffers();
 
-        CreateVertexBuffer();
-        CreateIndexBuffer();
         CreateUniformBuffers();
         WriteDescriptorSets();
+
+        CreateTextureImage();
+        CreateVertexBuffer();
+        CreateIndexBuffer();
 
         CreateSyncObjects();
 
@@ -70,10 +74,14 @@ namespace ve
 
         VE_CORE_TRACE("Destroying Uniformbuffers({0})...", MAX_FRAMES_IN_FLIGHT);
         size_t uniformbuffersSize = m_UniformBuffers.size();
+        m_UniformBuffersMemory.clear();
         m_UniformBuffers.clear();
         VE_CORE_TRACE("Destroyed {0} Uniformbuffers", uniformbuffersSize);
 
+        m_IndexBufferMemory.reset();
         m_IndexBuffer.reset();
+
+        m_VertexBufferMemory.reset();
         m_VertexBuffer.reset();
 
         m_CommandPool.reset();
@@ -332,25 +340,63 @@ namespace ve
         VE_CORE_TRACE("Created {0} VkFence (in flight) objects", MAX_FRAMES_IN_FLIGHT);
     }
 
+    void Renderer::CreateTextureImage()
+    {
+        // int texWidth, texHeight, texChannels;
+        // stbi_uc *pixels = stbi_load("../VulkanEngine/assets/textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+        // VkDeviceSize imageSize = texWidth * texHeight * 4;
+
+        // if (!pixels)
+        //     throw std::runtime_error("failed to load texture image!");
+
+        // VkPhysicalDevice physicalDevice = m_Context->GetPhysicalDevice().GetPhysicalDevice();
+        // VulkanBuffer stagingBuffer(
+        //     m_Device, physicalDevice,
+        //     imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        //     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        //     "TextureImage staging");
+
+        // stagingBuffer.Map();
+        // stagingBuffer.WriteToBuffer(pixels);
+        // stagingBuffer.Unmap();
+
+        // VkImageCreateInfo imageInfo{};
+        // imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        // imageInfo.imageType = VK_IMAGE_TYPE_2D;
+        // imageInfo.extent.width = static_cast<uint32_t>(texWidth);
+        // imageInfo.extent.height = static_cast<uint32_t>(texHeight);
+        // imageInfo.extent.depth = 1;
+        // imageInfo.mipLevels = 1;
+        // imageInfo.arrayLayers = 1;
+        // imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+        // imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        // imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        // imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        // imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        // imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        // imageInfo.flags = 0; // Optional
+
+        // VkResult result = vkCreateImage(m_Device, &imageInfo, nullptr, &m_TextureImage);
+        // CHECK_VK_RESULT(result);
+    }
+
     void Renderer::CreateVertexBuffer()
     {
         VkPhysicalDevice physicalDevice = m_Context->GetPhysicalDevice().GetPhysicalDevice();
         VkDeviceSize bufferSize = sizeof(Vertex) * s_Vertices.size();
 
-        VulkanBuffer stagingBuffer(
-            m_Device, physicalDevice,
-            bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            "VertexBuffer staging");
+        VulkanBuffer stagingBuffer(m_Device, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, "VertexBuffer staging");
+        VulkanDeviceMemory stagingMemory = stagingBuffer.AllocateMemory(
+            physicalDevice, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        stagingBuffer.Map();
-        stagingBuffer.WriteToBuffer(s_Vertices.data());
-        stagingBuffer.Unmap();
+        void *mapped = stagingMemory.Map(bufferSize);
+        std::memcpy(mapped, s_Vertices.data(), bufferSize);
+        stagingMemory.Unmap();
 
         m_VertexBuffer = CreateScope<VulkanBuffer>(
-            m_Device, physicalDevice,
-            bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "VertexBuffer");
+            m_Device, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, "VertexBuffer");
+        m_VertexBufferMemory = CreateScope<VulkanDeviceMemory>(m_VertexBuffer->AllocateMemory(
+            physicalDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
         CopyBuffer(stagingBuffer.GetBuffer(), m_VertexBuffer->GetBuffer(), bufferSize);
     }
@@ -360,20 +406,18 @@ namespace ve
         VkPhysicalDevice physicalDevice = m_Context->GetPhysicalDevice().GetPhysicalDevice();
         VkDeviceSize bufferSize = sizeof(uint32_t) * s_Indices.size();
 
-        VulkanBuffer stagingBuffer(
-            m_Device, physicalDevice,
-            bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            "IndexBuffer staging");
+        VulkanBuffer stagingBuffer(m_Device, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, "IndexBuffer staging");
+        VulkanDeviceMemory stagingMemory = stagingBuffer.AllocateMemory(
+            physicalDevice, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        stagingBuffer.Map();
-        stagingBuffer.WriteToBuffer(s_Indices.data());
-        stagingBuffer.Unmap();
+        void *mapped = stagingMemory.Map(bufferSize);
+        std::memcpy(mapped, s_Indices.data(), bufferSize);
+        stagingMemory.Unmap();
 
         m_IndexBuffer = CreateScope<VulkanBuffer>(
-            m_Device, physicalDevice,
-            bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "IndexBuffer");
+            m_Device, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, "IndexBuffer");
+        m_IndexBufferMemory = CreateScope<VulkanDeviceMemory>(m_IndexBuffer->AllocateMemory(
+            physicalDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
         CopyBuffer(stagingBuffer.GetBuffer(), m_IndexBuffer->GetBuffer(), bufferSize);
     }
@@ -383,16 +427,18 @@ namespace ve
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
         m_UniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+        m_UniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
 
         VE_CORE_TRACE("Creating UniformBuffers({0})...", MAX_FRAMES_IN_FLIGHT);
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
             VkPhysicalDevice physicalDevice = m_Context->GetPhysicalDevice().GetPhysicalDevice();
             m_UniformBuffers[i] = CreateScope<VulkanBuffer>(
-                m_Device, physicalDevice,
-                bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                m_Device, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 "UniformBuffer " + std::to_string(i));
+
+            m_UniformBuffersMemory[i] = CreateScope<VulkanDeviceMemory>(m_UniformBuffers[i]->AllocateMemory(
+                physicalDevice, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
         }
 
         VE_CORE_TRACE("Created {0} UniformBuffers", m_UniformBuffers.size());
@@ -486,9 +532,10 @@ namespace ve
         ubo.proj = glm::perspective(glm::radians(45.0f), m_Swapchain->GetExtent().width / (float)m_Swapchain->GetExtent().height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;
 
-        m_UniformBuffers[m_CurrentFrame]->Map();
-        m_UniformBuffers[m_CurrentFrame]->WriteToBuffer(&ubo);
-        m_UniformBuffers[m_CurrentFrame]->Unmap();
+        auto &uniformBufferMemory = m_UniformBuffersMemory[m_CurrentFrame];
+        void *mapped = uniformBufferMemory->Map(sizeof(UniformBufferObject));
+        std::memcpy(mapped, &ubo, sizeof(UniformBufferObject));
+        uniformBufferMemory->Unmap();
     }
 
 } // namespace ve
