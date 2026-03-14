@@ -88,9 +88,7 @@ namespace ve
 
         m_GraphicsPipeline.reset();
         m_PipelineLayout.reset();
-
-        vkDestroyDescriptorSetLayout(m_Device, m_DescriptorSetLayout, nullptr);
-        VE_CORE_TRACE("VkDesciprtorSetLayout destroyed");
+        m_DescriptorSetLayout.reset();
 
         m_RenderPass.reset();
 
@@ -175,28 +173,21 @@ namespace ve
 
     void Renderer::CreateDescriptorSetLayout()
     {
-        VkDescriptorSetLayoutBinding uboLayoutBinding{};
-        uboLayoutBinding.binding = 0;
-        uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        uboLayoutBinding.descriptorCount = 1;
-        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-        uboLayoutBinding.pImmutableSamplers = nullptr;
+        DescriptorBinding uboBinding{
+            .binding = 0,
+            .descriptorCount = 1,
+            .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .stage = VK_SHADER_STAGE_VERTEX_BIT};
 
-        VkDescriptorSetLayoutCreateInfo layoutInfo{};
-        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.bindingCount = 1;
-        layoutInfo.pBindings = &uboLayoutBinding;
+        std::vector<DescriptorBinding> bindings = {uboBinding};
 
-        VkResult result = vkCreateDescriptorSetLayout(m_Device, &layoutInfo, nullptr, &m_DescriptorSetLayout);
-        CHECK_VK_RESULT(result);
-
-        VE_CORE_TRACE("VkDesciprtorSetLayout created");
+        m_DescriptorSetLayout = CreateScope<DescriptorSetLayout>(m_Device, bindings);
     }
 
     void Renderer::CreateGraphicsPipeline()
     {
         // Pipeline layout
-        std::vector<VkDescriptorSetLayout> setLayouts = {m_DescriptorSetLayout};
+        std::vector<VkDescriptorSetLayout> setLayouts = {m_DescriptorSetLayout->GetLayout()};
         m_PipelineLayout = CreateScope<VulkanPipelineLayout>(m_Device, setLayouts, "Graphics");
 
         // Pipeline
@@ -429,7 +420,7 @@ namespace ve
 
     void Renderer::CreateDescriptorSets()
     {
-        std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_DescriptorSetLayout);
+        std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_DescriptorSetLayout->GetLayout());
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = m_DescriptorPool;

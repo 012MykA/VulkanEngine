@@ -5,6 +5,7 @@
 
 #include "VulkanSwapchain.hpp"
 #include "VulkanRenderPass.hpp"
+#include "DescriptorSetLayout.hpp"
 #include "VulkanPipelineLayout.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanFramebuffer.hpp"
@@ -37,8 +38,8 @@ namespace ve
 
     private:
         void CreateDescriptorSetLayout();
-
         void CreateGraphicsPipeline();
+
         void CreateFramebuffers();
 
         void CreateCommandPool();
@@ -65,6 +66,7 @@ namespace ve
         Scope<VulkanSwapchain> m_Swapchain;
 
         Scope<VulkanRenderPass> m_RenderPass;
+        Scope<DescriptorSetLayout> m_DescriptorSetLayout;
         Scope<VulkanPipelineLayout> m_PipelineLayout;
         Scope<VulkanPipeline> m_GraphicsPipeline;
 
@@ -76,7 +78,6 @@ namespace ve
 
         Scope<VulkanBuffer> m_VertexBuffer;
         Scope<VulkanBuffer> m_IndexBuffer;
-        VkDescriptorSetLayout m_DescriptorSetLayout = VK_NULL_HANDLE;
         std::vector<Scope<VulkanBuffer>> m_UniformBuffers;
         void UpdateUniformBuffers();
         VkDescriptorPool m_DescriptorPool;
