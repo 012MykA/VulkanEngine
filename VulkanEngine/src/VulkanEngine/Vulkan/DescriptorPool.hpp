@@ -14,7 +14,7 @@ namespace ve
         DescriptorPool(VkDevice device, const std::vector<DescriptorBinding> &descriptorBindings, const size_t maxSets);
         ~DescriptorPool();
 
-        VkDescriptorPool GetPool() const { return m_Pool; }
+        VkDescriptorPool GetPool() const { return m_DescriptorPool; }
         VkDevice GetDevice() const { return m_Device; }
 
     private:

@@ -8,7 +8,8 @@ namespace ve
 {
     DescriptorSets::DescriptorSets(
         const DescriptorPool &descriptorPool, const DescriptorSetLayout &layout,
-        DescriptorBindingTypes bindingTypes, const size_t size) : m_DescriptorPool(descriptorPool)
+        DescriptorBindingTypesMap bindingTypes, const size_t size)
+        : m_DescriptorPool(descriptorPool), m_BindingTypes(std::move(bindingTypes))
     {
         std::vector<VkDescriptorSetLayout> layouts(size, layout.GetLayout());
 
@@ -33,6 +34,14 @@ namespace ve
         //     m_DescriptorSets.data());
 
         // m_DescriptorSets.clear();
+    }
+
+    void DescriptorSets::UpdateDescriptors(const std::vector<VkWriteDescriptorSet> &descriptorWrites)
+    {
+        vkUpdateDescriptorSets(
+            m_DescriptorPool.GetDevice(),
+            static_cast<uint32_t>(descriptorWrites.size()),
+            descriptorWrites.data(), 0, nullptr);
     }
 
     VkWriteDescriptorSet DescriptorSets::Bind(const size_t index, const uint32_t binding,

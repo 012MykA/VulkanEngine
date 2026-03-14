@@ -11,14 +11,15 @@ namespace ve
     {
         std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
 
-        for (const auto &b : descriptorBindings)
+        for (const auto &binding : descriptorBindings)
         {
-            VkDescriptorSetLayoutBinding binding{};
-            binding.binding = b.binding;
-            binding.descriptorCount = b.descriptorCount;
-            binding.stageFlags = binding.stageFlags;
+            VkDescriptorSetLayoutBinding b = {};
+            b.binding = binding.binding;
+            b.descriptorCount = binding.descriptorCount;
+            b.descriptorType = binding.type;
+            b.stageFlags = binding.stage;
 
-            layoutBindings.push_back(binding);
+            layoutBindings.push_back(b);
         }
 
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -28,13 +29,13 @@ namespace ve
 
         VkResult result = vkCreateDescriptorSetLayout(m_Device, &layoutInfo, nullptr, &m_Layout);
         CHECK_VK_RESULT(result);
-        VE_CORE_TRACE("VkDesciprtorSetLayout created");
+        VE_CORE_TRACE("VkDescriptorSetLayout created");
     }
 
     DescriptorSetLayout::~DescriptorSetLayout()
     {
         vkDestroyDescriptorSetLayout(m_Device, m_Layout, nullptr);
-        VE_CORE_TRACE("VkDesciprtorSetLayout destroyed");
+        VE_CORE_TRACE("VkDescriptorSetLayout destroyed");
     }
 
 } // namespace ve

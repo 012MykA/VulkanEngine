@@ -5,7 +5,7 @@
 
 #include "VulkanSwapchain.hpp"
 #include "VulkanRenderPass.hpp"
-#include "DescriptorSetLayout.hpp"
+#include "DescriptorSetManager.hpp"
 #include "VulkanPipelineLayout.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanFramebuffer.hpp"
@@ -37,7 +37,7 @@ namespace ve
         void OnWindowResize(uint32_t width, uint32_t height);
 
     private:
-        void CreateDescriptorSetLayout();
+        void CreateDescriptorSetManager();
         void CreateGraphicsPipeline();
 
         void CreateFramebuffers();
@@ -52,8 +52,7 @@ namespace ve
         void CreateVertexBuffer();
         void CreateIndexBuffer();
         void CreateUniformBuffers();
-        void CreateDescriptorPool();
-        void CreateDescriptorSets();
+        void WriteDescriptorSets();
 
         void RecreateSwapchain();
 
@@ -66,7 +65,7 @@ namespace ve
         Scope<VulkanSwapchain> m_Swapchain;
 
         Scope<VulkanRenderPass> m_RenderPass;
-        Scope<DescriptorSetLayout> m_DescriptorSetLayout;
+        Scope<DescriptorSetManager> m_DescriptorSetManager;
         Scope<VulkanPipelineLayout> m_PipelineLayout;
         Scope<VulkanPipeline> m_GraphicsPipeline;
 
@@ -80,8 +79,6 @@ namespace ve
         Scope<VulkanBuffer> m_IndexBuffer;
         std::vector<Scope<VulkanBuffer>> m_UniformBuffers;
         void UpdateUniformBuffers();
-        VkDescriptorPool m_DescriptorPool;
-        std::vector<VkDescriptorSet> m_DescriptorSets;
 
         const int MAX_FRAMES_IN_FLIGHT = 3;
         uint32_t m_CurrentFrame = 0;

@@ -34,7 +34,7 @@ namespace ve
 
         m_RenderPass = CreateScope<VulkanRenderPass>(m_Device, m_Swapchain->GetImageFormat(), "Graphics");
 
-        CreateDescriptorSetLayout();
+        CreateDescriptorSetManager();
         CreateGraphicsPipeline();
 
         CreateFramebuffers();
@@ -45,8 +45,7 @@ namespace ve
         CreateVertexBuffer();
         CreateIndexBuffer();
         CreateUniformBuffers();
-        CreateDescriptorPool();
-        CreateDescriptorSets();
+        WriteDescriptorSets();
 
         CreateSyncObjects();
 
@@ -69,9 +68,6 @@ namespace ve
         VE_CORE_TRACE("Destroyed {0} VkSemaphore (render finished) objects", MAX_FRAMES_IN_FLIGHT);
         VE_CORE_TRACE("Destroyed {0} VkSemaphore (image available) objects", MAX_FRAMES_IN_FLIGHT);
 
-        vkDestroyDescriptorPool(m_Device, m_DescriptorPool, nullptr);
-        VE_CORE_TRACE("VkDescriptorPool destroy");
-
         VE_CORE_TRACE("Destroying Uniformbuffers({0})...", MAX_FRAMES_IN_FLIGHT);
         size_t uniformbuffersSize = m_UniformBuffers.size();
         m_UniformBuffers.clear();
@@ -88,7 +84,7 @@ namespace ve
 
         m_GraphicsPipeline.reset();
         m_PipelineLayout.reset();
-        m_DescriptorSetLayout.reset();
+        m_DescriptorSetManager.reset();
 
         m_RenderPass.reset();
 
@@ -171,7 +167,7 @@ namespace ve
         m_FramebufferExtent = {width, height};
     }
 
-    void Renderer::CreateDescriptorSetLayout()
+    void Renderer::CreateDescriptorSetManager()
     {
         DescriptorBinding uboBinding{
             .binding = 0,
@@ -180,14 +176,15 @@ namespace ve
             .stage = VK_SHADER_STAGE_VERTEX_BIT};
 
         std::vector<DescriptorBinding> bindings = {uboBinding};
-
-        m_DescriptorSetLayout = CreateScope<DescriptorSetLayout>(m_Device, bindings);
+        m_DescriptorSetManager = CreateScope<DescriptorSetManager>(m_Device, bindings, MAX_FRAMES_IN_FLIGHT);
     }
 
     void Renderer::CreateGraphicsPipeline()
     {
         // Pipeline layout
-        std::vector<VkDescriptorSetLayout> setLayouts = {m_DescriptorSetLayout->GetLayout()};
+        std::vector<VkDescriptorSetLayout> setLayouts = {
+            m_DescriptorSetManager->GetDescriptorSetLayout().GetLayout(),
+        };
         m_PipelineLayout = CreateScope<VulkanPipelineLayout>(m_Device, setLayouts, "Graphics");
 
         // Pipeline
@@ -292,9 +289,9 @@ namespace ve
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
+        VkDescriptorSet set = m_DescriptorSetManager->GetSets()[m_CurrentFrame];
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                m_PipelineLayout->GetPipelineLayout(), 0, 1, &m_DescriptorSets[m_CurrentFrame],
-                                0, nullptr);
+                                m_PipelineLayout->GetPipelineLayout(), 0, 1, &set, 0, nullptr);
 
         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(s_Indices.size()), 1, 0, 0, 0);
 
@@ -401,54 +398,19 @@ namespace ve
         VE_CORE_TRACE("Created {0} UniformBuffers", m_UniformBuffers.size());
     }
 
-    void Renderer::CreateDescriptorPool()
+    void Renderer::WriteDescriptorSets()
     {
-        VkDescriptorPoolSize poolSize{};
-        poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-
-        VkDescriptorPoolCreateInfo poolInfo{};
-        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount = 1;
-        poolInfo.pPoolSizes = &poolSize;
-        poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-
-        VkResult result = vkCreateDescriptorPool(m_Device, &poolInfo, nullptr, &m_DescriptorPool);
-        CHECK_VK_RESULT(result);
-        VE_CORE_TRACE("VkDescriptorPool created");
-    }
-
-    void Renderer::CreateDescriptorSets()
-    {
-        std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_DescriptorSetLayout->GetLayout());
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = m_DescriptorPool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-        allocInfo.pSetLayouts = layouts.data();
-
-        m_DescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-        VkResult result = vkAllocateDescriptorSets(m_Device, &allocInfo, m_DescriptorSets.data());
-        CHECK_VK_RESULT(result);
-
+        std::vector<VkWriteDescriptorSet> writes;
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
             VkDescriptorBufferInfo bufferInfo{};
             bufferInfo.buffer = m_UniformBuffers[i]->GetBuffer();
-            bufferInfo.offset = 0;
             bufferInfo.range = sizeof(UniformBufferObject);
 
-            VkWriteDescriptorSet descriptorWrite{};
-            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = m_DescriptorSets[i];
-            descriptorWrite.dstBinding = 0;
-            descriptorWrite.dstArrayElement = 0;
-            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrite.descriptorCount = 1;
-            descriptorWrite.pBufferInfo = &bufferInfo;
-
-            vkUpdateDescriptorSets(m_Device, 1, &descriptorWrite, 0, nullptr);
+            writes.push_back(m_DescriptorSetManager->GetSets().Bind(i, 0, bufferInfo));
         }
+
+        m_DescriptorSetManager->GetSets().UpdateDescriptors(writes);
     }
 
     void Renderer::CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)

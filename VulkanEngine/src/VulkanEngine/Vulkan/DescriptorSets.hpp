@@ -11,17 +11,23 @@
 
 namespace ve
 {
-    using DescriptorBindingTypes = std::map<uint32_t, VkDescriptorType>;
+    using DescriptorBindingTypesMap = std::map<uint32_t, VkDescriptorType>;
 
     class DescriptorSets
     {
     public:
         DescriptorSets(const DescriptorPool &descriptorPool, const DescriptorSetLayout &layout,
-                       DescriptorBindingTypes bindingTypes, const size_t size);
+                       DescriptorBindingTypesMap bindingTypes, const size_t size);
         ~DescriptorSets();
 
+        void UpdateDescriptors(const std::vector<VkWriteDescriptorSet> &descriptorWrites);
+
         VkWriteDescriptorSet Bind(const size_t index, const uint32_t binding,
-                                  const VkDescriptorBufferInfo &bufferInfo, const uint32_t count) const;
+                                  const VkDescriptorBufferInfo &bufferInfo, const uint32_t count = 1) const;
+
+    public:
+        // Getters
+        VkDescriptorSet operator[](uint32_t index) { return m_DescriptorSets[index]; }
 
     private:
         VkDescriptorType GetBindingType(const uint32_t binding) const;
@@ -30,7 +36,7 @@ namespace ve
         const DescriptorPool &m_DescriptorPool;
 
         std::vector<VkDescriptorSet> m_DescriptorSets;
-        const DescriptorBindingTypes m_BindingTypes;
+        const DescriptorBindingTypesMap m_BindingTypes;
     };
 
 } // namespace ve
