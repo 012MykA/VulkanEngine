@@ -18,7 +18,7 @@ namespace ve
 
     private:
         VkDevice m_Device;
-        VkDescriptorSetLayout m_Layout;
+        VkDescriptorSetLayout m_Layout = VK_NULL_HANDLE;
     };
 
 } // namespace ve

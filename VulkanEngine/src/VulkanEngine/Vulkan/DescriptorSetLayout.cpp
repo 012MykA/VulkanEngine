@@ -28,7 +28,6 @@ namespace ve
 
         VkResult result = vkCreateDescriptorSetLayout(m_Device, &layoutInfo, nullptr, &m_Layout);
         CHECK_VK_RESULT(result);
-
         VE_CORE_TRACE("VkDesciprtorSetLayout created");
     }
 
