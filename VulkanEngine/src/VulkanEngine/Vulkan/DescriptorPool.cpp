@@ -23,14 +23,14 @@ namespace ve
         poolInfo.pPoolSizes = poolSizes.data();
         poolInfo.maxSets = static_cast<uint32_t>(maxSets);
 
-        VkResult result = vkCreateDescriptorPool(m_Device, &poolInfo, nullptr, &m_Pool);
+        VkResult result = vkCreateDescriptorPool(m_Device, &poolInfo, nullptr, &m_DescriptorPool);
         CHECK_VK_RESULT(result);
         VE_CORE_TRACE("VkDescriptorPool created");
     }
 
     DescriptorPool::~DescriptorPool()
     {
-        vkDestroyDescriptorPool(m_Device, m_Pool, nullptr);
+        vkDestroyDescriptorPool(m_Device, m_DescriptorPool, nullptr);
         VE_CORE_TRACE("VkDescriptorPool destroy");
     }
 

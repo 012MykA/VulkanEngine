@@ -15,10 +15,11 @@ namespace ve
         ~DescriptorPool();
 
         VkDescriptorPool GetPool() const { return m_Pool; }
+        VkDevice GetDevice() const { return m_Device; }
 
     private:
         VkDevice m_Device;
-        VkDescriptorPool m_Pool = VK_NULL_HANDLE;
+        VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
     };
 
 } // namespace ve
