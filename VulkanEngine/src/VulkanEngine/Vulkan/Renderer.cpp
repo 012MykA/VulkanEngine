@@ -363,8 +363,10 @@ namespace ve
             m_Device, VkExtent2D{static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight)},
             VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, "TextureImage");
-        m_TextureImageMemory = CreateScope<VulkanDeviceMemory>(m_TextureImage->AllocateMemory(
-            physicalDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+
+        m_TextureImageMemory = CreateScope<VulkanDeviceMemory>(m_TextureImage->AllocateMemory(physicalDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+
+        m_TextureImageView = CreateScope<VulkanImageView>(m_Device, *m_TextureImage, VK_IMAGE_ASPECT_COLOR_BIT);
 
         VkCommandPool commandPool = m_CommandPool->GetCommandPool();
         VkQueue graphicsQueue = m_Context->GetGraphicsQueue();

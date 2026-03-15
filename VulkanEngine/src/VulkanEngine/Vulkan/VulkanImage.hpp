@@ -21,6 +21,9 @@ namespace ve
 
     public:
         // Getters
+        VkImage GetImage() const { return m_Image; }
+        VkFormat GetFormat() const { return m_Format; }
+        uint32_t GetMipLevels() const { return m_MipLevels; }
         VkMemoryRequirements GetMemoryRequirements() const;
 
     private:
@@ -30,6 +33,7 @@ namespace ve
         VkImageLayout m_ImageLayout;
         const VkExtent2D m_Extent;
         const VkFormat m_Format;
+        uint32_t m_MipLevels = 1;
 
         std::string m_DebugName;
     };
