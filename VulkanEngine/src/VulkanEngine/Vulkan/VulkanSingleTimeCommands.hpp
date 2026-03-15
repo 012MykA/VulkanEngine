@@ -12,7 +12,8 @@ namespace ve
     class VulkanSingleTimeCommands
     {
     public:
-        static void Submit(VkCommandPool commandPool, VkDevice device, VkQueue graphicsQueue, const std::function<void(VkCommandBuffer)> &action)
+        static void Submit(const std::function<void(VkCommandBuffer)> &action,
+                           VkCommandPool commandPool, VkDevice device, VkQueue graphicsQueue)
         {
             VkCommandBufferAllocateInfo allocInfo{};
             allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;

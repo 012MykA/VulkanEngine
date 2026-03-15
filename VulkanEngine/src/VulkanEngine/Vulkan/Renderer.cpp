@@ -365,6 +365,12 @@ namespace ve
             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, "TextureImage");
         m_TextureImageMemory = CreateScope<VulkanDeviceMemory>(m_TextureImage->AllocateMemory(
             physicalDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+
+        VkCommandPool commandPool = m_CommandPool->GetCommandPool();
+        VkQueue graphicsQueue = m_Context->GetGraphicsQueue();
+        m_TextureImage->TransitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, commandPool, graphicsQueue);
+        m_TextureImage->CopyFrom(stagingBuffer.GetBuffer(), commandPool, graphicsQueue);
+        m_TextureImage->TransitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, commandPool, graphicsQueue);
     }
 
     void Renderer::CreateVertexBuffer()
@@ -445,47 +451,6 @@ namespace ve
 
         m_DescriptorSetManager->GetSets().UpdateDescriptors(writes);
     }
-
-    // void Renderer::CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
-    // {
-    //     VkCommandBufferAllocateInfo allocInfo{};
-    //     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    //     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    //     allocInfo.commandPool = m_CommandPool->GetCommandPool();
-    //     allocInfo.commandBufferCount = 1;
-
-    //     VkCommandBuffer commandBuffer;
-    //     VkResult result = vkAllocateCommandBuffers(m_Device, &allocInfo, &commandBuffer);
-    //     CHECK_VK_RESULT(result);
-
-    //     VkCommandBufferBeginInfo beginInfo{};
-    //     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    //     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    //     result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
-    //     CHECK_VK_RESULT(result);
-
-    //     VkBufferCopy copyRegion{};
-    //     copyRegion.size = size;
-
-    //     vkCmdCopyBuffer(commandBuffer, src, dst, 1, &copyRegion);
-
-    //     result = vkEndCommandBuffer(commandBuffer);
-    //     CHECK_VK_RESULT(result);
-
-    //     VkSubmitInfo submitInfo{};
-    //     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    //     submitInfo.commandBufferCount = 1;
-    //     submitInfo.pCommandBuffers = &commandBuffer;
-
-    //     result = vkQueueSubmit(m_Context->GetGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-    //     CHECK_VK_RESULT(result);
-
-    //     result = vkQueueWaitIdle(m_Context->GetGraphicsQueue());
-    //     CHECK_VK_RESULT(result);
-
-    //     vkFreeCommandBuffers(m_Device, m_CommandPool->GetCommandPool(), 1, &commandBuffer);
-    // }
 
     void Renderer::RecreateSwapchain()
     {

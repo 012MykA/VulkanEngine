@@ -54,7 +54,7 @@ namespace ve
 
             vkCmdCopyBuffer(commandBuffer, srcBuffer, m_Buffer, 1, &copyRegion);
         };
-        VulkanSingleTimeCommands::Submit(commandPool, m_Device, graphicsQueue, action);
+        VulkanSingleTimeCommands::Submit(action, commandPool, m_Device, graphicsQueue);
     }
 
     VkMemoryRequirements VulkanBuffer::GetMemoryRequirements() const

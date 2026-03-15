@@ -50,8 +50,6 @@ namespace ve
 
         void CreateSyncObjects();
 
-        // void CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
-
         void CreateTextureImage();
 
         void CreateVertexBuffer();

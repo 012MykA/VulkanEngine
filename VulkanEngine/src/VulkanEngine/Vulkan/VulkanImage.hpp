@@ -16,6 +16,8 @@ namespace ve
         ~VulkanImage();
 
         VulkanDeviceMemory AllocateMemory(VkPhysicalDevice physicalDevice, const VkMemoryPropertyFlags properties) const;
+        void CopyFrom(VkBuffer srcBuffer, VkCommandPool commandPool, VkQueue graphicsQueue);
+        void TransitionImageLayout(VkImageLayout newLayout, VkCommandPool commandPool, VkQueue graphicsQueue);
 
     public:
         // Getters
