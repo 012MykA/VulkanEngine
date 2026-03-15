@@ -11,6 +11,7 @@
 #include "VulkanFramebuffer.hpp"
 #include "VulkanCommandPool.hpp"
 #include "VulkanBuffer.hpp"
+#include "VulkanImage.hpp"
 
 #include <vector>
 #include <cstdint>
@@ -79,8 +80,9 @@ namespace ve
 
         std::vector<VkCommandBuffer> m_CommandBuffers;
 
-        VkImage m_TextureImage;
-        VkDeviceMemory m_TextureImageMemory;
+        Scope<VulkanImage> m_TextureImage;
+        Scope<VulkanDeviceMemory> m_TextureImageMemory;
+
         Scope<VulkanBuffer> m_VertexBuffer;
         Scope<VulkanDeviceMemory> m_VertexBufferMemory;
         Scope<VulkanBuffer> m_IndexBuffer;

@@ -342,42 +342,29 @@ namespace ve
 
     void Renderer::CreateTextureImage()
     {
-        // int texWidth, texHeight, texChannels;
-        // stbi_uc *pixels = stbi_load("../VulkanEngine/assets/textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-        // VkDeviceSize imageSize = texWidth * texHeight * 4;
+        int texWidth, texHeight, texChannels;
+        stbi_uc *pixels = stbi_load("../VulkanEngine/assets/textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+        VkDeviceSize imageSize = texWidth * texHeight * 4;
 
-        // if (!pixels)
-        //     throw std::runtime_error("failed to load texture image!");
+        if (!pixels)
+            throw std::runtime_error("failed to load texture image!");
 
-        // VkPhysicalDevice physicalDevice = m_Context->GetPhysicalDevice().GetPhysicalDevice();
-        // VulkanBuffer stagingBuffer(
-        //     m_Device, physicalDevice,
-        //     imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        //     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        //     "TextureImage staging");
+        VkPhysicalDevice physicalDevice = m_Context->GetPhysicalDevice().GetPhysicalDevice();
+        VulkanBuffer stagingBuffer(m_Device, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, "TextureImage staging");
+        VulkanDeviceMemory stagingMemory = stagingBuffer.AllocateMemory(
+            physicalDevice, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        // stagingBuffer.Map();
-        // stagingBuffer.WriteToBuffer(pixels);
-        // stagingBuffer.Unmap();
+        void *mapped = stagingMemory.Map(imageSize);
+        std::memcpy(mapped, pixels, imageSize);
+        stagingMemory.Unmap();
+        stbi_image_free(pixels);
 
-        // VkImageCreateInfo imageInfo{};
-        // imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        // imageInfo.imageType = VK_IMAGE_TYPE_2D;
-        // imageInfo.extent.width = static_cast<uint32_t>(texWidth);
-        // imageInfo.extent.height = static_cast<uint32_t>(texHeight);
-        // imageInfo.extent.depth = 1;
-        // imageInfo.mipLevels = 1;
-        // imageInfo.arrayLayers = 1;
-        // imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
-        // imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        // imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        // imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-        // imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        // imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        // imageInfo.flags = 0; // Optional
-
-        // VkResult result = vkCreateImage(m_Device, &imageInfo, nullptr, &m_TextureImage);
-        // CHECK_VK_RESULT(result);
+        m_TextureImage = CreateScope<VulkanImage>(
+            m_Device, VkExtent2D{static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight)},
+            VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, "TextureImage");
+        m_TextureImageMemory = CreateScope<VulkanDeviceMemory>(m_TextureImage->AllocateMemory(
+            physicalDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
     }
 
     void Renderer::CreateVertexBuffer()
