@@ -10,7 +10,7 @@ namespace ve
 
         for (const auto &b : descriptorBindings)
         {
-            if (!bindingTypes.insert(std::make_pair(b.binding, b.type)).second)
+            if (!bindingTypes.insert(std::make_pair(b.Binding, b.Type)).second)
             {
                 throw std::invalid_argument("binding collision");
             }

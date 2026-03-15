@@ -42,7 +42,7 @@ namespace ve
     public:
         void Bind(VkCommandBuffer commandBuffer);
 
-        static void DefaultPipelineConfig(PipelineConfig &config);
+        static PipelineConfig DefaultPipelineConfig();
 
     private:
         VkDevice m_Device;

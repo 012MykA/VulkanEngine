@@ -126,34 +126,33 @@ namespace ve
 
         UpdateUniformBuffers();
 
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
         VkSemaphore waitSemaphores[] = {m_ImageAvailableSemaphores[m_CurrentFrame]};
         VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask = waitStages;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &m_CommandBuffers[m_CurrentFrame];
-
         VkSemaphore signalSemaphores[] = {m_RenderFinishedSemaphores[m_CurrentFrame]};
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
+
+        VkSubmitInfo submitInfo{
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores = waitSemaphores,
+            .pWaitDstStageMask = waitStages,
+            .commandBufferCount = 1,
+            .pCommandBuffers = &m_CommandBuffers[m_CurrentFrame],
+            .signalSemaphoreCount = 1,
+            .pSignalSemaphores = signalSemaphores,
+        };
 
         result = vkQueueSubmit(m_Context->GetGraphicsQueue(), 1, &submitInfo, m_InFlightFences[m_CurrentFrame]);
         CHECK_VK_RESULT(result);
 
-        VkPresentInfoKHR presentInfo{};
-        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = signalSemaphores;
-
         VkSwapchainKHR swapchains[] = {m_Swapchain->GetSwapchain()};
-        presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = swapchains;
-        presentInfo.pImageIndices = &imageIndex;
+        VkPresentInfoKHR presentInfo{
+            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores = signalSemaphores,
+            .swapchainCount = 1,
+            .pSwapchains = swapchains,
+            .pImageIndices = &imageIndex,
+        };
 
         result = vkQueuePresentKHR(m_Context->GetPresentQueue(), &presentInfo);
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_FramebufferResized)
@@ -178,17 +177,17 @@ namespace ve
     void Renderer::CreateDescriptorSetManager()
     {
         DescriptorBinding uboBinding{
-            .binding = 0,
-            .descriptorCount = 1,
-            .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+            .Binding = 0,
+            .DescriptorCount = 1,
+            .Type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .Stage = VK_SHADER_STAGE_VERTEX_BIT,
         };
 
         DescriptorBinding samplerBinding{
-            .binding = 1,
-            .descriptorCount = 1,
-            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .Binding = 1,
+            .DescriptorCount = 1,
+            .Type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .Stage = VK_SHADER_STAGE_FRAGMENT_BIT,
         };
 
         std::vector<DescriptorBinding> bindings = {uboBinding, samplerBinding};
@@ -204,8 +203,7 @@ namespace ve
         m_PipelineLayout = CreateScope<VulkanPipelineLayout>(m_Device, setLayouts, "Graphics");
 
         // Pipeline
-        PipelineConfig pipelineConfig{};
-        VulkanPipeline::DefaultPipelineConfig(pipelineConfig);
+        PipelineConfig pipelineConfig = VulkanPipeline::DefaultPipelineConfig();
 
         pipelineConfig.bindingDescriptions = {Vertex::GetBindingDescription()};
 
@@ -248,11 +246,12 @@ namespace ve
     {
         m_CommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = m_CommandPool->GetCommandPool();
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
+        VkCommandBufferAllocateInfo allocInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            .commandPool = m_CommandPool->GetCommandPool(),
+            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+            .commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size()),
+        };
 
         VkResult result = vkAllocateCommandBuffers(m_Device, &allocInfo, m_CommandBuffers.data());
         CHECK_VK_RESULT(result);
@@ -263,20 +262,24 @@ namespace ve
     {
         VkExtent2D swapchainExtent = m_Swapchain->GetExtent();
 
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = 0;                  // Optional
-        beginInfo.pInheritanceInfo = nullptr; // Optional
+        VkCommandBufferBeginInfo beginInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+            .flags = 0,                  // Optional
+            .pInheritanceInfo = nullptr, // Optional
+        };
 
         VkResult result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
         CHECK_VK_RESULT(result);
 
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = m_RenderPass->GetRenderPass();
-        renderPassInfo.framebuffer = m_Framebuffers[imageIndex]->GetFramebuffer();
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = swapchainExtent;
+        VkRenderPassBeginInfo renderPassInfo{
+            .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+            .renderPass = m_RenderPass->GetRenderPass(),
+            .framebuffer = m_Framebuffers[imageIndex]->GetFramebuffer(),
+            .renderArea{
+                .offset = {0, 0},
+                .extent = swapchainExtent,
+            },
+        };
 
         VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
         renderPassInfo.clearValueCount = 1;
@@ -286,18 +289,20 @@ namespace ve
 
         m_GraphicsPipeline->Bind(commandBuffer);
 
-        VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width = static_cast<float>(swapchainExtent.width);
-        viewport.height = static_cast<float>(swapchainExtent.height);
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
+        VkViewport viewport{
+            .x = 0.0f,
+            .y = 0.0f,
+            .width = static_cast<float>(swapchainExtent.width),
+            .height = static_cast<float>(swapchainExtent.height),
+            .minDepth = 0.0f,
+            .maxDepth = 1.0f,
+        };
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
-        VkRect2D scissor{};
-        scissor.offset = {0, 0};
-        scissor.extent = swapchainExtent;
+        VkRect2D scissor{
+            .offset = {0, 0},
+            .extent = swapchainExtent,
+        };
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
         VkBuffer vertexBuffers[] = {m_VertexBuffer->GetBuffer()};
@@ -323,12 +328,14 @@ namespace ve
         m_RenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         m_InFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
-        VkSemaphoreCreateInfo semaphoreInfo{};
-        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        VkSemaphoreCreateInfo semaphoreInfo{
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+        };
 
-        VkFenceCreateInfo fenceInfo{};
-        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+        VkFenceCreateInfo fenceInfo{
+            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+            .flags = VK_FENCE_CREATE_SIGNALED_BIT,
+        };
 
         VkResult result;
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -459,15 +466,17 @@ namespace ve
         std::vector<VkWriteDescriptorSet> writes;
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
-            VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = m_UniformBuffers[i]->GetBuffer();
-            bufferInfo.range = sizeof(UniformBufferObject);
+            VkDescriptorBufferInfo bufferInfo{
+                .buffer = m_UniformBuffers[i]->GetBuffer(),
+                .range = sizeof(UniformBufferObject),
+            };
             writes.push_back(m_DescriptorSetManager->GetSets().Bind(i, 0, bufferInfo));
 
-            VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = m_TextureImageView->GetImageView();
-            imageInfo.sampler = m_TextureImageSampler->GetSampler();
+            VkDescriptorImageInfo imageInfo{
+                .sampler = m_TextureImageSampler->GetSampler(),
+                .imageView = m_TextureImageView->GetImageView(),
+                .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            };
             writes.push_back(m_DescriptorSetManager->GetSets().Bind(i, 1, imageInfo));
         }
 
@@ -500,11 +509,12 @@ namespace ve
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-        UniformBufferObject ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.proj = glm::perspective(glm::radians(45.0f), m_Swapchain->GetExtent().width / (float)m_Swapchain->GetExtent().height, 0.1f, 10.0f);
-        ubo.proj[1][1] *= -1;
+        UniformBufferObject ubo{
+            .Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+            .View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+            .Proj = glm::perspective(glm::radians(45.0f), m_Swapchain->GetExtent().width / (float)m_Swapchain->GetExtent().height, 0.1f, 10.0f),
+        };
+        ubo.Proj[1][1] *= -1;
 
         auto &uniformBufferMemory = m_UniformBuffersMemory[m_CurrentFrame];
         void *mapped = uniformBufferMemory->Map(sizeof(UniformBufferObject));

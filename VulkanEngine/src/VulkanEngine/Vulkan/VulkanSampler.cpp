@@ -5,23 +5,24 @@ namespace ve
 {
     VulkanSampler::VulkanSampler(VkDevice device, const SamplerConfig &config) : m_Device(device)
     {
-        VkSamplerCreateInfo samplerInfo{};
-        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        samplerInfo.magFilter = config.MagFilter;
-        samplerInfo.minFilter = config.MinFilter;
-        samplerInfo.addressModeU = config.AddressModeU;
-        samplerInfo.addressModeV = config.AddressModeV;
-        samplerInfo.addressModeW = config.AddressModeW;
-        samplerInfo.anisotropyEnable = config.AnisotropyEnable;
-        samplerInfo.maxAnisotropy = config.MaxAnisotropy;
-        samplerInfo.borderColor = config.BorderColor;
-        samplerInfo.unnormalizedCoordinates = config.UnnormalizedCoordinates;
-        samplerInfo.compareEnable = config.CompareEnable;
-        samplerInfo.compareOp = config.CompareOp;
-        samplerInfo.mipmapMode = config.MipmapMode;
-        samplerInfo.mipLodBias = config.MipLodBias;
-        samplerInfo.minLod = config.MinLod;
-        samplerInfo.maxLod = config.MaxLod;
+        VkSamplerCreateInfo samplerInfo{
+            .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+            .magFilter = config.MagFilter,
+            .minFilter = config.MinFilter,
+            .mipmapMode = config.MipmapMode,
+            .addressModeU = config.AddressModeU,
+            .addressModeV = config.AddressModeV,
+            .addressModeW = config.AddressModeW,
+            .mipLodBias = config.MipLodBias,
+            .anisotropyEnable = config.AnisotropyEnable,
+            .maxAnisotropy = config.MaxAnisotropy,
+            .compareEnable = config.CompareEnable,
+            .compareOp = config.CompareOp,
+            .minLod = config.MinLod,
+            .maxLod = config.MaxLod,
+            .borderColor = config.BorderColor,
+            .unnormalizedCoordinates = config.UnnormalizedCoordinates,
+        };
 
         VkResult result = vkCreateSampler(m_Device, &samplerInfo, nullptr, &m_Sampler);
         CHECK_VK_RESULT(result);

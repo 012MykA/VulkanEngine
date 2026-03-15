@@ -13,11 +13,12 @@ namespace ve
     {
         std::vector<VkDescriptorSetLayout> layouts(size, layout.GetLayout());
 
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = descriptorPool.GetPool();
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(size);
-        allocInfo.pSetLayouts = layouts.data();
+        VkDescriptorSetAllocateInfo allocInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            .descriptorPool = descriptorPool.GetPool(),
+            .descriptorSetCount = static_cast<uint32_t>(size),
+            .pSetLayouts = layouts.data(),
+        };
 
         m_DescriptorSets.resize(size);
 

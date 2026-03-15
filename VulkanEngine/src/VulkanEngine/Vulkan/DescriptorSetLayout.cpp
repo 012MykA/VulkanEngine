@@ -13,19 +13,21 @@ namespace ve
 
         for (const auto &binding : descriptorBindings)
         {
-            VkDescriptorSetLayoutBinding b = {};
-            b.binding = binding.binding;
-            b.descriptorCount = binding.descriptorCount;
-            b.descriptorType = binding.type;
-            b.stageFlags = binding.stage;
+            VkDescriptorSetLayoutBinding b = {
+                .binding = binding.Binding,
+                .descriptorType = binding.Type,
+                .descriptorCount = binding.DescriptorCount,
+                .stageFlags = binding.Stage,
+            };
 
             layoutBindings.push_back(b);
         }
 
-        VkDescriptorSetLayoutCreateInfo layoutInfo{};
-        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
-        layoutInfo.pBindings = layoutBindings.data();
+        VkDescriptorSetLayoutCreateInfo layoutInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .bindingCount = static_cast<uint32_t>(layoutBindings.size()),
+            .pBindings = layoutBindings.data(),
+        };
 
         VkResult result = vkCreateDescriptorSetLayout(m_Device, &layoutInfo, nullptr, &m_Layout);
         CHECK_VK_RESULT(result);

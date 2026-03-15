@@ -15,16 +15,18 @@ namespace ve
         const VkMemoryPropertyFlags propertyFlags,
         const std::string &debugName) : m_Device(device), m_PhysicalDevice(physicalDevice), m_Size(size), m_DebugName(debugName)
     {
-        VkMemoryAllocateFlagsInfo flagsInfo = {};
-        flagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
-        flagsInfo.pNext = nullptr;
-        flagsInfo.flags = allocateFLags;
+        VkMemoryAllocateFlagsInfo flagsInfo = {
+            .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
+            .pNext = nullptr,
+            .flags = allocateFLags,
+        };
 
-        VkMemoryAllocateInfo allocInfo = {};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.pNext = &flagsInfo;
-        allocInfo.allocationSize = m_Size;
-        allocInfo.memoryTypeIndex = FindMemoryType(memoryTypeBits, propertyFlags);
+        VkMemoryAllocateInfo allocInfo = {
+            .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+            .pNext = &flagsInfo,
+            .allocationSize = m_Size,
+            .memoryTypeIndex = FindMemoryType(memoryTypeBits, propertyFlags),
+        };
 
         VkResult result = vkAllocateMemory(m_Device, &allocInfo, nullptr, &m_Memory);
         CHECK_VK_RESULT(result);

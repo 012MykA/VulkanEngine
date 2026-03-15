@@ -9,11 +9,12 @@ namespace ve
         : m_Device(device), m_DebugName(debugName)
     {
         // Create buffer
-        VkBufferCreateInfo bufferInfo{};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = size;
-        bufferInfo.usage = usage;
-        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        VkBufferCreateInfo bufferInfo{
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .size = size,
+            .usage = usage,
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        };
 
         VkResult result = vkCreateBuffer(m_Device, &bufferInfo, nullptr, &m_Buffer);
         CHECK_VK_RESULT(result);
@@ -47,10 +48,11 @@ namespace ve
     {
         auto action = [&](VkCommandBuffer commandBuffer) -> void
         {
-            VkBufferCopy copyRegion{};
-            copyRegion.srcOffset = 0; // Optional
-            copyRegion.dstOffset = 0; // Optional
-            copyRegion.size = size;
+            VkBufferCopy copyRegion{
+                .srcOffset = 0, // Optional
+                .dstOffset = 0, // Optional
+                .size = size,
+            };
 
             vkCmdCopyBuffer(commandBuffer, srcBuffer, m_Buffer, 1, &copyRegion);
         };
@@ -66,10 +68,11 @@ namespace ve
 
     VkDeviceAddress VulkanBuffer::GetDeviceAddress() const
     {
-        VkBufferDeviceAddressInfo info{};
-        info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-        info.pNext = nullptr;
-        info.buffer = m_Buffer;
+        VkBufferDeviceAddressInfo info{
+            .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+            .pNext = nullptr,
+            .buffer = m_Buffer,
+        };
 
         return vkGetBufferDeviceAddress(m_Device, &info);
     }

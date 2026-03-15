@@ -15,12 +15,11 @@ namespace ve
     VulkanShaderModule::VulkanShaderModule(VkDevice device, const std::vector<char> &code, const std::string &debugName)
         : m_Device(device), m_DebugName(debugName)
     {
-        VkShaderModuleCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        createInfo.codeSize = code.size();
-        createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
-        createInfo.flags = 0;       // Optional
-        createInfo.pNext = nullptr; // Optional
+        VkShaderModuleCreateInfo createInfo{
+            .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+            .codeSize = code.size(),
+            .pCode = reinterpret_cast<const uint32_t *>(code.data()),
+        };
 
         VkResult result = vkCreateShaderModule(m_Device, &createInfo, nullptr, &m_ShaderModule);
         CHECK_VK_RESULT(result);
@@ -36,11 +35,12 @@ namespace ve
 
     VkPipelineShaderStageCreateInfo VulkanShaderModule::CreateShaderStage(VkShaderStageFlagBits stage, const char *name) const
     {
-        VkPipelineShaderStageCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        createInfo.stage = stage;
-        createInfo.module = m_ShaderModule;
-        createInfo.pName = name;
+        VkPipelineShaderStageCreateInfo createInfo{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage = stage,
+            .module = m_ShaderModule,
+            .pName = name,
+        };
 
         return createInfo;
     }

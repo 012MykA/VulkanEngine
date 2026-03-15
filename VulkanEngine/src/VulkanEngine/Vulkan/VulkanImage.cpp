@@ -11,21 +11,24 @@ namespace ve
                              VkImageTiling tiling, VkImageUsageFlags usage, const std::string &debugName)
         : m_Device(device), m_Extent(extent), m_Format(format), m_ImageLayout(VK_IMAGE_LAYOUT_UNDEFINED), m_DebugName(debugName)
     {
-        VkImageCreateInfo imageInfo{};
-        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        imageInfo.imageType = VK_IMAGE_TYPE_2D;
-        imageInfo.extent.width = extent.width;
-        imageInfo.extent.height = extent.height;
-        imageInfo.extent.depth = 1;
-        imageInfo.mipLevels = 1;
-        imageInfo.arrayLayers = 1;
-        imageInfo.format = m_Format;
-        imageInfo.tiling = tiling;
-        imageInfo.initialLayout = m_ImageLayout;
-        imageInfo.usage = usage;
-        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        imageInfo.flags = 0; // Optional
+        VkImageCreateInfo imageInfo{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            .flags = 0, // Optional
+            .imageType = VK_IMAGE_TYPE_2D,
+            .format = m_Format,
+            .extent{
+                .width = extent.width,
+                .height = extent.height,
+                .depth = 1,
+            },
+            .mipLevels = 1,
+            .arrayLayers = 1,
+            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .tiling = tiling,
+            .usage = usage,
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .initialLayout = m_ImageLayout,
+        };
 
         VkResult result = vkCreateImage(m_Device, &imageInfo, nullptr, &m_Image);
         CHECK_VK_RESULT(result);
@@ -53,16 +56,19 @@ namespace ve
     {
         auto action = [&](VkCommandBuffer commandBuffer)
         {
-            VkBufferImageCopy region{};
-            region.bufferOffset = 0;
-            region.bufferRowLength = 0;
-            region.bufferImageHeight = 0;
-            region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            region.imageSubresource.mipLevel = 0;
-            region.imageSubresource.baseArrayLayer = 0;
-            region.imageSubresource.layerCount = 1;
-            region.imageOffset = {0, 0, 0};
-            region.imageExtent = {m_Extent.width, m_Extent.height, 1};
+            VkBufferImageCopy region{
+                .bufferOffset = 0,
+                .bufferRowLength = 0,
+                .bufferImageHeight = 0,
+                .imageSubresource{
+                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                    .mipLevel = 0,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1,
+                },
+                .imageOffset = {0, 0, 0},
+                .imageExtent = {m_Extent.width, m_Extent.height, 1},
+            };
 
             vkCmdCopyBufferToImage(commandBuffer, srcBuffer, m_Image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
         };
@@ -73,18 +79,21 @@ namespace ve
     {
         auto action = [&](VkCommandBuffer commandBuffer)
         {
-            VkImageMemoryBarrier barrier{};
-            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            barrier.oldLayout = m_ImageLayout;
-            barrier.newLayout = newLayout;
-            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.image = m_Image;
-            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            barrier.subresourceRange.baseMipLevel = 0;
-            barrier.subresourceRange.levelCount = 1;
-            barrier.subresourceRange.baseArrayLayer = 0;
-            barrier.subresourceRange.layerCount = 1;
+            VkImageMemoryBarrier barrier{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                .oldLayout = m_ImageLayout,
+                .newLayout = newLayout,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .image = m_Image,
+                .subresourceRange{
+                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                    .baseMipLevel = 0,
+                    .levelCount = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1,
+                },
+            };
 
             VkPipelineStageFlags sourceStage;
             VkPipelineStageFlags destinationStage;
