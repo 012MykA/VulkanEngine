@@ -1,6 +1,7 @@
 #include "VulkanBuffer.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 #include "Debug/VulkanValidation.hpp"
+#include "VulkanSingleTimeCommands.hpp"
 
 namespace ve
 {
@@ -40,6 +41,20 @@ namespace ve
         CHECK_VK_RESULT(result);
 
         return memory;
+    }
+
+    void VulkanBuffer::CopyFrom(VkBuffer srcBuffer, VkDeviceSize size, VkCommandPool commandPool, VkQueue graphicsQueue)
+    {
+        auto action = [&](VkCommandBuffer commandBuffer) -> void
+        {
+            VkBufferCopy copyRegion{};
+            copyRegion.srcOffset = 0; // Optional
+            copyRegion.dstOffset = 0; // Optional
+            copyRegion.size = size;
+
+            vkCmdCopyBuffer(commandBuffer, srcBuffer, m_Buffer, 1, &copyRegion);
+        };
+        VulkanSingleTimeCommands::Submit(commandPool, m_Device, graphicsQueue, action);
     }
 
     VkMemoryRequirements VulkanBuffer::GetMemoryRequirements() const

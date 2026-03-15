@@ -385,7 +385,7 @@ namespace ve
         m_VertexBufferMemory = CreateScope<VulkanDeviceMemory>(m_VertexBuffer->AllocateMemory(
             physicalDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
-        CopyBuffer(stagingBuffer.GetBuffer(), m_VertexBuffer->GetBuffer(), bufferSize);
+        m_VertexBuffer->CopyFrom(stagingBuffer.GetBuffer(), bufferSize, m_CommandPool->GetCommandPool(), m_Context->GetGraphicsQueue());
     }
 
     void Renderer::CreateIndexBuffer()
@@ -406,7 +406,7 @@ namespace ve
         m_IndexBufferMemory = CreateScope<VulkanDeviceMemory>(m_IndexBuffer->AllocateMemory(
             physicalDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
-        CopyBuffer(stagingBuffer.GetBuffer(), m_IndexBuffer->GetBuffer(), bufferSize);
+        m_IndexBuffer->CopyFrom(stagingBuffer.GetBuffer(), bufferSize, m_CommandPool->GetCommandPool(), m_Context->GetGraphicsQueue());
     }
 
     void Renderer::CreateUniformBuffers()
@@ -446,46 +446,46 @@ namespace ve
         m_DescriptorSetManager->GetSets().UpdateDescriptors(writes);
     }
 
-    void Renderer::CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
-    {
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandPool = m_CommandPool->GetCommandPool();
-        allocInfo.commandBufferCount = 1;
+    // void Renderer::CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
+    // {
+    //     VkCommandBufferAllocateInfo allocInfo{};
+    //     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    //     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    //     allocInfo.commandPool = m_CommandPool->GetCommandPool();
+    //     allocInfo.commandBufferCount = 1;
 
-        VkCommandBuffer commandBuffer;
-        VkResult result = vkAllocateCommandBuffers(m_Device, &allocInfo, &commandBuffer);
-        CHECK_VK_RESULT(result);
+    //     VkCommandBuffer commandBuffer;
+    //     VkResult result = vkAllocateCommandBuffers(m_Device, &allocInfo, &commandBuffer);
+    //     CHECK_VK_RESULT(result);
 
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    //     VkCommandBufferBeginInfo beginInfo{};
+    //     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    //     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-        result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
-        CHECK_VK_RESULT(result);
+    //     result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
+    //     CHECK_VK_RESULT(result);
 
-        VkBufferCopy copyRegion{};
-        copyRegion.size = size;
+    //     VkBufferCopy copyRegion{};
+    //     copyRegion.size = size;
 
-        vkCmdCopyBuffer(commandBuffer, src, dst, 1, &copyRegion);
+    //     vkCmdCopyBuffer(commandBuffer, src, dst, 1, &copyRegion);
 
-        result = vkEndCommandBuffer(commandBuffer);
-        CHECK_VK_RESULT(result);
+    //     result = vkEndCommandBuffer(commandBuffer);
+    //     CHECK_VK_RESULT(result);
 
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
+    //     VkSubmitInfo submitInfo{};
+    //     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    //     submitInfo.commandBufferCount = 1;
+    //     submitInfo.pCommandBuffers = &commandBuffer;
 
-        result = vkQueueSubmit(m_Context->GetGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-        CHECK_VK_RESULT(result);
+    //     result = vkQueueSubmit(m_Context->GetGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+    //     CHECK_VK_RESULT(result);
 
-        result = vkQueueWaitIdle(m_Context->GetGraphicsQueue());
-        CHECK_VK_RESULT(result);
+    //     result = vkQueueWaitIdle(m_Context->GetGraphicsQueue());
+    //     CHECK_VK_RESULT(result);
 
-        vkFreeCommandBuffers(m_Device, m_CommandPool->GetCommandPool(), 1, &commandBuffer);
-    }
+    //     vkFreeCommandBuffers(m_Device, m_CommandPool->GetCommandPool(), 1, &commandBuffer);
+    // }
 
     void Renderer::RecreateSwapchain()
     {

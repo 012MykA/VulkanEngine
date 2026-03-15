@@ -10,7 +10,10 @@ namespace ve
         VulkanCommandPool(VkDevice device, uint32_t queueFamilyIndex);
         ~VulkanCommandPool();
 
+    public:
+        // Getters
         VkCommandPool GetCommandPool() const { return m_CommandPool; }
+        VkDevice GetDevice() const { return m_Device; }
 
     private:
         VkDevice m_Device;

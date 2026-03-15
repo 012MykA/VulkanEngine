@@ -17,11 +17,15 @@ namespace ve
         VulkanBuffer(const VulkanBuffer &) = delete;
         VulkanBuffer &operator=(const VulkanBuffer &) = delete;
 
-        VkBuffer GetBuffer() const { return m_Buffer; }
-
+    public:
         VulkanDeviceMemory AllocateMemory(VkPhysicalDevice physicalDevice, const VkMemoryPropertyFlags propertyFlags);
         VulkanDeviceMemory AllocateMemory(VkPhysicalDevice physicalDevice, const VkMemoryAllocateFlags allocateFlags, const VkMemoryPropertyFlags propertyFlags);
 
+        void CopyFrom(VkBuffer srcBuffer, VkDeviceSize size, VkCommandPool commandPool, VkQueue graphicsQueue);
+
+    public:
+        // Getters
+        VkBuffer GetBuffer() const { return m_Buffer; }
         VkMemoryRequirements GetMemoryRequirements() const;
         VkDeviceAddress GetDeviceAddress() const;
 
