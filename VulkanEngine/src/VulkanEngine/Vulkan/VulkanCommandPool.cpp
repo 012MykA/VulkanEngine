@@ -7,11 +7,12 @@ namespace ve
     VulkanCommandPool::VulkanCommandPool(VkDevice device, uint32_t queueFamilyIndex)
         : m_Device(device)
     {
-        VkCommandPoolCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        createInfo.queueFamilyIndex = queueFamilyIndex;
-        createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        createInfo.pNext = nullptr;
+        VkCommandPoolCreateInfo createInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+            .queueFamilyIndex = queueFamilyIndex,
+        };
 
         VkResult result = vkCreateCommandPool(m_Device, &createInfo, nullptr, &m_CommandPool);
         CHECK_VK_RESULT(result);

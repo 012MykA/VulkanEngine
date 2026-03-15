@@ -65,17 +65,21 @@ namespace ve
         CreateSurface(window);
 
         // Physical device
-        PhysicalDeviceRequirements devReq;
-        devReq.RequiresGraphicsQueue = true;
-        devReq.RequiresPresentQueue = true;
-        devReq.SwapchainAdequate = true;
-        devReq.Extensions = {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-            VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
+        PhysicalDeviceRequirements devReq{
+            .RequiresGraphicsQueue = true,
+            .RequiresPresentQueue = true,
+            .SwapchainAdequate = true,
+            .Extensions = {
+                VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
+            },
+            .Features{
+                .geometryShader = VK_TRUE,
+                .tessellationShader = VK_TRUE,
+                .samplerAnisotropy = VK_TRUE,
+            },
+            .PreferredDeviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
         };
-        devReq.Features.geometryShader = VK_TRUE;
-        devReq.Features.tessellationShader = VK_TRUE;
-        devReq.PreferredDeviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         m_PhysicalDevice = CreateScope<VulkanPhysicalDevice>(VulkanPhysicalDevice::Select(m_Instance, m_Surface, devReq));
         // ---
 
@@ -124,24 +128,25 @@ namespace ve
         for (auto layer : config.ValidationLayers)
             VE_CORE_TRACE("\t{0}", layer);
 
-        VkApplicationInfo appInfo{};
-        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.pApplicationName = config.AppName.c_str();
-        appInfo.applicationVersion = config.AppVersion;
-        appInfo.pEngineName = config.EngineName.c_str();
-        appInfo.engineVersion = config.EngineVersion;
-        appInfo.apiVersion = config.ApiVersion;
-        appInfo.pNext = nullptr;
-
-        VkInstanceCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        createInfo.pApplicationInfo = &appInfo;
-        createInfo.enabledExtensionCount = static_cast<uint32_t>(config.InstanceExtensions.size());
-        createInfo.ppEnabledExtensionNames = config.InstanceExtensions.data();
+        VkApplicationInfo appInfo{
+            .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+            .pNext = nullptr,
+            .pApplicationName = config.AppName.c_str(),
+            .applicationVersion = config.AppVersion,
+            .pEngineName = config.EngineName.c_str(),
+            .engineVersion = config.EngineVersion,
+            .apiVersion = config.ApiVersion,
+        };
 
         uint32_t layerCount = config.EnableValidationLayers ? static_cast<uint32_t>(config.ValidationLayers.size()) : 0;
-        createInfo.enabledLayerCount = layerCount;
-        createInfo.ppEnabledLayerNames = layerCount > 0 ? config.ValidationLayers.data() : nullptr;
+        VkInstanceCreateInfo createInfo{
+            .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+            .pApplicationInfo = &appInfo,
+            .enabledLayerCount = layerCount,
+            .ppEnabledLayerNames = layerCount > 0 ? config.ValidationLayers.data() : nullptr,
+            .enabledExtensionCount = static_cast<uint32_t>(config.InstanceExtensions.size()),
+            .ppEnabledExtensionNames = config.InstanceExtensions.data(),
+        };
 
         VkResult result = vkCreateInstance(&createInfo, nullptr, &m_Instance);
         CHECK_VK_RESULT(result);
@@ -157,12 +162,13 @@ namespace ve
             return;
         }
 
-        VkDebugUtilsMessengerCreateInfoEXT createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        createInfo.messageSeverity = config.DebugConfig.MessageSeverity;
-        createInfo.messageType = config.DebugConfig.MessageType;
-        createInfo.pfnUserCallback = DebugCallback;
-        createInfo.pUserData = nullptr;
+        VkDebugUtilsMessengerCreateInfoEXT createInfo{
+            .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+            .messageSeverity = config.DebugConfig.MessageSeverity,
+            .messageType = config.DebugConfig.MessageType,
+            .pfnUserCallback = DebugCallback,
+            .pUserData = nullptr,
+        };
 
         VkResult result = CreateDebugUtilsMessengerEXT(m_Instance, &createInfo, nullptr, &m_DebugMessenger);
         CHECK_VK_RESULT(result);
@@ -196,23 +202,23 @@ namespace ve
         float queuePriority = 1.0f;
         for (uint32_t queueFamily : uniqueQueueFamilies)
         {
-            VkDeviceQueueCreateInfo queueCreateInfo{};
-            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = queueFamily;
-            queueCreateInfo.queueCount = 1;
-            queueCreateInfo.pQueuePriorities = &queuePriority;
+            VkDeviceQueueCreateInfo queueCreateInfo{
+                .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                .queueFamilyIndex = queueFamily,
+                .queueCount = 1,
+                .pQueuePriorities = &queuePriority,
+            };
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        VkDeviceCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        createInfo.pQueueCreateInfos = queueCreateInfos.data();
-        createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-
-        createInfo.pEnabledFeatures = &requirements.Features;
-
-        createInfo.enabledExtensionCount = static_cast<uint32_t>(requirements.Extensions.size());
-        createInfo.ppEnabledExtensionNames = requirements.Extensions.data();
+        VkDeviceCreateInfo createInfo{
+            .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+            .queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
+            .pQueueCreateInfos = queueCreateInfos.data(),
+            .enabledExtensionCount = static_cast<uint32_t>(requirements.Extensions.size()),
+            .ppEnabledExtensionNames = requirements.Extensions.data(),
+            .pEnabledFeatures = &requirements.Features,
+        };
 
         VkResult result = vkCreateDevice(m_PhysicalDevice->GetPhysicalDevice(), &createInfo, nullptr, &m_Device);
         CHECK_VK_RESULT(result);

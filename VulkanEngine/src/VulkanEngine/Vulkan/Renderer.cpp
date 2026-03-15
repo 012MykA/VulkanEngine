@@ -4,19 +4,21 @@
 #include "VulkanEngine/Core/Log.hpp"
 
 #include <cassert>
+#include <cstring> // std::memcpy
 
 // TODO: remove
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
+#include <stdexcept>
 // ---
 
 static const std::vector<ve::Vertex> s_Vertices = {
-    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, 0.5, 0.0f}, {0.0f, 0.0f, 1.0f}},
-    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
 };
 
 static const std::vector<uint32_t> s_Indices = {0, 1, 2, 2, 3, 0};
@@ -42,8 +44,10 @@ namespace ve
         CreateCommandPool();
         CreateCommandBuffers();
 
+        CreateTextureImage();
         CreateVertexBuffer();
         CreateIndexBuffer();
+
         CreateUniformBuffers();
         WriteDescriptorSets();
 
@@ -70,10 +74,14 @@ namespace ve
 
         VE_CORE_TRACE("Destroying Uniformbuffers({0})...", MAX_FRAMES_IN_FLIGHT);
         size_t uniformbuffersSize = m_UniformBuffers.size();
+        m_UniformBuffersMemory.clear();
         m_UniformBuffers.clear();
         VE_CORE_TRACE("Destroyed {0} Uniformbuffers", uniformbuffersSize);
 
+        m_IndexBufferMemory.reset();
         m_IndexBuffer.reset();
+
+        m_VertexBufferMemory.reset();
         m_VertexBuffer.reset();
 
         m_CommandPool.reset();
@@ -118,34 +126,33 @@ namespace ve
 
         UpdateUniformBuffers();
 
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
         VkSemaphore waitSemaphores[] = {m_ImageAvailableSemaphores[m_CurrentFrame]};
         VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask = waitStages;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &m_CommandBuffers[m_CurrentFrame];
-
         VkSemaphore signalSemaphores[] = {m_RenderFinishedSemaphores[m_CurrentFrame]};
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
+
+        VkSubmitInfo submitInfo{
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores = waitSemaphores,
+            .pWaitDstStageMask = waitStages,
+            .commandBufferCount = 1,
+            .pCommandBuffers = &m_CommandBuffers[m_CurrentFrame],
+            .signalSemaphoreCount = 1,
+            .pSignalSemaphores = signalSemaphores,
+        };
 
         result = vkQueueSubmit(m_Context->GetGraphicsQueue(), 1, &submitInfo, m_InFlightFences[m_CurrentFrame]);
         CHECK_VK_RESULT(result);
 
-        VkPresentInfoKHR presentInfo{};
-        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = signalSemaphores;
-
         VkSwapchainKHR swapchains[] = {m_Swapchain->GetSwapchain()};
-        presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = swapchains;
-        presentInfo.pImageIndices = &imageIndex;
+        VkPresentInfoKHR presentInfo{
+            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores = signalSemaphores,
+            .swapchainCount = 1,
+            .pSwapchains = swapchains,
+            .pImageIndices = &imageIndex,
+        };
 
         result = vkQueuePresentKHR(m_Context->GetPresentQueue(), &presentInfo);
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_FramebufferResized)
@@ -170,12 +177,20 @@ namespace ve
     void Renderer::CreateDescriptorSetManager()
     {
         DescriptorBinding uboBinding{
-            .binding = 0,
-            .descriptorCount = 1,
-            .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .stage = VK_SHADER_STAGE_VERTEX_BIT};
+            .Binding = 0,
+            .DescriptorCount = 1,
+            .Type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .Stage = VK_SHADER_STAGE_VERTEX_BIT,
+        };
 
-        std::vector<DescriptorBinding> bindings = {uboBinding};
+        DescriptorBinding samplerBinding{
+            .Binding = 1,
+            .DescriptorCount = 1,
+            .Type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .Stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+        };
+
+        std::vector<DescriptorBinding> bindings = {uboBinding, samplerBinding};
         m_DescriptorSetManager = CreateScope<DescriptorSetManager>(m_Device, bindings, MAX_FRAMES_IN_FLIGHT);
     }
 
@@ -188,8 +203,7 @@ namespace ve
         m_PipelineLayout = CreateScope<VulkanPipelineLayout>(m_Device, setLayouts, "Graphics");
 
         // Pipeline
-        PipelineConfig pipelineConfig{};
-        VulkanPipeline::DefaultPipelineConfig(pipelineConfig);
+        PipelineConfig pipelineConfig = VulkanPipeline::DefaultPipelineConfig();
 
         pipelineConfig.bindingDescriptions = {Vertex::GetBindingDescription()};
 
@@ -232,11 +246,12 @@ namespace ve
     {
         m_CommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = m_CommandPool->GetCommandPool();
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
+        VkCommandBufferAllocateInfo allocInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            .commandPool = m_CommandPool->GetCommandPool(),
+            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+            .commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size()),
+        };
 
         VkResult result = vkAllocateCommandBuffers(m_Device, &allocInfo, m_CommandBuffers.data());
         CHECK_VK_RESULT(result);
@@ -247,20 +262,24 @@ namespace ve
     {
         VkExtent2D swapchainExtent = m_Swapchain->GetExtent();
 
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = 0;                  // Optional
-        beginInfo.pInheritanceInfo = nullptr; // Optional
+        VkCommandBufferBeginInfo beginInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+            .flags = 0,                  // Optional
+            .pInheritanceInfo = nullptr, // Optional
+        };
 
         VkResult result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
         CHECK_VK_RESULT(result);
 
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = m_RenderPass->GetRenderPass();
-        renderPassInfo.framebuffer = m_Framebuffers[imageIndex]->GetFramebuffer();
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = swapchainExtent;
+        VkRenderPassBeginInfo renderPassInfo{
+            .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+            .renderPass = m_RenderPass->GetRenderPass(),
+            .framebuffer = m_Framebuffers[imageIndex]->GetFramebuffer(),
+            .renderArea{
+                .offset = {0, 0},
+                .extent = swapchainExtent,
+            },
+        };
 
         VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
         renderPassInfo.clearValueCount = 1;
@@ -270,18 +289,20 @@ namespace ve
 
         m_GraphicsPipeline->Bind(commandBuffer);
 
-        VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width = static_cast<float>(swapchainExtent.width);
-        viewport.height = static_cast<float>(swapchainExtent.height);
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
+        VkViewport viewport{
+            .x = 0.0f,
+            .y = 0.0f,
+            .width = static_cast<float>(swapchainExtent.width),
+            .height = static_cast<float>(swapchainExtent.height),
+            .minDepth = 0.0f,
+            .maxDepth = 1.0f,
+        };
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
-        VkRect2D scissor{};
-        scissor.offset = {0, 0};
-        scissor.extent = swapchainExtent;
+        VkRect2D scissor{
+            .offset = {0, 0},
+            .extent = swapchainExtent,
+        };
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
         VkBuffer vertexBuffers[] = {m_VertexBuffer->GetBuffer()};
@@ -307,12 +328,14 @@ namespace ve
         m_RenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         m_InFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
-        VkSemaphoreCreateInfo semaphoreInfo{};
-        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        VkSemaphoreCreateInfo semaphoreInfo{
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+        };
 
-        VkFenceCreateInfo fenceInfo{};
-        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+        VkFenceCreateInfo fenceInfo{
+            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+            .flags = VK_FENCE_CREATE_SIGNALED_BIT,
+        };
 
         VkResult result;
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -332,27 +355,67 @@ namespace ve
         VE_CORE_TRACE("Created {0} VkFence (in flight) objects", MAX_FRAMES_IN_FLIGHT);
     }
 
+    void Renderer::CreateTextureImage()
+    {
+        int texWidth, texHeight, texChannels;
+        stbi_uc *pixels = stbi_load("../VulkanEngine/assets/textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+        VkDeviceSize imageSize = texWidth * texHeight * 4;
+
+        if (!pixels)
+            throw std::runtime_error("failed to load texture image!");
+
+        VkPhysicalDevice physicalDevice = m_Context->GetPhysicalDevice().GetPhysicalDevice();
+        VulkanBuffer stagingBuffer(m_Device, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, "TextureImage staging");
+        VulkanDeviceMemory stagingMemory = stagingBuffer.AllocateMemory(
+            physicalDevice, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        void *mapped = stagingMemory.Map(imageSize);
+        std::memcpy(mapped, pixels, imageSize);
+        stagingMemory.Unmap();
+        stbi_image_free(pixels);
+
+        m_TextureImage = CreateScope<VulkanImage>(
+            m_Device, VkExtent2D{static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight)},
+            VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, "TextureImage");
+
+        m_TextureImageMemory = CreateScope<VulkanDeviceMemory>(m_TextureImage->AllocateMemory(physicalDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+
+        m_TextureImageView = CreateScope<VulkanImageView>(m_Device, *m_TextureImage, VK_IMAGE_ASPECT_COLOR_BIT);
+
+        const auto &deviceProps = m_Context->GetPhysicalDevice().GetProperties();
+        SamplerConfig samplerConfig{
+            .AnisotropyEnable = VK_TRUE,
+            .MaxAnisotropy = deviceProps.limits.maxSamplerAnisotropy,
+        };
+        m_TextureImageSampler = CreateScope<VulkanSampler>(m_Device, samplerConfig);
+
+        VkCommandPool commandPool = m_CommandPool->GetCommandPool();
+        VkQueue graphicsQueue = m_Context->GetGraphicsQueue();
+        m_TextureImage->TransitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, commandPool, graphicsQueue);
+        m_TextureImage->CopyFrom(stagingBuffer.GetBuffer(), commandPool, graphicsQueue);
+        m_TextureImage->TransitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, commandPool, graphicsQueue);
+    }
+
     void Renderer::CreateVertexBuffer()
     {
         VkPhysicalDevice physicalDevice = m_Context->GetPhysicalDevice().GetPhysicalDevice();
         VkDeviceSize bufferSize = sizeof(Vertex) * s_Vertices.size();
 
-        VulkanBuffer stagingBuffer(
-            m_Device, physicalDevice,
-            bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            "VertexBuffer staging");
+        VulkanBuffer stagingBuffer(m_Device, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, "VertexBuffer staging");
+        VulkanDeviceMemory stagingMemory = stagingBuffer.AllocateMemory(
+            physicalDevice, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        stagingBuffer.Map();
-        stagingBuffer.WriteToBuffer(s_Vertices.data());
-        stagingBuffer.Unmap();
+        void *mapped = stagingMemory.Map(bufferSize);
+        std::memcpy(mapped, s_Vertices.data(), bufferSize);
+        stagingMemory.Unmap();
 
         m_VertexBuffer = CreateScope<VulkanBuffer>(
-            m_Device, physicalDevice,
-            bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "VertexBuffer");
+            m_Device, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, "VertexBuffer");
+        m_VertexBufferMemory = CreateScope<VulkanDeviceMemory>(m_VertexBuffer->AllocateMemory(
+            physicalDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
-        CopyBuffer(stagingBuffer.GetBuffer(), m_VertexBuffer->GetBuffer(), bufferSize);
+        m_VertexBuffer->CopyFrom(stagingBuffer.GetBuffer(), bufferSize, m_CommandPool->GetCommandPool(), m_Context->GetGraphicsQueue());
     }
 
     void Renderer::CreateIndexBuffer()
@@ -360,22 +423,20 @@ namespace ve
         VkPhysicalDevice physicalDevice = m_Context->GetPhysicalDevice().GetPhysicalDevice();
         VkDeviceSize bufferSize = sizeof(uint32_t) * s_Indices.size();
 
-        VulkanBuffer stagingBuffer(
-            m_Device, physicalDevice,
-            bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            "IndexBuffer staging");
+        VulkanBuffer stagingBuffer(m_Device, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, "IndexBuffer staging");
+        VulkanDeviceMemory stagingMemory = stagingBuffer.AllocateMemory(
+            physicalDevice, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        stagingBuffer.Map();
-        stagingBuffer.WriteToBuffer(s_Indices.data());
-        stagingBuffer.Unmap();
+        void *mapped = stagingMemory.Map(bufferSize);
+        std::memcpy(mapped, s_Indices.data(), bufferSize);
+        stagingMemory.Unmap();
 
         m_IndexBuffer = CreateScope<VulkanBuffer>(
-            m_Device, physicalDevice,
-            bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, "IndexBuffer");
+            m_Device, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, "IndexBuffer");
+        m_IndexBufferMemory = CreateScope<VulkanDeviceMemory>(m_IndexBuffer->AllocateMemory(
+            physicalDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
 
-        CopyBuffer(stagingBuffer.GetBuffer(), m_IndexBuffer->GetBuffer(), bufferSize);
+        m_IndexBuffer->CopyFrom(stagingBuffer.GetBuffer(), bufferSize, m_CommandPool->GetCommandPool(), m_Context->GetGraphicsQueue());
     }
 
     void Renderer::CreateUniformBuffers()
@@ -383,16 +444,18 @@ namespace ve
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
         m_UniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+        m_UniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
 
         VE_CORE_TRACE("Creating UniformBuffers({0})...", MAX_FRAMES_IN_FLIGHT);
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
             VkPhysicalDevice physicalDevice = m_Context->GetPhysicalDevice().GetPhysicalDevice();
             m_UniformBuffers[i] = CreateScope<VulkanBuffer>(
-                m_Device, physicalDevice,
-                bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                m_Device, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 "UniformBuffer " + std::to_string(i));
+
+            m_UniformBuffersMemory[i] = CreateScope<VulkanDeviceMemory>(m_UniformBuffers[i]->AllocateMemory(
+                physicalDevice, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
         }
 
         VE_CORE_TRACE("Created {0} UniformBuffers", m_UniformBuffers.size());
@@ -403,55 +466,21 @@ namespace ve
         std::vector<VkWriteDescriptorSet> writes;
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
-            VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = m_UniformBuffers[i]->GetBuffer();
-            bufferInfo.range = sizeof(UniformBufferObject);
-
+            VkDescriptorBufferInfo bufferInfo{
+                .buffer = m_UniformBuffers[i]->GetBuffer(),
+                .range = sizeof(UniformBufferObject),
+            };
             writes.push_back(m_DescriptorSetManager->GetSets().Bind(i, 0, bufferInfo));
+
+            VkDescriptorImageInfo imageInfo{
+                .sampler = m_TextureImageSampler->GetSampler(),
+                .imageView = m_TextureImageView->GetImageView(),
+                .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            };
+            writes.push_back(m_DescriptorSetManager->GetSets().Bind(i, 1, imageInfo));
         }
 
         m_DescriptorSetManager->GetSets().UpdateDescriptors(writes);
-    }
-
-    void Renderer::CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
-    {
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandPool = m_CommandPool->GetCommandPool();
-        allocInfo.commandBufferCount = 1;
-
-        VkCommandBuffer commandBuffer;
-        VkResult result = vkAllocateCommandBuffers(m_Device, &allocInfo, &commandBuffer);
-        CHECK_VK_RESULT(result);
-
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
-        CHECK_VK_RESULT(result);
-
-        VkBufferCopy copyRegion{};
-        copyRegion.size = size;
-
-        vkCmdCopyBuffer(commandBuffer, src, dst, 1, &copyRegion);
-
-        result = vkEndCommandBuffer(commandBuffer);
-        CHECK_VK_RESULT(result);
-
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
-
-        result = vkQueueSubmit(m_Context->GetGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-        CHECK_VK_RESULT(result);
-
-        result = vkQueueWaitIdle(m_Context->GetGraphicsQueue());
-        CHECK_VK_RESULT(result);
-
-        vkFreeCommandBuffers(m_Device, m_CommandPool->GetCommandPool(), 1, &commandBuffer);
     }
 
     void Renderer::RecreateSwapchain()
@@ -480,15 +509,17 @@ namespace ve
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-        UniformBufferObject ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.proj = glm::perspective(glm::radians(45.0f), m_Swapchain->GetExtent().width / (float)m_Swapchain->GetExtent().height, 0.1f, 10.0f);
-        ubo.proj[1][1] *= -1;
+        UniformBufferObject ubo{
+            .Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+            .View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+            .Proj = glm::perspective(glm::radians(45.0f), m_Swapchain->GetExtent().width / (float)m_Swapchain->GetExtent().height, 0.1f, 10.0f),
+        };
+        ubo.Proj[1][1] *= -1;
 
-        m_UniformBuffers[m_CurrentFrame]->Map();
-        m_UniformBuffers[m_CurrentFrame]->WriteToBuffer(&ubo);
-        m_UniformBuffers[m_CurrentFrame]->Unmap();
+        auto &uniformBufferMemory = m_UniformBuffersMemory[m_CurrentFrame];
+        void *mapped = uniformBufferMemory->Map(sizeof(UniformBufferObject));
+        std::memcpy(mapped, &ubo, sizeof(UniformBufferObject));
+        uniformBufferMemory->Unmap();
     }
 
 } // namespace ve

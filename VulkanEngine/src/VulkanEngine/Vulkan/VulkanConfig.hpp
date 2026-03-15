@@ -24,6 +24,7 @@ namespace ve
             VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     };
 
+    // Default values for Release build
     struct VulkanConfig
     {
         std::string AppName;
@@ -31,9 +32,9 @@ namespace ve
         std::string EngineName;
         uint32_t EngineVersion;
         uint32_t ApiVersion;
-        std::vector<const char *> InstanceExtensions = {};
+        std::vector<const char *> InstanceExtensions;
         bool EnableValidationLayers = false;
-        std::vector<const char *> ValidationLayers = {};
+        std::vector<const char *> ValidationLayers;
 
         DebugCallbackConfig DebugConfig;
     };

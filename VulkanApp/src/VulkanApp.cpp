@@ -14,11 +14,16 @@ public:
 
 ve::Application *ve::CreateApplication(ApplicationCommandLineArgs args)
 {
-    ve::ApplicationCreateInfo appInfo;
-    appInfo.Name = "VulkanApp";
-    appInfo.WorkingDirectory = "VulkanApp/";
-    appInfo.CommandLineArgs = args;
-    appInfo.WindowInfo = {.Title = "VulkanApp", .IconPath = "assets/icons/vulkan.png", .Resizable = true};
+    ve::ApplicationCreateInfo appInfo{
+        .Name = "VulkanApp",
+        .WorkingDirectory = "VulkanApp/",
+        .CommandLineArgs = args,
+        .WindowInfo{
+            .Title = "VulkanApp",
+            .IconPath = "assets/icons/vulkan.png",
+            .Resizable = true,
+        },
+    };
 
     return new VulkanApp(appInfo);
 }

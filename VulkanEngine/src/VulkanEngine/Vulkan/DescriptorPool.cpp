@@ -11,17 +11,19 @@ namespace ve
 
         for (const auto &b : descriptorBindings)
         {
-            VkDescriptorPoolSize poolSize{};
-            poolSize.type = b.type;
-            poolSize.descriptorCount = static_cast<uint32_t>(b.descriptorCount * maxSets);
+            VkDescriptorPoolSize poolSize{
+                .type = b.Type,
+                .descriptorCount = static_cast<uint32_t>(b.DescriptorCount * maxSets),
+            };
             poolSizes.push_back(poolSize);
         }
 
-        VkDescriptorPoolCreateInfo poolInfo{};
-        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-        poolInfo.pPoolSizes = poolSizes.data();
-        poolInfo.maxSets = static_cast<uint32_t>(maxSets);
+        VkDescriptorPoolCreateInfo poolInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+            .maxSets = static_cast<uint32_t>(maxSets),
+            .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
+            .pPoolSizes = poolSizes.data(),
+        };
 
         VkResult result = vkCreateDescriptorPool(m_Device, &poolInfo, nullptr, &m_DescriptorPool);
         CHECK_VK_RESULT(result);

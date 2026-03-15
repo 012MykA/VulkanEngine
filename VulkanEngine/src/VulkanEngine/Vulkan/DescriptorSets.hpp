@@ -24,6 +24,8 @@ namespace ve
 
         VkWriteDescriptorSet Bind(const size_t index, const uint32_t binding,
                                   const VkDescriptorBufferInfo &bufferInfo, const uint32_t count = 1) const;
+        VkWriteDescriptorSet Bind(const size_t index, const uint32_t binding,
+                                  const VkDescriptorImageInfo &imageInfo, const uint32_t count = 1) const;
 
     public:
         // Getters

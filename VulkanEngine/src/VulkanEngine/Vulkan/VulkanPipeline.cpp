@@ -1,7 +1,7 @@
 #include "VulkanPipeline.hpp"
 #include "VulkanShaderModule.hpp"
-#include "VulkanEngine/Core/Log.hpp"
 #include "Debug/VulkanValidation.hpp"
+#include "VulkanEngine/Core/Log.hpp"
 
 #include <cassert>
 
@@ -28,37 +28,44 @@ namespace ve
         };
 
         // Vertex input
-        VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-        vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        VkPipelineVertexInputStateCreateInfo vertexInputInfo{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+            .vertexBindingDescriptionCount = static_cast<uint32_t>(configInfo.bindingDescriptions.size()),
+            .pVertexBindingDescriptions = configInfo.bindingDescriptions.data(),
+            .vertexAttributeDescriptionCount = static_cast<uint32_t>(configInfo.attributeDescriptions.size()),
+            .pVertexAttributeDescriptions = configInfo.attributeDescriptions.data(),
+        };
 
-        vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(configInfo.bindingDescriptions.size());
-        vertexInputInfo.pVertexBindingDescriptions = configInfo.bindingDescriptions.data();
+        auto colorBlending = configInfo.colorBlending;
+        colorBlending.pAttachments = &configInfo.colorBlendAttachment;
 
-        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(configInfo.attributeDescriptions.size());
-        vertexInputInfo.pVertexAttributeDescriptions = configInfo.attributeDescriptions.data();
+        auto dynamicState = configInfo.dynamicState;
+        dynamicState.dynamicStateCount = static_cast<uint32_t>(configInfo.dynamicStateEnables.size());
+        dynamicState.pDynamicStates = configInfo.dynamicStateEnables.data();
 
         // --- Pipeline creation ---
-        VkGraphicsPipelineCreateInfo pipelineInfo{};
-        pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        VkGraphicsPipelineCreateInfo pipelineInfo{
+            .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
 
-        pipelineInfo.stageCount = 2;
-        pipelineInfo.pStages = shaderStages;
+            .stageCount = 2,
+            .pStages = shaderStages,
 
-        pipelineInfo.pVertexInputState = &vertexInputInfo;
-        pipelineInfo.pInputAssemblyState = &configInfo.inputAssembly;
-        pipelineInfo.pViewportState = &configInfo.viewportState;
-        pipelineInfo.pRasterizationState = &configInfo.rasterizer;
-        pipelineInfo.pMultisampleState = &configInfo.multisampling;
-        pipelineInfo.pDepthStencilState = &configInfo.depthStencil;
-        pipelineInfo.pColorBlendState = &configInfo.colorBlending;
-        pipelineInfo.pDynamicState = &configInfo.dynamicState;
+            .pVertexInputState = &vertexInputInfo,
+            .pInputAssemblyState = &configInfo.inputAssembly,
+            .pViewportState = &configInfo.viewportState,
+            .pRasterizationState = &configInfo.rasterizer,
+            .pMultisampleState = &configInfo.multisampling,
+            .pDepthStencilState = &configInfo.depthStencil,
+            .pColorBlendState = &colorBlending,
+            .pDynamicState = &dynamicState,
 
-        pipelineInfo.layout = configInfo.pipelineLayout;
-        pipelineInfo.renderPass = configInfo.renderPass;
-        pipelineInfo.subpass = configInfo.subpass;
+            .layout = configInfo.pipelineLayout,
+            .renderPass = configInfo.renderPass,
+            .subpass = configInfo.subpass,
 
-        pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
-        pipelineInfo.basePipelineIndex = -1;              // Optional
+            .basePipelineHandle = VK_NULL_HANDLE, // Optional
+            .basePipelineIndex = -1,              // Optional
+        };
 
         VkResult result = vkCreateGraphicsPipelines(m_Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);
         CHECK_VK_RESULT(result);
@@ -77,82 +84,90 @@ namespace ve
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
     }
 
-    void VulkanPipeline::DefaultPipelineConfig(PipelineConfig &config)
+    PipelineConfig VulkanPipeline::DefaultPipelineConfig()
     {
-        // Input assembly
-        config.inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        config.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        config.inputAssembly.primitiveRestartEnable = VK_FALSE;
-        config.inputAssembly.pNext = nullptr;
-
-        // Viewport & scissor
-        config.viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-        config.viewportState.viewportCount = 1;
-        config.viewportState.pViewports = nullptr; // Dynamic state
-        config.viewportState.scissorCount = 1;
-        config.viewportState.pScissors = nullptr; // Dynamic state
-
-        // Rasterizer
-        config.rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-        config.rasterizer.depthClampEnable = VK_FALSE;
-        config.rasterizer.rasterizerDiscardEnable = VK_FALSE;
-        config.rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-        config.rasterizer.lineWidth = 1.0f;
-        config.rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-        config.rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-        config.rasterizer.depthBiasEnable = VK_FALSE;
-        config.rasterizer.depthBiasConstantFactor = 0.0f; // Optional
-        config.rasterizer.depthBiasClamp = 0.0f;          // Optional
-        config.rasterizer.depthBiasSlopeFactor = 0.0f;    // Optional
-
-        // Multisampling
-        config.multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-        config.multisampling.sampleShadingEnable = VK_FALSE;
-        config.multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-        config.multisampling.minSampleShading = 1.0f;          // Optional
-        config.multisampling.pSampleMask = nullptr;            // Optional
-        config.multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
-        config.multisampling.alphaToOneEnable = VK_FALSE;      // Optional
-
-        // Depth
-        config.depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        config.depthStencil.depthTestEnable = VK_FALSE;  // Switch when depth test enabled
-        config.depthStencil.depthWriteEnable = VK_FALSE; // Switch when depth test enabled
-        config.depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-        config.depthStencil.depthBoundsTestEnable = VK_FALSE;
-        config.depthStencil.stencilTestEnable = VK_FALSE;
-        config.depthStencil.minDepthBounds = 0.0f; // Optional
-        config.depthStencil.maxDepthBounds = 1.0f; // Optional
-
-        // Color blending
-        config.colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                                                     VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-        config.colorBlendAttachment.blendEnable = VK_FALSE;
-        config.colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;  // Optional
-        config.colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-        config.colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;             // Optional
-        config.colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;  // Optional
-        config.colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-        config.colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;             // Optional
-
-        config.colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        config.colorBlending.logicOpEnable = VK_FALSE;
-        config.colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
-        config.colorBlending.attachmentCount = 1;
-        config.colorBlending.pAttachments = &config.colorBlendAttachment;
-        config.colorBlending.blendConstants[0] = 0.0f; // Optional
-        config.colorBlending.blendConstants[1] = 0.0f; // Optional
-        config.colorBlending.blendConstants[2] = 0.0f; // Optional
-        config.colorBlending.blendConstants[3] = 0.0f; // Optional
-
-        config.dynamicStateEnables = {
-            VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_SCISSOR,
+        PipelineConfig defaultConfig{
+            // Input assembly
+            .inputAssembly{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+                .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+                .primitiveRestartEnable = VK_FALSE,
+            },
+            // Viewport & scissor
+            .viewportState{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+                .viewportCount = 1,
+                .pViewports = nullptr, // Dynamic state
+                .scissorCount = 1,
+                .pScissors = nullptr, // Dynamic state
+            },
+            // Rasterizer
+            .rasterizer{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+                .depthClampEnable = VK_FALSE,
+                .rasterizerDiscardEnable = VK_FALSE,
+                .polygonMode = VK_POLYGON_MODE_FILL,
+                .cullMode = VK_CULL_MODE_BACK_BIT,
+                .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+                .depthBiasEnable = VK_FALSE,
+                .depthBiasConstantFactor = 0.0f, // Optional
+                .depthBiasClamp = 0.0f,          // Optional
+                .depthBiasSlopeFactor = 0.0f,    // Optional
+                .lineWidth = 1.0f,
+            },
+            // Multisampling
+            .multisampling{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+                .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+                .sampleShadingEnable = VK_FALSE,
+                .minSampleShading = 1.0f,          // Optional
+                .pSampleMask = nullptr,            // Optional
+                .alphaToCoverageEnable = VK_FALSE, // Optional
+                .alphaToOneEnable = VK_FALSE,      // Optional
+            },
+            // Depth stencil
+            .depthStencil{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+                .depthTestEnable = VK_FALSE,  // Switch when depth test enabled
+                .depthWriteEnable = VK_FALSE, // Switch when depth test enabled
+                .depthCompareOp = VK_COMPARE_OP_LESS,
+                .depthBoundsTestEnable = VK_FALSE,
+                .stencilTestEnable = VK_FALSE,
+                .minDepthBounds = 0.0f, // Optional
+                .maxDepthBounds = 1.0f, // Optional
+            },
+            // Color blending
+            .colorBlendAttachment{
+                .blendEnable = VK_FALSE,
+                .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,  // Optional
+                .dstColorBlendFactor = VK_BLEND_FACTOR_ZERO, // Optional
+                .colorBlendOp = VK_BLEND_OP_ADD,             // Optional
+                .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,  // Optional
+                .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO, // Optional
+                .alphaBlendOp = VK_BLEND_OP_ADD,             // Optional
+                .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                                  VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+            },
+            .colorBlending{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+                .logicOpEnable = VK_FALSE,
+                .logicOp = VK_LOGIC_OP_COPY, // Optional
+                .attachmentCount = 1,
+                // .pAttachments = // Written in constructor
+                .blendConstants = {0.0f, 0.0f, 0.0f, 0.0f},
+            },
+            .dynamicStateEnables = {
+                VK_DYNAMIC_STATE_VIEWPORT,
+                VK_DYNAMIC_STATE_SCISSOR,
+            },
+            .dynamicState{
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+                // .dynamicStateCount = // Written in constructor
+                // .pDynamicStates =    // Written in constructor
+            },
         };
 
-        config.dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-        config.dynamicState.dynamicStateCount = static_cast<uint32_t>(config.dynamicStateEnables.size());
-        config.dynamicState.pDynamicStates = config.dynamicStateEnables.data();
+        return defaultConfig;
     }
 
 } // namespace ve
