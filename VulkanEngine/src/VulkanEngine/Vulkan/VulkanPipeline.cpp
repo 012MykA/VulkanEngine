@@ -1,7 +1,7 @@
 #include "VulkanPipeline.hpp"
 #include "VulkanShaderModule.hpp"
-#include "VulkanEngine/Core/Log.hpp"
 #include "Debug/VulkanValidation.hpp"
+#include "VulkanEngine/Core/Log.hpp"
 
 #include <cassert>
 

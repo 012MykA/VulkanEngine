@@ -6,7 +6,7 @@
 
 namespace ve
 {
-    class VulkanDeviceMemory final
+    class VulkanDeviceMemory
     {
     public:
         VulkanDeviceMemory(const VulkanDeviceMemory &) = delete;

@@ -15,10 +15,10 @@
 // ---
 
 static const std::vector<ve::Vertex> s_Vertices = {
-    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, 0.5, 0.0f}, {0.0f, 0.0f, 1.0f}},
-    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
 };
 
 static const std::vector<uint32_t> s_Indices = {0, 1, 2, 2, 3, 0};
@@ -44,12 +44,12 @@ namespace ve
         CreateCommandPool();
         CreateCommandBuffers();
 
-        CreateUniformBuffers();
-        WriteDescriptorSets();
-
         CreateTextureImage();
         CreateVertexBuffer();
         CreateIndexBuffer();
+
+        CreateUniformBuffers();
+        WriteDescriptorSets();
 
         CreateSyncObjects();
 
@@ -181,9 +181,17 @@ namespace ve
             .binding = 0,
             .descriptorCount = 1,
             .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .stage = VK_SHADER_STAGE_VERTEX_BIT};
+            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+        };
 
-        std::vector<DescriptorBinding> bindings = {uboBinding};
+        DescriptorBinding samplerBinding{
+            .binding = 1,
+            .descriptorCount = 1,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+        };
+
+        std::vector<DescriptorBinding> bindings = {uboBinding, samplerBinding};
         m_DescriptorSetManager = CreateScope<DescriptorSetManager>(m_Device, bindings, MAX_FRAMES_IN_FLIGHT);
     }
 
@@ -368,6 +376,13 @@ namespace ve
 
         m_TextureImageView = CreateScope<VulkanImageView>(m_Device, *m_TextureImage, VK_IMAGE_ASPECT_COLOR_BIT);
 
+        const auto &deviceProps = m_Context->GetPhysicalDevice().GetProperties();
+        SamplerConfig samplerConfig{
+            .AnisotropyEnable = VK_TRUE,
+            .MaxAnisotropy = deviceProps.limits.maxSamplerAnisotropy,
+        };
+        m_TextureImageSampler = CreateScope<VulkanSampler>(m_Device, samplerConfig);
+
         VkCommandPool commandPool = m_CommandPool->GetCommandPool();
         VkQueue graphicsQueue = m_Context->GetGraphicsQueue();
         m_TextureImage->TransitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, commandPool, graphicsQueue);
@@ -447,8 +462,13 @@ namespace ve
             VkDescriptorBufferInfo bufferInfo{};
             bufferInfo.buffer = m_UniformBuffers[i]->GetBuffer();
             bufferInfo.range = sizeof(UniformBufferObject);
-
             writes.push_back(m_DescriptorSetManager->GetSets().Bind(i, 0, bufferInfo));
+
+            VkDescriptorImageInfo imageInfo{};
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageInfo.imageView = m_TextureImageView->GetImageView();
+            imageInfo.sampler = m_TextureImageSampler->GetSampler();
+            writes.push_back(m_DescriptorSetManager->GetSets().Bind(i, 1, imageInfo));
         }
 
         m_DescriptorSetManager->GetSets().UpdateDescriptors(writes);

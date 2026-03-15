@@ -65,17 +65,21 @@ namespace ve
         CreateSurface(window);
 
         // Physical device
-        PhysicalDeviceRequirements devReq;
-        devReq.RequiresGraphicsQueue = true;
-        devReq.RequiresPresentQueue = true;
-        devReq.SwapchainAdequate = true;
-        devReq.Extensions = {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-            VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
+        PhysicalDeviceRequirements devReq{
+            .RequiresGraphicsQueue = true,
+            .RequiresPresentQueue = true,
+            .SwapchainAdequate = true,
+            .Extensions = {
+                VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
+            },
+            .Features{
+                .geometryShader = VK_TRUE,
+                .tessellationShader = VK_TRUE,
+                .samplerAnisotropy = VK_TRUE,
+            },
+            .PreferredDeviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU,
         };
-        devReq.Features.geometryShader = VK_TRUE;
-        devReq.Features.tessellationShader = VK_TRUE;
-        devReq.PreferredDeviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
         m_PhysicalDevice = CreateScope<VulkanPhysicalDevice>(VulkanPhysicalDevice::Select(m_Instance, m_Surface, devReq));
         // ---
 

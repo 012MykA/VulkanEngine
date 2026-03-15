@@ -101,20 +101,23 @@ namespace ve
 
     void Application::InitializeVulkan(const std::string &appName)
     {
-        VulkanConfig config{};
-        config.AppName = appName;
-        config.AppVersion = VK_MAKE_VERSION(1, 0, 0);
-        config.EngineName = "VulkanEngine";
-        config.EngineVersion = VK_MAKE_VERSION(1, 0, 0);
-        config.ApiVersion = VK_API_VERSION_1_3;
-        config.InstanceExtensions = m_Window->GetRequiredVulkanExtensions();
+        VulkanConfig config{
+            .AppName = appName,
+            .AppVersion = VK_MAKE_VERSION(1, 0, 0),
+            .EngineName = "VulkanEngine",
+            .EngineVersion = VK_MAKE_VERSION(1, 0, 0),
+            .ApiVersion = VK_API_VERSION_1_3,
+            .InstanceExtensions = m_Window->GetRequiredVulkanExtensions(),
 #if defined(VE_DEBUG)
-        config.EnableValidationLayers = true;
-        config.ValidationLayers = {"VK_LAYER_KHRONOS_validation"};
-        config.DebugConfig.EnableDebugMessenger = true;
-        config.DebugConfig.MessageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                                             VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+            .EnableValidationLayers = true,
+            .ValidationLayers = {"VK_LAYER_KHRONOS_validation"},
+            .DebugConfig{
+                .EnableDebugMessenger = true,
+                .MessageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                                   VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+            },
 #endif
+        };
 
         m_VulkanContext = CreateRef<VulkanContext>(config, static_cast<GLFWwindow *>(m_Window->GetNativeWindow()));
         m_Renderer = CreateScope<Renderer>(m_VulkanContext, VkExtent2D{m_Window->GetWidth(), m_Window->GetHeight()});

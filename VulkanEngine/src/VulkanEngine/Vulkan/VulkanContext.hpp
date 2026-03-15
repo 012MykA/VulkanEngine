@@ -26,7 +26,6 @@ namespace ve
         VkQueue GetPresentQueue() const { return m_PresentQueue; }
 
         VkSurfaceKHR GetSurface() const { return m_Surface; }
-        VkExtent2D GetWindowExtent() const;
 
     private:
         void CreateInstance(const VulkanConfig &config);

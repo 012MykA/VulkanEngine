@@ -13,6 +13,7 @@
 #include "VulkanBuffer.hpp"
 #include "VulkanImage.hpp"
 #include "VulkanImageView.hpp"
+#include "VulkanSampler.hpp"
 
 #include <vector>
 #include <cstdint>
@@ -82,6 +83,7 @@ namespace ve
         Scope<VulkanImage> m_TextureImage;
         Scope<VulkanDeviceMemory> m_TextureImageMemory;
         Scope<VulkanImageView> m_TextureImageView;
+        Scope<VulkanSampler> m_TextureImageSampler;
 
         Scope<VulkanBuffer> m_VertexBuffer;
         Scope<VulkanDeviceMemory> m_VertexBufferMemory;
