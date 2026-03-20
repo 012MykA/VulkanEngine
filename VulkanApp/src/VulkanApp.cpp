@@ -1,14 +1,14 @@
 #include <VulkanEngine/VulkanEngine.hpp>
 #include <VulkanEngine/Core/EntryPoint.hpp>
 
-#include "RenderLayer.hpp"
+#include "ExampleLayer.hpp"
 
 class VulkanApp : public ve::Application
 {
 public:
     VulkanApp(const ve::ApplicationCreateInfo &createInfo) : ve::Application(createInfo)
     {
-        PushLayer(new RenderLayer());
+        PushLayer(new ExampleLayer());
     }
 };
 

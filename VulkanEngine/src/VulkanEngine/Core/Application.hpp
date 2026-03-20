@@ -9,9 +9,6 @@
 #include <string>
 #include <cassert>
 
-#include "VulkanEngine/Vulkan/VulkanContext.hpp"
-#include "VulkanEngine/Vulkan/Renderer.hpp"
-
 namespace ve
 {
     struct ApplicationCommandLineArgs
@@ -60,11 +57,6 @@ namespace ve
         bool m_Minimized = false;
         LayerStack m_LayerStack;
         float m_LastFrameTime = 0.0f;
-
-    private: // TODO: refactor
-        void InitializeVulkan(const std::string &appName);
-        Ref<VulkanContext> m_VulkanContext;
-        Scope<Renderer> m_Renderer;
 
     private:
         static Application *s_Instance;

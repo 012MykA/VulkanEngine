@@ -1,6 +1,5 @@
 #include "VulkanEngine/Core/Base.hpp"
-
-#ifdef VE_PLATFORM_WINDOWS
+#if defined(VE_PLATFORM_WINDOWS) || defined(VE_PLATFORM_LINUX)
 
 #include "VulkanEngine/Utils/PlatformUtils.hpp"
 
@@ -15,4 +14,4 @@ namespace ve
 
 } // namespace ve
 
-#endif // VE_PLATFORM_WINDOWS
+#endif // VE_PLATFORM_WINDOWS || VE_PLATFORM_LINUX

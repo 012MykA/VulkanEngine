@@ -1,10 +1,7 @@
 #include "Application.hpp"
 #include "VulkanEngine/Core/Timestep.hpp"
 #include "VulkanEngine/Utils/PlatformUtils.hpp"
-#include "VulkanEngine/Vulkan/VulkanConfig.hpp"
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
 #include <cassert>
 
 namespace ve
@@ -24,8 +21,6 @@ namespace ve
 
         m_Window = Window::Create(createInfo.WindowInfo);
         m_Window->SetEventCallback(VE_BIND_EVENT_FN(OnEvent));
-
-        InitializeVulkan(createInfo.Name);
     }
 
     void Application::Run()
@@ -42,8 +37,6 @@ namespace ve
                 {
                     layer->OnUpdate(timestep);
                 }
-
-                m_Renderer->DrawFrame();
             }
 
             m_Window->OnUpdate();
@@ -94,33 +87,7 @@ namespace ve
         }
         m_Minimized = false;
 
-        m_Renderer->OnWindowResize(e.GetWidth(), e.GetHeight());
-
         return false;
-    }
-
-    void Application::InitializeVulkan(const std::string &appName)
-    {
-        VulkanConfig config{
-            .AppName = appName,
-            .AppVersion = VK_MAKE_VERSION(1, 0, 0),
-            .EngineName = "VulkanEngine",
-            .EngineVersion = VK_MAKE_VERSION(1, 0, 0),
-            .ApiVersion = VK_API_VERSION_1_3,
-            .InstanceExtensions = m_Window->GetRequiredVulkanExtensions(),
-#if defined(VE_DEBUG)
-            .EnableValidationLayers = true,
-            .ValidationLayers = {"VK_LAYER_KHRONOS_validation"},
-            .DebugConfig{
-                .EnableDebugMessenger = true,
-                .MessageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                                   VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
-            },
-#endif
-        };
-
-        m_VulkanContext = CreateRef<VulkanContext>(config, static_cast<GLFWwindow *>(m_Window->GetNativeWindow()));
-        m_Renderer = CreateScope<Renderer>(m_VulkanContext, VkExtent2D{m_Window->GetWidth(), m_Window->GetHeight()});
     }
 
 } // namespace ve
