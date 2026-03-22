@@ -76,7 +76,7 @@ namespace ve
             WindowCloseEvent event;
             data.EventCallback(event); });
 
-        glfwSetKeyCallback(m_WindowHandle, [](GLFWwindow *window, int key, int scancode, int action, int mods)
+        glfwSetKeyCallback(m_WindowHandle, [](GLFWwindow *window, int key, int, int action, int)
                            {
             WindowData& data =*reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
@@ -108,7 +108,7 @@ namespace ve
             KeyTypedEvent event(keycode);
             data.EventCallback(event); });
 
-        glfwSetMouseButtonCallback(m_WindowHandle, [](GLFWwindow *window, int button, int action, int mods)
+        glfwSetMouseButtonCallback(m_WindowHandle, [](GLFWwindow *window, int button, int action, int)
                                    {
             WindowData& data =*reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 

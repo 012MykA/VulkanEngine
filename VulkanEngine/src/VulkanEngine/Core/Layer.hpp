@@ -15,9 +15,9 @@ namespace ve
 
         virtual void OnAttach() {}
         virtual void OnDetach() {}
-        virtual void OnUpdate(Timestep ts) {}
+        virtual void OnUpdate([[maybe_unused]] Timestep e) {}
         virtual void OnUIRender() {}
-        virtual void OnEvent(Event &event) {}
+        virtual void OnEvent([[maybe_unused]] Event &e) {}
 
         const std::string &GetName() const { return m_DebugName; }
 
