@@ -14,9 +14,13 @@ public:
 
 ve::Application *ve::CreateApplication(ApplicationCommandLineArgs args)
 {
+    std::string workingDir = "VulkanApp/";
+    if (args.Count > 1)
+        workingDir = args[1];
+
     ve::ApplicationCreateInfo appInfo{
         .Name = "VulkanApp",
-        .WorkingDirectory = "VulkanApp/",
+        .WorkingDirectory = workingDir,
         .CommandLineArgs = args,
         .WindowInfo{
             .Title = "VulkanApp",

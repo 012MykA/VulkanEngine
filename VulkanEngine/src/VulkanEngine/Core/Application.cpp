@@ -1,6 +1,7 @@
 #include "Application.hpp"
 #include "VulkanEngine/Core/Timestep.hpp"
 #include "VulkanEngine/Utils/PlatformUtils.hpp"
+#include "VulkanEngine/AssetManager/AssetManager.hpp"
 
 #include <cassert>
 
@@ -13,14 +14,15 @@ namespace ve
         assert(!s_Instance && "Application already exists!");
         s_Instance = this;
 
-        std::filesystem::path workingDir(createInfo.WorkingDirectory);
-        if (std::filesystem::exists(workingDir))
-        {
-            std::filesystem::current_path(workingDir);
-        }
+        AssetManager::Init(createInfo.WorkingDirectory, "VulkanEngine/");
 
         m_Window = Window::Create(createInfo.WindowInfo);
         m_Window->SetEventCallback(VE_BIND_EVENT_FN(OnEvent));
+    }
+
+    Application::~Application()
+    {
+        AssetManager::Shutdown();
     }
 
     void Application::Run()

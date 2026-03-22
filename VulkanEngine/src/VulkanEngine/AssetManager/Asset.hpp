@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
 
 namespace ve
 {
@@ -13,11 +14,15 @@ namespace ve
         Shader,
         Mesh,
     };
-    
+
     class Asset
     {
     public:
-        
+        AssetHandle Handle;
+        std::filesystem::path FilePath;
+
+        virtual ~Asset() = default;
+        virtual AssetType GetType() const = 0;
     };
 
 } // namespace ve

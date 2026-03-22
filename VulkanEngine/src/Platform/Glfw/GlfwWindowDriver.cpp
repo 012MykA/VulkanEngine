@@ -6,6 +6,7 @@
 #include "VulkanEngine/Events/ApplicationEvent.hpp"
 #include "VulkanEngine/Events/KeyEvent.hpp"
 #include "VulkanEngine/Events/MouseEvent.hpp"
+#include "VulkanEngine/AssetManager/AssetManager.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -59,12 +60,14 @@ namespace ve
         // Set Window Icon
         if (!createInfo.IconPath.empty())
         {
+            std::filesystem::path absoluteIconPath = AssetManager::ResolvePath(createInfo.IconPath.string());
+            
             GLFWimage icon;
-            icon.pixels = stbi_load(createInfo.IconPath.string().c_str(), &icon.width, &icon.height, nullptr, STBI_rgb_alpha);
+            icon.pixels = stbi_load(absoluteIconPath.string().c_str(), &icon.width, &icon.height, nullptr, STBI_rgb_alpha);
 
             if (icon.pixels == nullptr)
             {
-                VE_CORE_ERROR("failed to load window icon: {0}" + createInfo.IconPath.string());
+                VE_CORE_ERROR("failed to load window icon: '{0}' (Full path: {1})", createInfo.IconPath, absoluteIconPath);
             }
             else
             {

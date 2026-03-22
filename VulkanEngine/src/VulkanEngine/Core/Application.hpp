@@ -25,7 +25,7 @@ namespace ve
 
     struct ApplicationCreateInfo
     {
-        std::string Name = "VulkanEngine App";
+        std::string Name;
         std::string WorkingDirectory;
         ApplicationCommandLineArgs CommandLineArgs;
         WindowCreateInfo WindowInfo;
@@ -35,7 +35,7 @@ namespace ve
     {
     public:
         Application(const ApplicationCreateInfo &createInfo);
-        virtual ~Application() {}
+        virtual ~Application();
 
     public:
         void Run();
