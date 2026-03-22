@@ -1,6 +1,5 @@
 #pragma once
 
-#include "VulkanEngine/Core/Base.hpp"
 #include "VulkanEngine/Core/Layer.hpp"
 
 namespace ve

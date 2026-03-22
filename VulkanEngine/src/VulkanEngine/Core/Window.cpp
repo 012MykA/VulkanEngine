@@ -1,6 +1,6 @@
 #include "Window.hpp"
-#include "VulkanEngine/Core/Base.hpp"
 
+#include "VulkanEngine/Core/Base.hpp"
 #if defined(VE_PLATFORM_WINDOWS) || defined(VE_PLATFORM_LINUX)
     #include "Platform/Glfw/GlfwWindowDriver.hpp"
 #endif
@@ -9,9 +9,9 @@
 
 namespace ve
 {
-    Scope<Window> ve::Window::Create(const WindowCreateInfo &createInfo)
+    std::unique_ptr<Window> ve::Window::Create(const WindowCreateInfo &createInfo)
     {
-        return CreateScope<GlfwWindowDriver>(createInfo);
+        return std::make_unique<GlfwWindowDriver>(createInfo);
     }
 
 } // namespace ve
