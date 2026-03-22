@@ -15,6 +15,8 @@
 
 namespace ve
 {
+    static bool s_GlfwInitialized = false; // TODO: Add glfw context in future
+    
     namespace
     {
         void GlfwErrorCallback(const int error, const char *const description)
@@ -29,34 +31,49 @@ namespace ve
         m_Data.Width = createInfo.Width;
         m_Data.Height = createInfo.Height;
 
+        // Glfw error callback
         glfwSetErrorCallback(GlfwErrorCallback);
 
-        if (!glfwInit())
-            throw std::runtime_error("failed to initialize GLFW!");
+        // Initializing glfw
+        if (!s_GlfwInitialized)
+        {
+            int success = glfwInit();
+            if (!success)
+                throw std::runtime_error("failed to initialize GLFW!");
+            s_GlfwInitialized = true;
+        }
 
+        // Check Vulkan support
         if (!glfwVulkanSupported())
             throw std::runtime_error("Vulkan is not supported by GLFW!");
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, createInfo.Resizable ? GLFW_TRUE : GLFW_FALSE);
 
+        // Handle Fullscreen
         GLFWmonitor *const monitor = createInfo.Fullscreen ? glfwGetPrimaryMonitor() : nullptr;
-
         m_WindowHandle = glfwCreateWindow(createInfo.Width, createInfo.Height, createInfo.Title.c_str(), monitor, nullptr);
         if (!m_WindowHandle)
             throw std::runtime_error("failed to create GLFW window!");
 
+        // Set Window Icon
         if (!createInfo.IconPath.empty())
         {
             GLFWimage icon;
             icon.pixels = stbi_load(createInfo.IconPath.string().c_str(), &icon.width, &icon.height, nullptr, STBI_rgb_alpha);
-            if (icon.pixels == nullptr)
-                throw std::runtime_error("failed to load window icon");
 
-            glfwSetWindowIcon(m_WindowHandle, 1, &icon);
-            stbi_image_free(icon.pixels);
+            if (icon.pixels == nullptr)
+            {
+                VE_CORE_ERROR("failed to load window icon: {0}" + createInfo.IconPath.string());
+            }
+            else
+            {
+                glfwSetWindowIcon(m_WindowHandle, 1, &icon);
+                stbi_image_free(icon.pixels);
+            }
         }
 
+        // User pointer
         glfwSetWindowUserPointer(m_WindowHandle, &m_Data);
 
         // Set GLFW callbacks
@@ -146,7 +163,7 @@ namespace ve
     GlfwWindowDriver::~GlfwWindowDriver()
     {
         glfwDestroyWindow(m_WindowHandle);
-        glfwTerminate();
+        glfwTerminate(); // TODO: change with glfw context
     }
 
     void GlfwWindowDriver::OnUpdate()
