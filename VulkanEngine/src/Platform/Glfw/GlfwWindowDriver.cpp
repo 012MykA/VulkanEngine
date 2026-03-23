@@ -64,7 +64,7 @@ namespace ve
 
             if (icon.pixels == nullptr)
             {
-                VE_CORE_ERROR("failed to load window icon: {0}" + createInfo.IconPath.string());
+                VE_CORE_ERROR("failed to load window icon: {0}", createInfo.IconPath);
             }
             else
             {
