@@ -1,6 +1,5 @@
 #pragma once
 
-#include "VulkanEngine/Core/Base.hpp"
 #include "VulkanEngine/Core/Window.hpp"
 #include "VulkanEngine/Core/LayerStack.hpp"
 #include "VulkanEngine/Events/Event.hpp"
@@ -8,6 +7,7 @@
 
 #include <string>
 #include <cassert>
+#include <memory>
 
 namespace ve
 {
@@ -52,7 +52,7 @@ namespace ve
 
     private:
         ApplicationCreateInfo m_Info;
-        Scope<Window> m_Window;
+        std::unique_ptr<Window> m_Window;
         bool m_Running = true;
         bool m_Minimized = false;
         LayerStack m_LayerStack;

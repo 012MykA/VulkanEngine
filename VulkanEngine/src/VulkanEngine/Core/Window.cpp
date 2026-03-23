@@ -9,9 +9,9 @@
 
 namespace ve
 {
-    Scope<Window> ve::Window::Create(const WindowCreateInfo &createInfo)
+    std::unique_ptr<Window> ve::Window::Create(const WindowCreateInfo &createInfo)
     {
-        return CreateScope<GlfwWindowDriver>(createInfo);
+        return std::make_unique<GlfwWindowDriver>(createInfo);
     }
 
 } // namespace ve

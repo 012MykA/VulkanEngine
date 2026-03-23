@@ -1,8 +1,9 @@
 #pragma once
 
-#include "VulkanEngine/Core/Base.hpp"
-
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/std.h>
+
+#include <memory>
 
 namespace ve
 {
@@ -11,12 +12,12 @@ namespace ve
 	public:
 		static void Init();
 
-		static Ref<spdlog::logger> &GetCoreLogger() { return m_CoreLogger; }
-		static Ref<spdlog::logger> &GetClientLogger() { return m_ClientLogger; }
+		static std::shared_ptr<spdlog::logger> &GetCoreLogger() { return m_CoreLogger; }
+		static std::shared_ptr<spdlog::logger> &GetClientLogger() { return m_ClientLogger; }
 
 	private:
-		static Ref<spdlog::logger> m_CoreLogger;
-		static Ref<spdlog::logger> m_ClientLogger;
+		static std::shared_ptr<spdlog::logger> m_CoreLogger;
+		static std::shared_ptr<spdlog::logger> m_ClientLogger;
 	};
 	
 } // namespace ve

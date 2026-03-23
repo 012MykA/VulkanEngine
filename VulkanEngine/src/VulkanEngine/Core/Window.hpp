@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <functional>
 #include <vector>
+#include <memory>
 
 namespace ve
 {
@@ -35,7 +36,7 @@ namespace ve
         virtual void SetEventCallback(const EventCallbackFn &callback) = 0;
         virtual std::vector<const char *> GetRequiredVulkanExtensions() const = 0;
 
-        static Scope<Window> Create(const WindowCreateInfo &createInfo);
+        static std::unique_ptr<Window> Create(const WindowCreateInfo &createInfo);
     };
 
 } // namespace ve
