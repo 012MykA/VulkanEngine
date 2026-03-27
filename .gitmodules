@@ -4,3 +4,6 @@
 [submodule "VulkanEngine/vendor/glfw"]
 	path = VulkanEngine/vendor/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "VulkanEngine/vendor/vma"]
+	path = VulkanEngine/vendor/vma
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator

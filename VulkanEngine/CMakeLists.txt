@@ -4,32 +4,20 @@ project(VulkanEngine)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Vendor
 find_package(Vulkan REQUIRED)
 
 add_subdirectory(vendor/spdlog)
 add_subdirectory(vendor/glfw)
+add_subdirectory(vendor/vma)
 
 # Sources
 file(GLOB_RECURSE ENGINE_CORE_SOURCES
     src/VulkanEngine/*.cpp
 )
 
-# Platform Sources
-# Common
-if(UNIX OR WIN32)
-    file(GLOB_RECURSE PLATFORM_GLFW_SOURCES src/Platform/Glfw/*.cpp)
-    list(APPEND PLATFORM_SOURCES ${PLATFORM_GLFW_SOURCES})
-endif()
-
-# Windows
-if(WIN32)
-    file(GLOB_RECURSE PLATFORM_WINDOWS_SOURCES src/Platform/Windows/*.cpp)
-    list(APPEND PLATFORM_SOURCES ${PLATFORM_WINDOWS_SOURCES})
-elseif(UNIX AND NOT APPLE) # Linux
-    file(GLOB_RECURSE PLATFORM_LINUX_SOURCES src/Platform/Linux/*.cpp)
-    list(APPEND PLATFORM_SOURCES ${PLATFORM_LINUX_SOURCES})
-endif()
-# End Platform Sources
+file(GLOB_RECURSE PLATFORM_GLFW_SOURCES src/Platform/Glfw/*.cpp)
+list(APPEND PLATFORM_SOURCES ${PLATFORM_GLFW_SOURCES})
 
 set(STB_IMAGE_SOURCE vendor/stb/src/stb_image.c)
 
@@ -42,8 +30,7 @@ add_library(${PROJECT_NAME} STATIC
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
         Vulkan::Vulkan
-    
-    PRIVATE
+        GPUOpen::VulkanMemoryAllocator
         glfw
 )
 

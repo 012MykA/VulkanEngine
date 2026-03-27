@@ -4,6 +4,7 @@
 #include "VulkanEngine/Core/LayerStack.hpp"
 #include "VulkanEngine/Events/Event.hpp"
 #include "VulkanEngine/Events/ApplicationEvent.hpp"
+#include "VulkanEngine/Renderer/Renderer.hpp"
 
 #include <string>
 #include <cassert>
@@ -53,6 +54,10 @@ namespace ve
     private:
         ApplicationCreateInfo m_Info;
         std::unique_ptr<Window> m_Window;
+        
+        std::unique_ptr<Renderer> m_Renderer;
+
+    private:        
         bool m_Running = true;
         bool m_Minimized = false;
         LayerStack m_LayerStack;
