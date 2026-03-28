@@ -91,4 +91,89 @@ namespace ve
         return *this;
     }
 
+    // --- VulkanDescriptorPool ---
+    VulkanDescriptorPool::VulkanDescriptorPool(const VulkanLogicalDevice &logicalDevice, const DescriptorPoolDesc &desc)
+        : m_Device(logicalDevice.GetVkHandle()), m_AllowFree(desc.allowFreeDescriptorSet)
+    {
+        std::vector<VkDescriptorPoolSize> sizes = desc.poolSizes;
+
+        // Default values for PBR rendering ~100 objects
+        if (sizes.empty())
+        {
+            sizes = {
+                {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, desc.maxSets * 2},
+                {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, desc.maxSets},
+                {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, desc.maxSets * 8},
+                {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, desc.maxSets * 4},
+                {VK_DESCRIPTOR_TYPE_SAMPLER, desc.maxSets},
+                {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, desc.maxSets},
+            };
+        }
+
+        VkDescriptorPoolCreateInfo createInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+            .flags = desc.allowFreeDescriptorSet ? VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT : VkDescriptorPoolCreateFlags(0),
+            .maxSets = desc.maxSets,
+            .poolSizeCount = static_cast<uint32_t>(sizes.size()),
+            .pPoolSizes = sizes.data(),
+        };
+
+        VkResult result = vkCreateDescriptorPool(m_Device, &createInfo, nullptr, &m_Pool);
+        CHECK_VK_RESULT(result);
+        VE_CORE_TRACE("VulkanDescriptorPool created (maxSets={})", desc.maxSets);
+    }
+
+    VulkanDescriptorPool::~VulkanDescriptorPool()
+    {
+        if (m_Pool != VK_NULL_HANDLE)
+            vkDestroyDescriptorPool(m_Device, m_Pool, nullptr);
+    }
+
+    VkDescriptorSet VulkanDescriptorPool::Allocate(VkDescriptorSetLayout layout) const
+    {
+        VkDescriptorSetAllocateInfo allocInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            .descriptorPool = m_Pool,
+            .descriptorSetCount = 1,
+            .pSetLayouts = &layout,
+        };
+
+        VkDescriptorSet set = VK_NULL_HANDLE;
+        VkResult result = vkAllocateDescriptorSets(m_Device, &allocInfo, &set);
+        CHECK_VK_RESULT(result);
+        return set;
+    }
+
+    std::vector<VkDescriptorSet> VulkanDescriptorPool::AllocateMany(VkDescriptorSetLayout layout, uint32_t count) const
+    {
+        std::vector<VkDescriptorSetLayout> layouts(count, layout);
+
+        VkDescriptorSetAllocateInfo allocInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            .descriptorPool = m_Pool,
+            .descriptorSetCount = count,
+            .pSetLayouts = layouts.data(),
+        };
+
+        std::vector<VkDescriptorSet> sets(count);
+        VkResult result = vkAllocateDescriptorSets(m_Device, &allocInfo, sets.data());
+        CHECK_VK_RESULT(result);
+        return sets;
+    }
+
+    void VulkanDescriptorPool::Free(VkDescriptorSet set) const
+    {
+        if (m_AllowFree)
+        {
+            VE_CORE_WARN("VulkanDescriptorPool::Free called but allowFreeDescriptorSet=false");
+            return;
+        }
+        vkFreeDescriptorSets(m_Device, m_Pool, 1, &set);
+    }
+
+    void VulkanDescriptorPool::Reset() const
+    {
+        vkResetDescriptorPool(m_Device, m_Pool, 0);
+    }
+
 } // namespace ve

@@ -11,6 +11,7 @@ namespace ve
 {
     class VulkanLogicalDevice;
 
+    // --- VulkanDescriptorSetLayout ---
     class VulkanDescriptorSetLayout
     {
     public:
@@ -51,6 +52,40 @@ namespace ve
     private:
         VkDevice m_Device = VK_NULL_HANDLE;
         VkDescriptorSetLayout m_Layout = VK_NULL_HANDLE;
+    };
+
+    // --- VulkanDescriptorPool ---
+    struct DescriptorPoolDesc
+    {
+        uint32_t maxSets = 100;
+        std::vector<VkDescriptorPoolSize> poolSizes;
+
+        bool allowFreeDescriptorSet = false;
+    };
+
+    class VulkanDescriptorPool
+    {
+    public:
+        explicit VulkanDescriptorPool(const VulkanLogicalDevice &logicalDevice, const DescriptorPoolDesc &desc = {});
+        ~VulkanDescriptorPool();
+
+        VulkanDescriptorPool(const VulkanDescriptorPool &) = delete;
+        VulkanDescriptorPool &operator=(const VulkanDescriptorPool &) = delete;
+
+        [[nodiscard]] VkDescriptorSet Allocate(VkDescriptorSetLayout layout) const;
+
+        [[nodiscard]] std::vector<VkDescriptorSet> AllocateMany(VkDescriptorSetLayout layout, uint32_t count) const;
+
+        void Free(VkDescriptorSet set) const;
+
+        void Reset() const;
+
+        VkDescriptorPool GetVkHandle() const { return m_Pool; }
+
+    private:
+        VkDevice m_Device = VK_NULL_HANDLE;
+        VkDescriptorPool m_Pool = VK_NULL_HANDLE;
+        bool m_AllowFree = false;
     };
 
 } // namespace ve
