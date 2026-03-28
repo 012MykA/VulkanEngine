@@ -1,8 +1,5 @@
 #pragma once
 
-#include "VulkanEngine/Core/Base.hpp"
-#if defined(VE_PLATFORM_WINDOWS) || defined(VE_PLATFORM_LINUX)
-
 #include "VulkanEngine/Core/Window.hpp"
 
 struct GLFWwindow;
@@ -36,5 +33,3 @@ namespace ve
     };
 
 } // namespace ve
-
-#endif // VE_PLATFORM_WINDOWS || VE_PLATFORM_LINUX

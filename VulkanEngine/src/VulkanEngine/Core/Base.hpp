@@ -1,16 +1,5 @@
 #pragma once
 
-#include "VulkanEngine/Core/PlatformSelector.hpp"
-
-// Build Configuration
-#if defined(VE_DIST)
-    #define VE_RELEASE
-#elif defined(NDEBUG)
-    #define VE_RELEASE
-#else
-    #define VE_DEBUG
-#endif // Build Configuration
-
 // Debugbreak support
 #if defined(VE_DEBUG)
     #if defined(VE_PLATFORM_WINDOWS)
@@ -53,5 +42,3 @@ namespace ve
     // }
 
 } // namespace ve
-
-#include "VulkanEngine/Core/Log.hpp"

@@ -1,6 +1,3 @@
-#include "VulkanEngine/Core/Base.hpp"
-#if defined(VE_PLATFORM_WINDOWS) || defined(VE_PLATFORM_LINUX)
-
 #include "GlfwWindowDriver.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 #include "VulkanEngine/Events/ApplicationEvent.hpp"
@@ -203,5 +200,3 @@ namespace ve
     }
 
 } // namespace ve
-
-#endif // VE_PLATFORM_WINDOWS || VE_PLATFORM_LINUX

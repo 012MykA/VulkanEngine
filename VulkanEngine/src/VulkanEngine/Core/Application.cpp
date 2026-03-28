@@ -1,5 +1,4 @@
 #include "Application.hpp"
-#include "VulkanEngine/Core/Base.hpp"
 #include "VulkanEngine/Core/Timestep.hpp"
 #include "VulkanEngine/Utils/PlatformUtils.hpp"
 

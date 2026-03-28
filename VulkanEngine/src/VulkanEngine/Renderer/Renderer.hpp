@@ -16,9 +16,9 @@ namespace ve
     class Renderer
     {
     public:
-        Renderer() = default;
+        Renderer();
         ~Renderer() = default;
-    
+
     private:
         std::unique_ptr<VulkanInstance> m_Instance;
         std::unique_ptr<VulkanSurface> m_Surface;
