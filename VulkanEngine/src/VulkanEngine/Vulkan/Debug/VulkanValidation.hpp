@@ -1,7 +1,5 @@
 #pragma once
 
-#ifdef VE_DEBUG
-
 #include "VulkanEngine/Core/Log.hpp"
 
 #include <vulkan/vulkan.h>
@@ -9,6 +7,7 @@
 
 #include <stdexcept>
 
+#ifdef VE_DEBUG
 
 #define CHECK_VK_RESULT(result)                                                                         \
     do                                                                                                  \
@@ -20,8 +19,8 @@
         }                                                                                               \
     } while (0)
 
-namespace ve
-{
-} // namespace ve
+#else
+
+#define CHECK_VK_RESULT(result)
 
 #endif // VE_DEBUG

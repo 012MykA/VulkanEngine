@@ -11,9 +11,13 @@ file(GLOB_RECURSE SANDBOX_SOURCES
 
 add_executable(${PROJECT_NAME} ${SANDBOX_SOURCES})
 
+if(VE_DIST_MODE)
+    set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
+endif()
+
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
-        VulkanEngine
+    VulkanEngine
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

@@ -39,8 +39,6 @@ namespace ve
 
 #include <Windows.h>
 
-#pragma comment(linker, "/entry:wWinMainCRTStartup") // TODO: refactor
-
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
     return ve::Main(__argc, __argv);

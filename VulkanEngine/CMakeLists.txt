@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.23)
 project(VulkanEngine)
 
+option(VE_DIST_MODE "Build in Distribution mode (Windows App without console)" OFF)
+
+if(VE_DIST_MODE AND NOT WIN32)
+    message(FATAL_ERROR "VE_DIST_MODE is only supported on Windows!")
+endif()
+
 # Language
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -52,10 +58,16 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
     $<$<NOT:$<CONFIG:Debug>>:VE_RELEASE>
 )
 
+if(VE_DIST_MODE)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC VE_DIST)
+endif()
+
+# Compiler settings
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PUBLIC /W4 /utf-8) # for spdlog
 endif()
 
+# Linking
 target_include_directories(${PROJECT_NAME}
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
