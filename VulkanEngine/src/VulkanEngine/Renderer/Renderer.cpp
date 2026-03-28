@@ -2,18 +2,26 @@
 
 namespace ve
 {
-    Renderer::Renderer()
+    Renderer::Renderer(const Window &window)
     {
-        m_Instance = std::make_unique<VulkanInstance>(InstanceDesc{
-#ifdef VE_DEBUG
-            .enableValidation = true,
-            .debugMessenger{
-                .enableDebugMessenger = true,
-                .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                                   VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
-            },
-#endif
-        });
+        Init(window);
+    }
+
+    bool Renderer::BeginFrame()
+    {
+        return false;
+    }
+
+    void Renderer::EndFrame()
+    {
+    }
+
+    void Renderer::Init(const Window &window)
+    {
+    }
+
+    void Renderer::RecreateSwapchain(uint32_t width, uint32_t height)
+    {
     }
 
 } // namespace ve
