@@ -1,0 +1,99 @@
+#pragma once
+
+#include "VulkanEngine/Vulkan/VulkanBuffer.hpp"
+#include "VulkanEngine/Vulkan/VulkanAllocator.hpp"
+
+#include <glm/glm.hpp>
+
+#include <limits>
+#include <cstdint>
+#include <string>
+#include <memory>
+#include <vector>
+
+namespace ve
+{
+    class VulkanImmediateSubmit;
+
+    struct Vertex
+    {
+        glm::vec3 position;
+        glm::vec3 normal;
+        glm::vec4 tangent;
+        glm::vec2 uv;
+    };
+
+    struct AABB
+    {
+        glm::vec3 min{std::numeric_limits<float>::max()};
+        glm::vec3 max{std::numeric_limits<float>::lowest()};
+
+        glm::vec3 Center() const { return (min + max) * 0.5f; }
+        glm::vec3 Extents() const { return (max - min) * 0.5f; }
+
+        void Expand(const glm::vec3 &p)
+        {
+            min = glm::min(min, p);
+            max = glm::max(max, p);
+        }
+    };
+
+    struct SubMesh
+    {
+        uint32_t indexOffset = 0;
+        uint32_t indexCount = 0;
+        uint32_t vertexOffset = 0;
+        int32_t materialIndex = -1;
+        AABB bounds;
+    };
+
+    class Mesh
+    {
+    public:
+        Mesh() = default;
+        ~Mesh() = default;
+
+        Mesh(const Mesh &) = delete;
+        Mesh &operator=(const Mesh &) = delete;
+
+        Mesh(Mesh &&) noexcept = default;
+        Mesh &operator=(Mesh &&) noexcept = default;
+
+    public:
+        void SetVertices(std::vector<Vertex> vertices);
+        void SetIndices(std::vector<uint32_t> indices);
+        void AddSubMesh(SubMesh subMesh);
+
+        void ComputeTangents();
+        void ComputeBounds();
+
+        void UploadToGPU(const VulkanAllocator &allocator,
+                         const VulkanImmediateSubmit &upload);
+        void FreeCPUData();
+
+        void Bind(VkCommandBuffer cmd) const;
+
+    public:
+        // Getters
+        const std::vector<SubMesh> &GetSubMeshes() const { return m_SubMeshes; }
+        const AABB &GetBounds() const { return m_Bounds; }
+        bool IsUploaded() const { return m_VertexBuffer != nullptr; }
+        const std::vector<Vertex> &GetVertices() const { return m_Vertices; }
+        const std::vector<uint32_t> &GetIndices() const { return m_Indices; }
+        const std::string &GetName() const { return m_Name; }
+        void SetName(std::string name) { m_Name = std::move(name); }
+
+    private:
+        // CPU Data
+        std::vector<Vertex> m_Vertices;
+        std::vector<uint32_t> m_Indices;
+        std::vector<SubMesh> m_SubMeshes;
+        AABB m_Bounds;
+        std::string m_Name;
+
+        // GPU Data
+        std::unique_ptr<VulkanBuffer> m_VertexBuffer;
+        std::unique_ptr<VulkanBuffer> m_IndexBuffer;
+    };
+
+} // namespace ve

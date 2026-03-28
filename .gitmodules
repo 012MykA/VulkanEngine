@@ -7,3 +7,6 @@
 [submodule "VulkanEngine/vendor/vma"]
 	path = VulkanEngine/vendor/vma
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
+[submodule "VulkanEngine/vendor/glm"]
+	path = VulkanEngine/vendor/glm
+	url = https://github.com/g-truc/glm.git

@@ -33,6 +33,7 @@ find_package(Vulkan REQUIRED)
 add_subdirectory(vendor/spdlog)
 add_subdirectory(vendor/glfw)
 add_subdirectory(vendor/vma)
+add_subdirectory(vendor/glm)
 
 # Sources
 file(GLOB_RECURSE ENGINE_CORE_SOURCES src/VulkanEngine/*.cpp)
