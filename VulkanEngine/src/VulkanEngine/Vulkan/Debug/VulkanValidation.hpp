@@ -1,11 +1,14 @@
 #pragma once
 
+#ifdef VE_DEBUG
+
 #include "VulkanEngine/Core/Log.hpp"
 
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_enum_string_helper.h>
 
 #include <stdexcept>
+
 
 #define CHECK_VK_RESULT(result)                                                                         \
     do                                                                                                  \
@@ -20,3 +23,5 @@
 namespace ve
 {
 } // namespace ve
+
+#endif // VE_DEBUG
