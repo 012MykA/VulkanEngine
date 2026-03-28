@@ -88,4 +88,37 @@ namespace ve
         bool m_AllowFree = false;
     };
 
+    // --- VulkanDescriptorWriter ---
+    class VulkanDescriptorWriter
+    {
+    public:
+        VulkanDescriptorWriter(VkDevice device);
+
+        VulkanDescriptorWriter &WriteBuffer(
+            uint32_t binding,
+            VkDescriptorType type,
+            VkDescriptorSet set,
+            const VkDescriptorBufferInfo &bufferInfo);
+
+        VulkanDescriptorWriter &WriteImage(
+            uint32_t binding,
+            VkDescriptorType type,
+            VkDescriptorSet set,
+            const VkDescriptorImageInfo &imageInfo);
+
+        VulkanDescriptorWriter &WriteImageArray(
+            uint32_t binding,
+            VkDescriptorType type,
+            VkDescriptorSet set,
+            std::span<const VkDescriptorImageInfo> imageInfos);
+
+        void Flush();
+
+    private:
+        VkDevice m_Device = VK_NULL_HANDLE;
+        std::vector<VkWriteDescriptorSet> m_Writes;
+        std::vector<VkDescriptorBufferInfo> m_BufferInfos;
+        std::vector<VkDescriptorImageInfo> m_ImageInfos;
+    };
+
 } // namespace ve
