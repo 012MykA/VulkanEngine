@@ -21,6 +21,6 @@
 
 #else
 
-#define CHECK_VK_RESULT(result)
+#define CHECK_VK_RESULT(result) ((void)(result))
 
 #endif // VE_DEBUG
