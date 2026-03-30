@@ -3,6 +3,7 @@
 #include "VulkanEngine/Events/ApplicationEvent.hpp"
 #include "VulkanEngine/Events/KeyEvent.hpp"
 #include "VulkanEngine/Events/MouseEvent.hpp"
+#include "VulkanEngine/Vulkan/Debug/VulkanValidation.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -13,7 +14,7 @@
 namespace ve
 {
     static bool s_GlfwInitialized = false; // TODO: Add glfw context in future
-    
+
     namespace
     {
         void GlfwErrorCallback(const int error, const char *const description)
@@ -194,9 +195,17 @@ namespace ve
         const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
         std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
         return extensions;
+    }
+
+    VkSurfaceKHR GlfwWindowDriver::GetVulkanSurface(VkInstance instance) const
+    {
+        VkSurfaceKHR surface;
+        VkResult result = glfwCreateWindowSurface(instance, m_WindowHandle, nullptr, &surface);
+        CHECK_VK_RESULT(result);
+
+        return surface;
     }
 
 } // namespace ve

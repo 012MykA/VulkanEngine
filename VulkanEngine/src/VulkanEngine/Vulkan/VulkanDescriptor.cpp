@@ -163,7 +163,7 @@ namespace ve
 
     void VulkanDescriptorPool::Free(VkDescriptorSet set) const
     {
-        if (m_AllowFree)
+        if (!m_AllowFree)
         {
             VE_CORE_WARN("VulkanDescriptorPool::Free called but allowFreeDescriptorSet=false");
             return;

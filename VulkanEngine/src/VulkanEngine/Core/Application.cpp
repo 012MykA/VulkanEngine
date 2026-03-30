@@ -39,6 +39,9 @@ namespace ve
                 {
                     layer->OnUpdate(timestep);
                 }
+
+                m_Renderer->BeginFrame();
+                m_Renderer->EndFrame();
             }
 
             m_Window->OnUpdate();
@@ -88,6 +91,8 @@ namespace ve
             return false;
         }
         m_Minimized = false;
+
+        m_Renderer->HandleResize(e.GetWidth(), e.GetHeight());
 
         return false;
     }

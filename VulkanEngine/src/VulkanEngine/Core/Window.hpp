@@ -2,6 +2,8 @@
 
 #include "VulkanEngine/Events/Event.hpp"
 
+#include <vulkan/vulkan.h>
+
 #include <cstdint>
 #include <string>
 #include <filesystem>
@@ -34,7 +36,10 @@ namespace ve
         virtual void *GetNativeWindow() const = 0;
 
         virtual void SetEventCallback(const EventCallbackFn &callback) = 0;
+
+        // Vulkan
         virtual std::vector<const char *> GetRequiredVulkanExtensions() const = 0;
+        virtual VkSurfaceKHR GetVulkanSurface(VkInstance instance) const = 0;
 
         static std::unique_ptr<Window> Create(const WindowCreateInfo &createInfo);
     };

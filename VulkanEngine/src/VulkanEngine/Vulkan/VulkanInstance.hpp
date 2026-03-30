@@ -57,7 +57,6 @@ namespace ve
 
     private:
         void CreateInstance(const InstanceDesc &desc);
-        void CreateDebugMessenger(const DebugMessengerDesc &desc);
 
     private:
         bool CheckValidationLayerSupport(const std::vector<const char *> &layers);
@@ -66,8 +65,6 @@ namespace ve
 
     private:
         VkInstance m_Instance = VK_NULL_HANDLE;
-        VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
-        bool m_ValidationEnabled = false;
     };
 
 } // namespace ve

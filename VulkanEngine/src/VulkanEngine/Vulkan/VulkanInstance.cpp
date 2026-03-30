@@ -2,6 +2,9 @@
 #include "Debug/VulkanValidation.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 
+#include <cstring>
+#include <stdexcept>
+
 namespace ve
 {
     namespace
@@ -25,39 +28,15 @@ namespace ve
 
             return VK_FALSE;
         }
-
-        VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo, const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pCallback)
-        {
-            const auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
-            return func != nullptr
-                       ? func(instance, pCreateInfo, pAllocator, pCallback)
-                       : VK_ERROR_EXTENSION_NOT_PRESENT;
-        }
-
-        void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks *pAllocator)
-        {
-            const auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
-            if (func != nullptr)
-            {
-                func(instance, callback, pAllocator);
-            }
-        }
-
     }
 
     VulkanInstance::VulkanInstance(const InstanceDesc &desc)
     {
         CreateInstance(desc);
-
-        if (desc.enableValidation && desc.debugMessenger.enableDebugMessenger)
-            CreateDebugMessenger(desc.debugMessenger);
     }
 
     VulkanInstance::~VulkanInstance()
     {
-        if (m_DebugMessenger != VK_NULL_HANDLE)
-            DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
-
         if (m_Instance != VK_NULL_HANDLE)
             vkDestroyInstance(m_Instance, nullptr);
     }
@@ -65,9 +44,8 @@ namespace ve
     void VulkanInstance::CreateInstance(const InstanceDesc &desc)
     {
         if (desc.enableValidation && !CheckValidationLayerSupport(desc.validationLayers))
-            throw std::runtime_error("[Vulkan] Required validation layers are not available");
+            throw std::runtime_error("Required validation layers are not available");
 
-        // --- AppInfo ----------------------------------------
         VkApplicationInfo appInfo{
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
             .pNext = nullptr,
@@ -78,12 +56,14 @@ namespace ve
             .apiVersion = desc.apiVersion,
         };
 
-        // --- Extensions ----------------------------------------
         auto extensions = BuildExtensionList(desc);
 
         VkInstanceCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+            .pNext = nullptr,
             .pApplicationInfo = &appInfo,
+            .enabledLayerCount = 0,
+            .ppEnabledLayerNames = nullptr,
             .enabledExtensionCount = static_cast<uint32_t>(extensions.size()),
             .ppEnabledExtensionNames = extensions.data(),
         };
@@ -92,12 +72,22 @@ namespace ve
 
         if (desc.enableValidation)
         {
-            createInfo.enabledLayerCount = static_cast<uint32_t>(desc.validationLayers.size()),
+            createInfo.enabledLayerCount = static_cast<uint32_t>(desc.validationLayers.size());
             createInfo.ppEnabledLayerNames = desc.validationLayers.data();
 
             if (desc.debugMessenger.enableDebugMessenger)
             {
-                debugCreateInfo = BuildMessengerCreateInfo(desc.debugMessenger);
+                debugCreateInfo = {
+                    .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+                    .pNext = nullptr,
+                    .messageSeverity = desc.debugMessenger.messageSeverity,
+                    .messageType = desc.debugMessenger.messageType,
+                    .pfnUserCallback = desc.debugMessenger.pfnUserCallback
+                                           ? desc.debugMessenger.pfnUserCallback
+                                           : DebugCallback,
+                    .pUserData = desc.debugMessenger.pUserData,
+                };
+
                 createInfo.pNext = &debugCreateInfo;
             }
         }
@@ -113,6 +103,7 @@ namespace ve
                      VK_API_VERSION_PATCH(desc.apiVersion));
 
         VE_CORE_INFO("  Validation: {}", desc.enableValidation ? "ON" : "OFF");
+
         if (desc.enableValidation)
         {
             for (const char *layer : desc.validationLayers)
@@ -124,24 +115,18 @@ namespace ve
             VE_CORE_INFO("     {}", ext);
     }
 
-    void VulkanInstance::CreateDebugMessenger(const DebugMessengerDesc &desc)
-    {
-        VkDebugUtilsMessengerCreateInfoEXT createInfo = BuildMessengerCreateInfo(desc);
-
-        VkResult result = CreateDebugUtilsMessengerEXT(m_Instance, &createInfo, nullptr, &m_DebugMessenger);
-        CHECK_VK_RESULT(result);
-    }
-
     bool VulkanInstance::CheckValidationLayerSupport(const std::vector<const char *> &layers)
     {
         uint32_t count = 0;
-        vkEnumerateInstanceLayerProperties(&count, nullptr);
+        CHECK_VK_RESULT(vkEnumerateInstanceLayerProperties(&count, nullptr));
+
         std::vector<VkLayerProperties> available(count);
-        vkEnumerateInstanceLayerProperties(&count, available.data());
+        CHECK_VK_RESULT(vkEnumerateInstanceLayerProperties(&count, available.data()));
 
         for (const char *name : layers)
         {
             bool found = false;
+
             for (const auto &props : available)
             {
                 if (strcmp(name, props.layerName) == 0)
@@ -154,6 +139,7 @@ namespace ve
             if (!found)
                 return false;
         }
+
         return true;
     }
 
@@ -163,38 +149,43 @@ namespace ve
 
         if (desc.enableValidation && desc.debugMessenger.enableDebugMessenger)
         {
-            // Добавляем только если ещё нет — пользователь мог передать сам
             bool alreadyPresent = false;
+
             for (const char *ext : extensions)
+            {
                 if (strcmp(ext, VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0)
                 {
                     alreadyPresent = true;
                     break;
                 }
+            }
 
             if (!alreadyPresent)
                 extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
 
         uint32_t count = 0;
-        vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr);
+        CHECK_VK_RESULT(vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
+
         std::vector<VkExtensionProperties> available(count);
-        vkEnumerateInstanceExtensionProperties(nullptr, &count, available.data());
+        CHECK_VK_RESULT(vkEnumerateInstanceExtensionProperties(nullptr, &count, available.data()));
 
         for (const char *requested : extensions)
         {
             bool found = false;
+
             for (const auto &props : available)
+            {
                 if (strcmp(requested, props.extensionName) == 0)
                 {
                     found = true;
                     break;
                 }
+            }
 
             if (!found)
             {
-                std::string msg = "Required instance extension not supported: ";
-                throw std::runtime_error(msg + requested);
+                throw std::runtime_error(std::string("Required instance extension not supported: ") + requested);
             }
         }
 
@@ -206,6 +197,7 @@ namespace ve
     {
         VkDebugUtilsMessengerCreateInfoEXT info{};
         info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        info.pNext = nullptr;
         info.messageSeverity = desc.messageSeverity;
         info.messageType = desc.messageType;
         info.pfnUserCallback = desc.pfnUserCallback ? desc.pfnUserCallback : DebugCallback;

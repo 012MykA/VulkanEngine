@@ -28,6 +28,8 @@ namespace ve
         bool BeginFrame();
         void EndFrame();
 
+        void HandleResize(uint32_t width, uint32_t height);
+
         const VulkanLogicalDevice &GetLogicalDeivce() const { return *m_LogicalDevice; }
         const VulkanAllocator &GetAllocator() const { return *m_Allocator; }
         VulkanImmediateSubmit &GetImmediateSubmit() { return *m_ImmediateSubmit; }
