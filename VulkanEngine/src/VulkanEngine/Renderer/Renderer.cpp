@@ -66,6 +66,8 @@ namespace ve
                 .width = window.GetWidth(),
                 .height = window.GetHeight(),
             });
+
+        m_RenderPass = std::make_unique<VulkanRenderPass>(*m_LogicalDevice, m_Swapchain->GetFormat());
     }
 
     void Renderer::RecreateSwapchain(uint32_t width, uint32_t height)

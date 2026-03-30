@@ -6,7 +6,7 @@
 #include "VulkanEngine/Vulkan/VulkanLogicalDevice.hpp"
 #include "VulkanEngine/Vulkan/VulkanAllocator.hpp"
 #include "VulkanEngine/Vulkan/VulkanSwapchain.hpp"
-#include "VulkanEngine/Vulkan/VulkanCommandPool.hpp"
+#include "VulkanEngine/Vulkan/VulkanRenderPass.hpp"
 
 #include <memory>
 
@@ -41,8 +41,8 @@ namespace ve
         std::unique_ptr<VulkanPhysicalDevice> m_PhysicalDevice;
         std::unique_ptr<VulkanLogicalDevice> m_LogicalDevice;
         std::unique_ptr<VulkanAllocator> m_Allocator;
-
         std::unique_ptr<VulkanSwapchain> m_Swapchain;
+        std::unique_ptr<VulkanRenderPass> m_RenderPass;
 
         // std::unique_ptr<VulkanCommandPool> m_GraphicsCommandPool;
         // std::unique_ptr<VulkanCommandPool> m_TransferCommandPool;
