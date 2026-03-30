@@ -26,12 +26,10 @@ namespace ve
     {
         VkDevice device = m_LogicalDevice.GetVkHandle();
 
-        // Destroy image views
         for (auto imageView : m_ImageViews)
             vkDestroyImageView(device, imageView, nullptr);
         m_ImageViews.clear();
 
-        // Destroy swapchain
         if (m_Swapchain != VK_NULL_HANDLE)
         {
             vkDestroySwapchainKHR(device, m_Swapchain, nullptr);
@@ -43,19 +41,19 @@ namespace ve
 
     void VulkanSwapchain::Recreate(uint32_t newWidth, uint32_t newHeight)
     {
+        VkDevice device = m_LogicalDevice.GetVkHandle();
+
         VkSwapchainKHR oldSwapchain = m_Swapchain;
-        std::vector<VkImageView> oldImageViews = m_ImageViews;
+        m_Swapchain = VK_NULL_HANDLE;
+
+        for (auto view : m_ImageViews)
+            vkDestroyImageView(device, view, nullptr);
+        m_ImageViews.clear();
 
         Create(newWidth, newHeight, oldSwapchain);
 
-        // Clear old resources
-        for (auto view : oldImageViews)
-            vkDestroyImageView(m_LogicalDevice.GetVkHandle(), view, nullptr);
-
         if (oldSwapchain != VK_NULL_HANDLE)
-        {
-            vkDestroySwapchainKHR(m_LogicalDevice.GetVkHandle(), oldSwapchain, nullptr);
-        }
+            vkDestroySwapchainKHR(device, oldSwapchain, nullptr);
     }
 
     void VulkanSwapchain::Create(uint32_t width, uint32_t height, VkSwapchainKHR oldSwapchain)

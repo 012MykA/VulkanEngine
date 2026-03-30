@@ -71,7 +71,7 @@ namespace ve
     void Renderer::RecreateSwapchain(uint32_t width, uint32_t height)
     {
         Timer timer;
-        
+
         m_Swapchain->Recreate(width, height);
 
         VE_CORE_TRACE("Swapchain recreated: {}x{} ({} ms)", width, height, timer.ElapsedMilliseconds());
