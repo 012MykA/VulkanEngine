@@ -1,11 +1,17 @@
 #include "Renderer.hpp"
 #include "VulkanEngine/Core/Window.hpp"
+#include "VulkanEngine/Core/Log.hpp"
 
 namespace ve
 {
     Renderer::Renderer(const Window &window)
     {
         Init(window);
+    }
+
+    Renderer::~Renderer()
+    {
+        m_LogicalDevice->WaitIdle();
     }
 
     bool Renderer::BeginFrame()
@@ -19,6 +25,14 @@ namespace ve
 
     void Renderer::HandleResize(uint32_t width, uint32_t height)
     {
+        if (width == 0 || height == 0)
+            return;
+
+        m_LogicalDevice->WaitIdle();
+
+        m_NeedsResize = true;
+        m_ResizeWidth = width;
+        m_ResizeHeight = height;
     }
 
     void Renderer::Init(const Window &window)
@@ -40,10 +54,22 @@ namespace ve
         m_PhysicalDevice = std::make_unique<VulkanPhysicalDevice>(*m_Instance, *m_Surface);
         m_LogicalDevice = std::make_unique<VulkanLogicalDevice>(*m_PhysicalDevice, LogicalDeviceDesc{});
         m_Allocator = std::make_unique<VulkanAllocator>(*m_Instance, *m_PhysicalDevice, *m_LogicalDevice);
+
+        m_Swapchain = std::make_unique<VulkanSwapchain>(
+            *m_PhysicalDevice,
+            *m_LogicalDevice,
+            *m_Surface,
+            SwapchainDesc{
+                .width = window.GetWidth(),
+                .height = window.GetHeight(),
+            });
     }
 
     void Renderer::RecreateSwapchain(uint32_t width, uint32_t height)
     {
+        m_Swapchain->Recreate(width, height);
+
+        VE_CORE_INFO("Swapchain recreated: {}x{}", width, height);
     }
 
 } // namespace ve

@@ -7,20 +7,18 @@
 #include "VulkanEngine/Vulkan/VulkanAllocator.hpp"
 #include "VulkanEngine/Vulkan/VulkanSwapchain.hpp"
 #include "VulkanEngine/Vulkan/VulkanCommandPool.hpp"
-#include "VulkanEngine/Vulkan/VulkanFrameData.hpp"
-#include "VulkanEngine/Vulkan/VulkanImmediateSubmit.hpp"
-#include "VulkanEngine/Vulkan/VulkanDescriptor.hpp"
-#include "VulkanEngine/Vulkan/VulkanPipeline.hpp"
 
 #include <memory>
 
 namespace ve
 {
+    class Window;
+
     class Renderer
     {
     public:
         explicit Renderer(const Window &window);
-        ~Renderer() = default;
+        ~Renderer();
 
         Renderer(const Renderer &) = delete;
         Renderer &operator=(const Renderer &) = delete;
@@ -32,7 +30,6 @@ namespace ve
 
         const VulkanLogicalDevice &GetLogicalDeivce() const { return *m_LogicalDevice; }
         const VulkanAllocator &GetAllocator() const { return *m_Allocator; }
-        VulkanImmediateSubmit &GetImmediateSubmit() { return *m_ImmediateSubmit; }
 
     private:
         void Init(const Window &window);
@@ -47,14 +44,13 @@ namespace ve
 
         std::unique_ptr<VulkanSwapchain> m_Swapchain;
 
-        std::unique_ptr<VulkanCommandPool> m_GraphicsCommandPool;
-        std::unique_ptr<VulkanCommandPool> m_TransferCommandPool;
-
-        std::unique_ptr<VulkanFrameManager> m_FrameManager;
-        std::unique_ptr<VulkanImmediateSubmit> m_ImmediateSubmit;
-        std::unique_ptr<VulkanDescriptorPool> m_DescriptorPool;
+        // std::unique_ptr<VulkanCommandPool> m_GraphicsCommandPool;
+        // std::unique_ptr<VulkanCommandPool> m_TransferCommandPool;
 
         uint32_t m_CurrentImageIndex = 0;
+
+        bool m_NeedsResize = false;
+        uint32_t m_ResizeWidth = 0, m_ResizeHeight = 0;
     };
 
 } // namespace ve

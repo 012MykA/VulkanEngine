@@ -1,7 +1,5 @@
 #pragma once
 
-#include "VulkanPhysicalDevice.hpp"
-
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
@@ -9,14 +7,14 @@
 
 namespace ve
 {
+    class VulkanPhysicalDevice;
     class VulkanLogicalDevice;
+    class VulkanSurface;
 
     struct SwapchainDesc
     {
         uint32_t width = 0;
         uint32_t height = 0;
-
-        uint32_t preferredImageCount = 2;
 
         std::vector<VkSurfaceFormatKHR> preferredFormats = {
             {VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
@@ -34,7 +32,7 @@ namespace ve
     public:
         VulkanSwapchain(const VulkanPhysicalDevice &physicalDevice,
                         const VulkanLogicalDevice &logicalDevice,
-                        VkSurfaceKHR surface,
+                        const VulkanSurface &surface,
                         const SwapchainDesc &desc);
         ~VulkanSwapchain();
 
@@ -52,8 +50,7 @@ namespace ve
         const std::vector<VkImageView> &GetImageViews() const { return m_ImageViews; }
 
     private:
-        void Create(uint32_t width, uint32_t height);
-        void Destroy();
+        void Create(uint32_t width, uint32_t height, VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE);
 
         void CreateImageViews();
 

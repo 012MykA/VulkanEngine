@@ -4,13 +4,8 @@
 
 namespace ve
 {
-    class Window;
-
-} // namespace ve
-
-namespace ve
-{
     class VulkanInstance;
+    class Window;
 
     class VulkanSurface
     {

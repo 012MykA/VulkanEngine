@@ -1,18 +1,22 @@
 #include "VulkanSwapchain.hpp"
+#include "VulkanPhysicalDevice.hpp"
 #include "VulkanLogicalDevice.hpp"
+#include "VulkanSurface.hpp"
 #include "Debug/VulkanValidation.hpp"
 #include "VulkanEngine/Core/Log.hpp"
+
+#include <cassert>
 
 namespace ve
 {
     VulkanSwapchain::VulkanSwapchain(
         const VulkanPhysicalDevice &physicalDevice,
         const VulkanLogicalDevice &logicalDevice,
-        VkSurfaceKHR surface,
+        const VulkanSurface &surface,
         const SwapchainDesc &desc)
         : m_PhysicalDevice(physicalDevice),
           m_LogicalDevice(logicalDevice),
-          m_Surface(surface),
+          m_Surface(surface.GetVkHandle()),
           m_Desc(desc)
     {
         Create(desc.width, desc.height);
@@ -20,17 +24,41 @@ namespace ve
 
     VulkanSwapchain::~VulkanSwapchain()
     {
-        Destroy();
+        VkDevice device = m_LogicalDevice.GetVkHandle();
+
+        // Destroy image views
+        for (auto imageView : m_ImageViews)
+            vkDestroyImageView(device, imageView, nullptr);
+        m_ImageViews.clear();
+
+        // Destroy swapchain
+        if (m_Swapchain != VK_NULL_HANDLE)
+        {
+            vkDestroySwapchainKHR(device, m_Swapchain, nullptr);
+            m_Swapchain = VK_NULL_HANDLE;
+        }
+
+        m_Images.clear();
     }
 
     void VulkanSwapchain::Recreate(uint32_t newWidth, uint32_t newHeight)
     {
-        m_LogicalDevice.WaitIdle();
-        Destroy();
-        Create(newWidth, newHeight);
+        VkSwapchainKHR oldSwapchain = m_Swapchain;
+        std::vector<VkImageView> oldImageViews = m_ImageViews;
+
+        Create(newWidth, newHeight, oldSwapchain);
+
+        // Clear old resources
+        for (auto view : oldImageViews)
+            vkDestroyImageView(m_LogicalDevice.GetVkHandle(), view, nullptr);
+
+        if (oldSwapchain != VK_NULL_HANDLE)
+        {
+            vkDestroySwapchainKHR(m_LogicalDevice.GetVkHandle(), oldSwapchain, nullptr);
+        }
     }
 
-    void VulkanSwapchain::Create(uint32_t width, uint32_t height)
+    void VulkanSwapchain::Create(uint32_t width, uint32_t height, VkSwapchainKHR oldSwapchain)
     {
         const auto support = m_PhysicalDevice.QuerySwapchainSupport();
         const auto &indices = m_PhysicalDevice.GetQueueFamilies();
@@ -39,8 +67,7 @@ namespace ve
         VkPresentModeKHR presentMode = ChoosePresentMode(support.presentModes);
         VkExtent2D extent = ChooseExtent(support.capabilities, width, height);
 
-        uint32_t imageCount = std::max(m_Desc.preferredImageCount, support.capabilities.minImageCount + 1);
-
+        uint32_t imageCount = support.capabilities.minImageCount + 1;
         if (support.capabilities.maxImageCount > 0)
             imageCount = std::min(imageCount, support.capabilities.maxImageCount);
 
@@ -57,7 +84,7 @@ namespace ve
             .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
             .presentMode = presentMode,
             .clipped = VK_TRUE,
-            .oldSwapchain = VK_NULL_HANDLE,
+            .oldSwapchain = oldSwapchain,
         };
 
         uint32_t queueFamilies[] = {
@@ -98,25 +125,6 @@ namespace ve
         VE_CORE_TRACE("  Present mode: {}", string_VkPresentModeKHR(presentMode));
     }
 
-    void VulkanSwapchain::Destroy()
-    {
-        VkDevice device = m_LogicalDevice.GetVkHandle();
-
-        // Destroy image views
-        for (auto imageView : m_ImageViews)
-            vkDestroyImageView(device, imageView, nullptr);
-        m_ImageViews.clear();
-
-        // Destroy swapchain
-        if (m_Swapchain != VK_NULL_HANDLE)
-        {
-            vkDestroySwapchainKHR(device, m_Swapchain, nullptr);
-            m_Swapchain = VK_NULL_HANDLE;
-        }
-
-        m_Images.clear();
-    }
-
     void VulkanSwapchain::CreateImageViews()
     {
         m_ImageViews.resize(m_Images.size());
@@ -150,6 +158,8 @@ namespace ve
 
     VkSurfaceFormatKHR VulkanSwapchain::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &available) const
     {
+        assert(!available.empty() && "No surface formats available");
+
         for (const auto &preferred : m_Desc.preferredFormats)
             for (const auto &format : available)
                 if (format.format == preferred.format &&
