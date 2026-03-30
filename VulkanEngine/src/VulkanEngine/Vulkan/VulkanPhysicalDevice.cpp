@@ -158,31 +158,75 @@ namespace ve
         std::vector<VkQueueFamilyProperties> families(count);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &count, families.data());
 
+        std::optional<uint32_t> dedicatedCompute;
+        std::optional<uint32_t> dedicatedTransfer;
+
         for (uint32_t i = 0; i < count; i++)
         {
             const auto &family = families[i];
 
             // Graphics
-            if (!indices.graphicsFamily.has_value() && (family.queueFlags & VK_QUEUE_GRAPHICS_BIT))
+            if (!indices.graphicsFamily.has_value() &&
+                (family.queueFlags & VK_QUEUE_GRAPHICS_BIT))
+            {
                 indices.graphicsFamily = i;
-
-            // Compute
-            if (!indices.computeFamily.has_value() && (family.queueFlags & VK_QUEUE_COMPUTE_BIT))
-                indices.computeFamily = i;
+            }
 
             // Present
             VkBool32 presentSupport = false;
             vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-            if (!indices.presentFamily.has_value() && presentSupport)
-                indices.presentFamily = i;
 
-            // Dedicated transfer
-            if ((family.queueFlags & VK_QUEUE_TRANSFER_BIT) &&
-                !(family.queueFlags & VK_QUEUE_GRAPHICS_BIT) &&
-                !(family.queueFlags & VK_QUEUE_COMPUTE_BIT))
+            if (presentSupport)
             {
-                indices.transferFamily = i;
+                // Prefer same queue as graphics
+                if (!indices.presentFamily.has_value() || i == indices.graphicsFamily)
+                {
+                    indices.presentFamily = i;
+                }
             }
+
+            // Compute
+            if (family.queueFlags & VK_QUEUE_COMPUTE_BIT)
+            {
+                // Prefer dedicated compute (no graphics)
+                if (!(family.queueFlags & VK_QUEUE_GRAPHICS_BIT))
+                {
+                    if (!dedicatedCompute.has_value())
+                        dedicatedCompute = i;
+                }
+                else if (!indices.computeFamily.has_value())
+                {
+                    indices.computeFamily = i;
+                }
+            }
+
+            // Transfer
+            if (family.queueFlags & VK_QUEUE_TRANSFER_BIT)
+            {
+                // Prefer fully dedicated transfer
+                if (!(family.queueFlags & VK_QUEUE_GRAPHICS_BIT) && !(family.queueFlags & VK_QUEUE_COMPUTE_BIT))
+                {
+                    if (!dedicatedTransfer.has_value())
+                        dedicatedTransfer = i;
+                }
+            }
+        }
+
+        // Final selection with priority
+        if (dedicatedCompute.has_value())
+            indices.computeFamily = dedicatedCompute;
+
+        if (dedicatedTransfer.has_value())
+        {
+            indices.transferFamily = dedicatedTransfer;
+        }
+        else if (indices.computeFamily.has_value() && indices.computeFamily != indices.graphicsFamily)
+        {
+            indices.transferFamily = indices.computeFamily;
+        }
+        else
+        {
+            indices.transferFamily = indices.graphicsFamily;
         }
 
         return indices;
