@@ -1,6 +1,7 @@
 #include "Renderer.hpp"
 #include "VulkanEngine/Core/Window.hpp"
 #include "VulkanEngine/Core/Log.hpp"
+#include "VulkanEngine/Core/Timer.hpp"
 
 namespace ve
 {
@@ -33,6 +34,8 @@ namespace ve
         m_NeedsResize = true;
         m_ResizeWidth = width;
         m_ResizeHeight = height;
+
+        RecreateSwapchain(width, height);
     }
 
     void Renderer::Init(const Window &window)
@@ -67,9 +70,11 @@ namespace ve
 
     void Renderer::RecreateSwapchain(uint32_t width, uint32_t height)
     {
+        Timer timer;
+        
         m_Swapchain->Recreate(width, height);
 
-        VE_CORE_INFO("Swapchain recreated: {}x{}", width, height);
+        VE_CORE_TRACE("Swapchain recreated: {}x{} ({} ms)", width, height, timer.ElapsedMilliseconds());
     }
 
 } // namespace ve
