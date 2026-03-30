@@ -8,6 +8,9 @@
 
 namespace ve
 {
+    class VulkanInstance;
+    class VulkanSurface;
+    
     struct QueueFamilyIndices
     {
         std::optional<uint32_t> graphicsFamily;
@@ -47,7 +50,7 @@ namespace ve
             VK_KHR_SWAPCHAIN_EXTENSION_NAME,
         };
 
-        VulkanPhysicalDevice(VkInstance instance, VkSurfaceKHR surface);
+        VulkanPhysicalDevice(const VulkanInstance &instance, const VulkanSurface &surface);
 
         VulkanPhysicalDevice(const VulkanPhysicalDevice &) = delete;
         VulkanPhysicalDevice &operator=(const VulkanPhysicalDevice &) = delete;

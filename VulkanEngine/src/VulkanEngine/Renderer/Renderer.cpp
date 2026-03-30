@@ -37,6 +37,8 @@ namespace ve
         });
 
         m_Surface = std::make_unique<VulkanSurface>(*m_Instance, window);
+        m_PhysicalDevice = std::make_unique<VulkanPhysicalDevice>(*m_Instance, *m_Surface);
+        // m_LogicalDevice = std::make_unique<VulkanLogicalDevice>(*m_PhysicalDevice);
     }
 
     void Renderer::RecreateSwapchain(uint32_t width, uint32_t height)

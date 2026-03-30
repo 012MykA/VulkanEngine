@@ -1,4 +1,6 @@
 #include "VulkanPhysicalDevice.hpp"
+#include "VulkanInstance.hpp"
+#include "VulkanSurface.hpp"
 #include "Debug/VulkanValidation.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 
@@ -7,10 +9,10 @@
 
 namespace ve
 {
-    VulkanPhysicalDevice::VulkanPhysicalDevice(VkInstance instance, VkSurfaceKHR surface)
-        : m_Surface(surface)
+    VulkanPhysicalDevice::VulkanPhysicalDevice(const VulkanInstance &instance, const VulkanSurface &surface)
+        : m_Surface(surface.GetVkHandle())
     {
-        PickPhysicalDevice(instance, surface);
+        PickPhysicalDevice(instance.GetVkHandle(), m_Surface);
     }
 
     SwapchainSupportDetails VulkanPhysicalDevice::QuerySwapchainSupport() const
@@ -108,10 +110,13 @@ namespace ve
         {
         case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
             score += 1000;
+            break;
         case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
             score += 100;
+            break;
         case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
             score += 50;
+            break;
         }
 
         // VRAM size (mb)
@@ -158,18 +163,18 @@ namespace ve
             const auto &family = families[i];
 
             // Graphics
-            if (family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            if (!indices.graphicsFamily.has_value() && (family.queueFlags & VK_QUEUE_GRAPHICS_BIT))
                 indices.graphicsFamily = i;
+
+            // Compute
+            if (!indices.computeFamily.has_value() && (family.queueFlags & VK_QUEUE_COMPUTE_BIT))
+                indices.computeFamily = i;
 
             // Present
             VkBool32 presentSupport = false;
             vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-            if (presentSupport)
+            if (!indices.presentFamily.has_value() && presentSupport)
                 indices.presentFamily = i;
-
-            // Compute
-            if (family.queueFlags & VK_QUEUE_COMPUTE_BIT)
-                indices.computeFamily = i;
 
             // Dedicated transfer
             if ((family.queueFlags & VK_QUEUE_TRANSFER_BIT) &&
@@ -178,6 +183,9 @@ namespace ve
             {
                 indices.transferFamily = i;
             }
+
+            if (indices.IsComplete())
+                break;
         }
 
         return indices;

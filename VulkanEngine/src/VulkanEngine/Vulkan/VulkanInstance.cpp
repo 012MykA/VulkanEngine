@@ -96,23 +96,22 @@ namespace ve
         CHECK_VK_RESULT(result);
 
         // Logging
-        VE_CORE_INFO("VulkanInstance created");
-        VE_CORE_INFO("  API version: {}.{}.{}",
-                     VK_API_VERSION_MAJOR(desc.apiVersion),
-                     VK_API_VERSION_MINOR(desc.apiVersion),
-                     VK_API_VERSION_PATCH(desc.apiVersion));
+        VE_CORE_TRACE("VulkanInstance created");
+        VE_CORE_TRACE("  API version: {}.{}.{}",
+                      VK_API_VERSION_MAJOR(desc.apiVersion),
+                      VK_API_VERSION_MINOR(desc.apiVersion),
+                      VK_API_VERSION_PATCH(desc.apiVersion));
 
-        VE_CORE_INFO("  Validation: {}", desc.enableValidation ? "ON" : "OFF");
-
+        VE_CORE_TRACE("  Validation: {}", desc.enableValidation ? "ON" : "OFF");
         if (desc.enableValidation)
         {
             for (const char *layer : desc.validationLayers)
-                VE_CORE_INFO("    layer: {}", layer);
+                VE_CORE_TRACE("    layer: {}", layer);
         }
 
-        VE_CORE_INFO("  Extensions ({}):", extensions.size());
+        VE_CORE_TRACE("  Extensions ({}):", extensions.size());
         for (const char *ext : extensions)
-            VE_CORE_INFO("     {}", ext);
+            VE_CORE_TRACE("     {}", ext);
     }
 
     bool VulkanInstance::CheckValidationLayerSupport(const std::vector<const char *> &layers)
