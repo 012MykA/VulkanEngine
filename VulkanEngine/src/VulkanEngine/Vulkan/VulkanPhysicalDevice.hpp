@@ -10,7 +10,7 @@ namespace ve
 {
     class VulkanInstance;
     class VulkanSurface;
-    
+
     struct QueueFamilyIndices
     {
         std::optional<uint32_t> graphicsFamily;

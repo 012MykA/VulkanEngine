@@ -41,6 +41,7 @@ namespace ve
 
         void Recreate(uint32_t newWidth, uint32_t newHeight);
 
+    public:
         // Getters
         VkSwapchainKHR GetVkHandle() const { return m_Swapchain; }
         VkFormat GetFormat() const { return m_Format; }

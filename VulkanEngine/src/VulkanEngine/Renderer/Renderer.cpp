@@ -29,8 +29,6 @@ namespace ve
         if (width == 0 || height == 0)
             return;
 
-        m_LogicalDevice->WaitIdle();
-
         m_NeedsResize = true;
         m_ResizeWidth = width;
         m_ResizeHeight = height;
@@ -68,13 +66,17 @@ namespace ve
             });
 
         m_RenderPass = std::make_unique<VulkanRenderPass>(*m_LogicalDevice, m_Swapchain->GetFormat());
+        m_Framebuffers = std::make_unique<VulkanFramebuffers>(*m_LogicalDevice, *m_Swapchain, *m_RenderPass);
     }
 
     void Renderer::RecreateSwapchain(uint32_t width, uint32_t height)
     {
+        m_LogicalDevice->WaitIdle();
+
         Timer timer;
 
         m_Swapchain->Recreate(width, height);
+        m_Framebuffers->Recreate(*m_Swapchain, *m_RenderPass);
 
         VE_CORE_TRACE("Swapchain recreated: {}x{} ({} ms)", width, height, timer.ElapsedMilliseconds());
     }
