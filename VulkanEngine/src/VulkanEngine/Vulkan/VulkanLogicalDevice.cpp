@@ -22,7 +22,7 @@ namespace ve
     {
         const auto &indices = physicalDevice.GetQueueFamilies();
 
-        // --- Queues ----------------------------------------
+        // Queues
         std::set<uint32_t> uniqueFamilies = {
             indices.graphicsFamily.value(),
             indices.presentFamily.value(),
@@ -45,7 +45,7 @@ namespace ve
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        // --- Extensions ----------------------------------------
+        // Extensions
         std::vector<const char *> extensions(
             std::begin(VulkanPhysicalDevice::k_RequiredExtensions),
             std::end(VulkanPhysicalDevice::k_RequiredExtensions));
@@ -53,20 +53,10 @@ namespace ve
         for (const char *ext : desc.additionalExtensions)
             extensions.push_back(ext);
 
-        // Vulkan 1.3
-        VkPhysicalDeviceVulkan13Features features13 = desc.features13;
-        features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-        features13.pNext = nullptr;
-
-        // Vulkan 1.2
-        VkPhysicalDeviceVulkan12Features features12 = desc.features12;
-        features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-        features12.pNext = &features13;
-
-        // --- Device ----------------------------------------
+        // Device
         VkDeviceCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-            .pNext = &features12,
+            .pNext = nullptr,
             .queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
             .pQueueCreateInfos = queueCreateInfos.data(),
             .enabledExtensionCount = static_cast<uint32_t>(extensions.size()),

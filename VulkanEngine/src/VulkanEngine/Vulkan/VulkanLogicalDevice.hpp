@@ -13,8 +13,6 @@ namespace ve
         std::vector<const char *> additionalExtensions;
 
         VkPhysicalDeviceFeatures enabledFeatures{};
-        VkPhysicalDeviceVulkan12Features features12{};
-        VkPhysicalDeviceVulkan13Features features13{};
     };
 
     struct DeviceQueues

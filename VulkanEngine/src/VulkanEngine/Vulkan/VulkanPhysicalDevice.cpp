@@ -183,9 +183,6 @@ namespace ve
             {
                 indices.transferFamily = i;
             }
-
-            if (indices.IsComplete())
-                break;
         }
 
         return indices;
