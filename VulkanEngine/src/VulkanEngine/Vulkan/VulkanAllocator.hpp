@@ -1,6 +1,5 @@
 #pragma once
 
-// Disable VMA warnings
 #ifdef _MSC_VER
 #pragma warning(push, 0)
 #endif
@@ -36,9 +35,17 @@ namespace ve
 
     struct Allocation
     {
-        VmaAllocation handle = VK_NULL_HANDLE;
+        VmaAllocation handle = nullptr;
         VmaAllocationInfo info = {};
         void *mappedPtr = nullptr;
+    };
+
+    struct AllocatorStats
+    {
+        uint32_t allocationCount = 0;
+        uint32_t blockCount = 0;
+        VkDeviceSize usedBytes = 0;
+        VkDeviceSize totalBytes = 0;
     };
 
     class VulkanAllocator
@@ -78,7 +85,7 @@ namespace ve
         void FlushAllocation(const Allocation &allocation, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
         void InvalidateAllocation(const Allocation &allocation, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
 
-        void PrintStats() const;
+        AllocatorStats GetStats() const;
 
         VmaAllocator GetVmaHandle() const { return m_Allocator; }
 
@@ -86,7 +93,7 @@ namespace ve
         VmaAllocationCreateInfo BuildVmaAllocInfo(const AllocationDesc &desc) const;
 
     private:
-        VmaAllocator m_Allocator = VK_NULL_HANDLE;
+        VmaAllocator m_Allocator = nullptr;
     };
 
 } // namespace ve

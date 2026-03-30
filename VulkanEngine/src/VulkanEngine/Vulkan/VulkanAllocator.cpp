@@ -14,8 +14,6 @@ namespace ve
         const VulkanPhysicalDevice &physicalDevice,
         const VulkanLogicalDevice &logicalDevice)
     {
-        // VMA сам подтягивает указатели на функции через vkGetInstanceProcAddr /
-        // vkGetDeviceProcAddr — нам только передать хэндлы.
         VmaVulkanFunctions vulkanFunctions{
             .vkGetInstanceProcAddr = vkGetInstanceProcAddr,
             .vkGetDeviceProcAddr = vkGetDeviceProcAddr,
@@ -32,20 +30,17 @@ namespace ve
 
         VkResult result = vmaCreateAllocator(&createInfo, &m_Allocator);
         CHECK_VK_RESULT(result);
-
-        VE_CORE_TRACE("VulkanAllocator created (VMA)");
     }
 
     VulkanAllocator::~VulkanAllocator()
     {
-        if (m_Allocator != VK_NULL_HANDLE)
+        if (m_Allocator != nullptr)
         {
             vmaDestroyAllocator(m_Allocator);
-            m_Allocator = VK_NULL_HANDLE;
+            m_Allocator = nullptr;
         }
     }
 
-    // Buffer
     Allocation VulkanAllocator::AllocateBuffer(
         const VkBufferCreateInfo &bufferInfo,
         const AllocationDesc &allocDesc,
@@ -64,23 +59,16 @@ namespace ve
         CHECK_VK_RESULT(result);
 
         if (allocDesc.persistentMap)
-        {
-            result = vmaMapMemory(m_Allocator, allocation.handle, &allocation.mappedPtr);
-            CHECK_VK_RESULT(result);
-        }
+            allocation.mappedPtr = allocation.info.pMappedData;
 
         return allocation;
     }
 
     void VulkanAllocator::FreeBuffer(VkBuffer buffer, const Allocation &allocation) const
     {
-        if (allocation.mappedPtr)
-            vmaUnmapMemory(m_Allocator, allocation.handle);
-
         vmaDestroyBuffer(m_Allocator, buffer, allocation.handle);
     }
 
-    //  Image
     Allocation VulkanAllocator::AllocateImage(
         const VkImageCreateInfo &imageInfo,
         const AllocationDesc &allocDesc,
@@ -106,10 +94,6 @@ namespace ve
         vmaDestroyImage(m_Allocator, image, allocation.handle);
     }
 
-    // -------------------------------------------------------
-    //  Маппинг
-    // -------------------------------------------------------
-
     void *VulkanAllocator::MapMemory(const Allocation &allocation) const
     {
         void *ptr = nullptr;
@@ -133,23 +117,6 @@ namespace ve
         vmaInvalidateAllocation(m_Allocator, allocation.handle, offset, size);
     }
 
-    // -------------------------------------------------------
-    //  Диагностика
-    // -------------------------------------------------------
-
-    void VulkanAllocator::PrintStats() const
-    {
-        VmaTotalStatistics stats{};
-        vmaCalculateStatistics(m_Allocator, &stats);
-
-        const auto &total = stats.total;
-        VE_CORE_INFO("VMA Stats:");
-        VE_CORE_INFO("  Allocations : {}", total.statistics.allocationCount);
-        VE_CORE_INFO("  Blocks      : {}", total.statistics.blockCount);
-        VE_CORE_INFO("  Used bytes  : {} MB", total.statistics.allocationBytes / (1024 * 1024));
-        VE_CORE_INFO("  Total bytes : {} MB", total.statistics.blockBytes / (1024 * 1024));
-    }
-
     VmaAllocationCreateInfo VulkanAllocator::BuildVmaAllocInfo(const AllocationDesc &desc) const
     {
         VmaAllocationCreateInfo info{};
@@ -167,7 +134,7 @@ namespace ve
         }
         else if (desc.cpuToGpu)
         {
-            info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+            info.usage = VMA_MEMORY_USAGE_AUTO;
             info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                          VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT;
         }
@@ -180,6 +147,21 @@ namespace ve
             info.flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
         return info;
+    }
+
+    AllocatorStats VulkanAllocator::GetStats() const
+    {
+        VmaTotalStatistics stats{};
+        vmaCalculateStatistics(m_Allocator, &stats);
+
+        AllocatorStats allocatorStats{
+            .allocationCount = stats.total.statistics.allocationCount,
+            .blockCount = stats.total.statistics.blockCount,
+            .usedBytes = stats.total.statistics.allocationBytes,
+            .totalBytes = stats.total.statistics.blockBytes,
+        };
+
+        return allocatorStats;
     }
 
 } // namespace ve
