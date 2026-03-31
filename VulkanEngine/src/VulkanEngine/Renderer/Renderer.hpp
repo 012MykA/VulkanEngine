@@ -9,6 +9,7 @@
 #include "VulkanEngine/Vulkan/VulkanRenderPass.hpp"
 #include "VulkanEngine/Vulkan/VulkanFramebuffers.hpp"
 #include "VulkanEngine/Vulkan/VulkanCommandPool.hpp"
+#include "VulkanEngine/Vulkan/VulkanFrameData.hpp"
 
 #include <memory>
 
@@ -25,7 +26,7 @@ namespace ve
         Renderer(const Renderer &) = delete;
         Renderer &operator=(const Renderer &) = delete;
 
-        bool BeginFrame();
+        void BeginFrame();
         void EndFrame();
 
         void HandleResize(uint32_t width, uint32_t height);
@@ -35,7 +36,7 @@ namespace ve
 
     private:
         void Init(const Window &window);
-        void RecreateSwapchain(uint32_t width, uint32_t height);
+        void RecreateSwapchain();
 
     private:
         std::unique_ptr<VulkanInstance> m_Instance;
@@ -46,10 +47,8 @@ namespace ve
         std::unique_ptr<VulkanSwapchain> m_Swapchain;
         std::unique_ptr<VulkanRenderPass> m_RenderPass;
         std::unique_ptr<VulkanFramebuffers> m_Framebuffers;
-        std::unique_ptr<VulkanCommandPool> m_CommandPool;
-
-        // std::unique_ptr<VulkanCommandPool> m_GraphicsCommandPool;
-        // std::unique_ptr<VulkanCommandPool> m_TransferCommandPool;
+        std::unique_ptr<VulkanCommandPool> m_GraphicsCommandPool;
+        std::unique_ptr<VulkanFrameManager> m_FrameManager;
 
         uint32_t m_CurrentImageIndex = 0;
 

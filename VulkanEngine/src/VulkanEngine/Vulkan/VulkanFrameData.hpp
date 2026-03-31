@@ -21,7 +21,7 @@ namespace ve
     class VulkanFrameManager
     {
     public:
-        static constexpr uint32_t k_MaxFramesInFlight = 2;
+        static constexpr uint32_t k_MaxFramesInFlight = 3;
 
         VulkanFrameManager(const VulkanLogicalDevice &logicalDevice,
                            const VulkanCommandPool &commandPool);
