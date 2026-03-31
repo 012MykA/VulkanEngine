@@ -67,6 +67,9 @@ namespace ve
 
         m_RenderPass = std::make_unique<VulkanRenderPass>(*m_LogicalDevice, m_Swapchain->GetFormat());
         m_Framebuffers = std::make_unique<VulkanFramebuffers>(*m_LogicalDevice, *m_Swapchain, *m_RenderPass);
+        m_CommandPool = std::make_unique<VulkanCommandPool>(
+            *m_LogicalDevice, *m_PhysicalDevice,
+            CommandPoolDesc{.type = CommandPoolType::Graphics, .resetBuffer = true});
     }
 
     void Renderer::RecreateSwapchain(uint32_t width, uint32_t height)

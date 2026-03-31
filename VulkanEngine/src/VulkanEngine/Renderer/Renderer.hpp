@@ -8,6 +8,7 @@
 #include "VulkanEngine/Vulkan/VulkanSwapchain.hpp"
 #include "VulkanEngine/Vulkan/VulkanRenderPass.hpp"
 #include "VulkanEngine/Vulkan/VulkanFramebuffers.hpp"
+#include "VulkanEngine/Vulkan/VulkanCommandPool.hpp"
 
 #include <memory>
 
@@ -45,6 +46,7 @@ namespace ve
         std::unique_ptr<VulkanSwapchain> m_Swapchain;
         std::unique_ptr<VulkanRenderPass> m_RenderPass;
         std::unique_ptr<VulkanFramebuffers> m_Framebuffers;
+        std::unique_ptr<VulkanCommandPool> m_CommandPool;
 
         // std::unique_ptr<VulkanCommandPool> m_GraphicsCommandPool;
         // std::unique_ptr<VulkanCommandPool> m_TransferCommandPool;

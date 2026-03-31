@@ -64,8 +64,18 @@ namespace ve
 
     VkCommandBuffer VulkanCommandPool::AllocateBuffer(VkCommandBufferLevel level) const
     {
-        auto buffers = AllocateBuffers(1, level);
-        return buffers[0];
+        VkCommandBufferAllocateInfo allocInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            .commandPool = m_CommandPool,
+            .level = level,
+            .commandBufferCount = 1,
+        };
+
+        VkCommandBuffer buffer;
+        VkResult result = vkAllocateCommandBuffers(m_Device, &allocInfo, &buffer);
+        CHECK_VK_RESULT(result);
+
+        return buffer;
     }
 
     void VulkanCommandPool::FreeBuffers(std::vector<VkCommandBuffer> &buffers) const
