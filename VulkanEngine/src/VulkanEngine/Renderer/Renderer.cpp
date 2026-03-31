@@ -146,6 +146,16 @@ namespace ve
         m_FrameManager->AdvanceFrame();
     }
 
+    void Renderer::Submit()
+    {
+        auto &frame = m_FrameManager->GetCurrentFrame();
+        VkCommandBuffer cmd = frame.commandBuffer;
+        
+        m_Pipeline->Bind(cmd);
+
+        vkCmdDraw(cmd, 3, 1, 0, 0);
+    }
+
     void Renderer::HandleResize(uint32_t width, uint32_t height)
     {
         if (width == 0 || height == 0)
@@ -192,6 +202,27 @@ namespace ve
             CommandPoolDesc{.type = CommandPoolType::Graphics, .resetBuffer = true});
 
         m_FrameManager = std::make_unique<VulkanFrameManager>(*m_LogicalDevice, *m_GraphicsCommandPool);
+
+        // Pipeline
+        m_PipelineLayout = std::make_unique<VulkanPipelineLayout>(VulkanPipelineLayout::Builder(*m_LogicalDevice).Build());
+
+        VulkanShader vertexShader(*m_LogicalDevice, "../VulkanEngine/assets/shaders/triangle.vert.spv");
+        VulkanShader fragmentShader(*m_LogicalDevice, "../VulkanEngine/assets/shaders/triangle.frag.spv");
+
+        GraphicsPipelineDesc pipelineDesc{
+            .vertexShader = vertexShader.GetVkHandle(),
+            .fragmentShader = fragmentShader.GetVkHandle(),
+            
+            .depthTest = false,
+            .depthWrite = false,
+
+            .colorBlendAttachment = MakeOpaqueBlend(),
+
+            .renderPass = m_RenderPass->GetVkHandle(),
+            .layout = m_PipelineLayout->GetVkHandle(),
+        };        
+        
+        m_Pipeline = std::make_unique<VulkanGraphicsPipeline>(*m_LogicalDevice, pipelineDesc);
     }
 
     void Renderer::RecreateSwapchain()

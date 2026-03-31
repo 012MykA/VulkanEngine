@@ -41,6 +41,7 @@ namespace ve
                 }
 
                 m_Renderer->BeginFrame();
+                m_Renderer->Submit();
                 m_Renderer->EndFrame();
             }
 

@@ -10,6 +10,7 @@
 #include "VulkanEngine/Vulkan/VulkanFramebuffers.hpp"
 #include "VulkanEngine/Vulkan/VulkanCommandPool.hpp"
 #include "VulkanEngine/Vulkan/VulkanFrameData.hpp"
+#include "VulkanEngine/Vulkan/VulkanPipeline.hpp"
 
 #include <memory>
 
@@ -28,6 +29,8 @@ namespace ve
 
         void BeginFrame();
         void EndFrame();
+
+        void Submit();
 
         void HandleResize(uint32_t width, uint32_t height);
 
@@ -49,6 +52,10 @@ namespace ve
         std::unique_ptr<VulkanFramebuffers> m_Framebuffers;
         std::unique_ptr<VulkanCommandPool> m_GraphicsCommandPool;
         std::unique_ptr<VulkanFrameManager> m_FrameManager;
+
+        // Pipeline
+        std::unique_ptr<VulkanPipelineLayout> m_PipelineLayout;
+        std::unique_ptr<VulkanGraphicsPipeline> m_Pipeline;
 
         uint32_t m_CurrentImageIndex = 0;
 

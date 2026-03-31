@@ -6,14 +6,14 @@
 
 namespace ve
 {
-    VulkanShader::VulkanShader(VkDevice device, const std::string &spvPath)
+    VulkanShader::VulkanShader(const VulkanLogicalDevice &device, const std::string &spvPath)
         : VulkanShader(device, LoadSpv(spvPath))
     {
         VE_CORE_TRACE("Shader loaded: {}", spvPath);
     }
 
-    VulkanShader::VulkanShader(VkDevice device, std::span<const uint32_t> spvCode)
-        : m_Device(device)
+    VulkanShader::VulkanShader(const VulkanLogicalDevice &device, std::span<const uint32_t> spvCode)
+        : m_Device(device.GetVkHandle())
     {
         VkShaderModuleCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
@@ -196,11 +196,13 @@ namespace ve
             .primitiveRestartEnable = VK_FALSE,
         };
 
-        // Viewport (dynamic)
+        // Dynamic viewport & scissor
         VkPipelineViewportStateCreateInfo viewportState{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
             .viewportCount = 1,
+            .pViewports = nullptr, // Dynamic state
             .scissorCount = 1,
+            .pScissors = nullptr, // Dynamic state
         };
 
         // Rasterization
@@ -212,17 +214,24 @@ namespace ve
             .cullMode = desc.cullMode,
             .frontFace = desc.frontFace,
             .depthBiasEnable = VK_FALSE,
+            .depthBiasConstantFactor = 0.0f, // Optional
+            .depthBiasClamp = 0.0f,          // Optional
+            .depthBiasSlopeFactor = 0.0f,    // Optional
             .lineWidth = desc.lineWidth,
         };
 
-        // --- Multisampling ---
+        // Multisampling
         VkPipelineMultisampleStateCreateInfo multisampling{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
             .rasterizationSamples = desc.samples,
             .sampleShadingEnable = VK_FALSE,
+            .minSampleShading = 1.0f,          // Optional
+            .pSampleMask = nullptr,            // Optional
+            .alphaToCoverageEnable = VK_FALSE, // Optional
+            .alphaToOneEnable = VK_FALSE,      // Optional
         };
 
-        // Depth/stencil
+        // Depth stencil
         VkPipelineDepthStencilStateCreateInfo depthStencil{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
             .depthTestEnable = desc.depthTest ? VK_TRUE : VK_FALSE,
@@ -230,23 +239,15 @@ namespace ve
             .depthCompareOp = desc.depthCompareOp,
             .depthBoundsTestEnable = VK_FALSE,
             .stencilTestEnable = VK_FALSE,
+            .minDepthBounds = 0.0f, // Optional
+            .maxDepthBounds = 1.0f, // Optional
         };
-
-        // --- Blending ---
-        // Если attachments не переданы — создаём opaque для каждого color format
-        std::vector<VkPipelineColorBlendAttachmentState> blendAttachments = desc.blendAttachments;
-        if (blendAttachments.empty())
-        {
-            blendAttachments.resize(
-                desc.colorAttachmentFormats.size(),
-                MakeOpaqueBlend());
-        }
 
         VkPipelineColorBlendStateCreateInfo blending{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
             .logicOpEnable = VK_FALSE,
-            .attachmentCount = static_cast<uint32_t>(blendAttachments.size()),
-            .pAttachments = blendAttachments.empty() ? nullptr : blendAttachments.data(),
+            .attachmentCount = 1,
+            .pAttachments = &desc.colorBlendAttachment,
         };
 
         // Dynamic states
@@ -261,21 +262,9 @@ namespace ve
             .pDynamicStates = dynamicStates.data(),
         };
 
-        // Dynamic Rendering (Vulkan 1.3)
-        VkPipelineRenderingCreateInfo renderingInfo{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
-            .colorAttachmentCount = static_cast<uint32_t>(desc.colorAttachmentFormats.size()),
-            .pColorAttachmentFormats = desc.colorAttachmentFormats.empty()
-                                           ? nullptr
-                                           : desc.colorAttachmentFormats.data(),
-            .depthAttachmentFormat = desc.depthAttachmentFormat,
-            .stencilAttachmentFormat = desc.stencilAttachmentFormat,
-        };
-
         // --- Pipeline ---
         VkGraphicsPipelineCreateInfo pipelineInfo{
             .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-            .pNext = &renderingInfo, // Dynamic Rendering
             .stageCount = static_cast<uint32_t>(shaderStages.size()),
             .pStages = shaderStages.data(),
             .pVertexInputState = &vertexInput,
@@ -287,7 +276,8 @@ namespace ve
             .pColorBlendState = &blending,
             .pDynamicState = &dynamicState,
             .layout = desc.layout,
-            .renderPass = VK_NULL_HANDLE,
+            .renderPass = desc.renderPass,
+            .subpass = 0,
         };
 
         VkResult result = vkCreateGraphicsPipelines(m_Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);
