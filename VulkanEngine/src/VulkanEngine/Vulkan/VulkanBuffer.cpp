@@ -53,11 +53,19 @@ namespace ve
 
     void VulkanBuffer::Upload(const void *data, VkDeviceSize size, VkDeviceSize offset) const
     {
-        assert(size + offset <= m_Desc.size, "VulkanBuffer::Upload - out of bounds");
+        assert(size + offset <= m_Desc.size && "VulkanBuffer::Upload - out of bounds");
 
         if (m_Allocation.mappedPtr)
         {
+            // Persistent mapping (UBO and etc.) - just memcpy, no unmap
             std::memcpy(static_cast<uint8_t *>(m_Allocation.mappedPtr) + offset, data, size);
+            m_Allocator->FlushAllocation(m_Allocation, offset, size);
+        }
+        else
+        {
+            // Temporary mapping (staging buffers)
+            void *ptr = m_Allocator->MapMemory(m_Allocation);
+            std::memcpy(static_cast<uint8_t *>(ptr) + offset, data, size);
             m_Allocator->FlushAllocation(m_Allocation, offset, size);
             m_Allocator->UnmapMemory(m_Allocation);
         }

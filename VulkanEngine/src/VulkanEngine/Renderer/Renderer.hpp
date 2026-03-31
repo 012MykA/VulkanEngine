@@ -12,6 +12,19 @@
 #include "VulkanEngine/Vulkan/VulkanFrameData.hpp"
 #include "VulkanEngine/Vulkan/VulkanPipeline.hpp"
 
+// TODO: remove
+#include "VulkanEngine/Vulkan/VulkanBuffer.hpp"
+#include "VulkanEngine/Vulkan/VulkanImmediateSubmit.hpp"
+#include <glm/glm.hpp>
+#include <vector>
+
+struct Vertex
+{
+    glm::vec3 Position;
+    glm::vec3 Color;
+};
+// ---
+
 #include <memory>
 
 namespace ve
@@ -34,7 +47,7 @@ namespace ve
 
         void HandleResize(uint32_t width, uint32_t height);
 
-        const VulkanLogicalDevice &GetLogicalDeivce() const { return *m_LogicalDevice; }
+        const VulkanLogicalDevice &GetLogicalDevice() const { return *m_LogicalDevice; }
         const VulkanAllocator &GetAllocator() const { return *m_Allocator; }
 
     private:
@@ -51,11 +64,17 @@ namespace ve
         std::unique_ptr<VulkanRenderPass> m_RenderPass;
         std::unique_ptr<VulkanFramebuffers> m_Framebuffers;
         std::unique_ptr<VulkanCommandPool> m_GraphicsCommandPool;
+        std::unique_ptr<VulkanCommandPool> m_TransferCommandPool;
         std::unique_ptr<VulkanFrameManager> m_FrameManager;
+        std::unique_ptr<VulkanImmediateSubmit> m_ImmediateSubmit;
 
         // Pipeline
         std::unique_ptr<VulkanPipelineLayout> m_PipelineLayout;
         std::unique_ptr<VulkanGraphicsPipeline> m_Pipeline;
+
+        // TODO: remove
+        std::unique_ptr<VulkanBuffer> m_VertexBuffer;
+        // ---
 
         uint32_t m_CurrentImageIndex = 0;
 

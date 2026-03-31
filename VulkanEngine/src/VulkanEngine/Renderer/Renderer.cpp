@@ -13,7 +13,8 @@ namespace ve
 
     Renderer::~Renderer()
     {
-        m_LogicalDevice->WaitIdle();
+        if (m_LogicalDevice)
+            m_LogicalDevice->WaitIdle();
     }
 
     void Renderer::BeginFrame()
@@ -150,9 +151,12 @@ namespace ve
     {
         auto &frame = m_FrameManager->GetCurrentFrame();
         VkCommandBuffer cmd = frame.commandBuffer;
-        
+
         m_Pipeline->Bind(cmd);
 
+        VkBuffer vertexBuffers[] = {m_VertexBuffer->GetVkHandle()};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
         vkCmdDraw(cmd, 3, 1, 0, 0);
     }
 
@@ -201,7 +205,12 @@ namespace ve
             *m_LogicalDevice, *m_PhysicalDevice,
             CommandPoolDesc{.type = CommandPoolType::Graphics, .resetBuffer = true});
 
+        m_TransferCommandPool = std::make_unique<VulkanCommandPool>(
+            *m_LogicalDevice, *m_PhysicalDevice,
+            CommandPoolDesc{.type = CommandPoolType::Transfer, .transient = true});
+
         m_FrameManager = std::make_unique<VulkanFrameManager>(*m_LogicalDevice, *m_GraphicsCommandPool);
+        m_ImmediateSubmit = std::make_unique<VulkanImmediateSubmit>(*m_LogicalDevice, *m_TransferCommandPool);
 
         // Pipeline
         m_PipelineLayout = std::make_unique<VulkanPipelineLayout>(VulkanPipelineLayout::Builder(*m_LogicalDevice).Build());
@@ -212,7 +221,16 @@ namespace ve
         GraphicsPipelineDesc pipelineDesc{
             .vertexShader = vertexShader.GetVkHandle(),
             .fragmentShader = fragmentShader.GetVkHandle(),
-            
+
+            .vertexInput{
+                .bindings = {
+                    VkVertexInputBindingDescription{.binding = 0, .stride = sizeof(Vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX},
+                },
+                .attributes = {
+                    {.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, Position)},
+                    {.location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, Color)},
+                }},
+
             .depthTest = false,
             .depthWrite = false,
 
@@ -220,9 +238,31 @@ namespace ve
 
             .renderPass = m_RenderPass->GetVkHandle(),
             .layout = m_PipelineLayout->GetVkHandle(),
-        };        
-        
+        };
+
         m_Pipeline = std::make_unique<VulkanGraphicsPipeline>(*m_LogicalDevice, pipelineDesc);
+
+        // TODO: remove
+        const std::vector<Vertex> vertices = {
+            {{0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+            {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+            {{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+        };
+
+        const VkDeviceSize vertexSize = sizeof(Vertex) * vertices.size();
+
+        VulkanBuffer stagingVB(*m_Allocator, MakeStagingBufferDesc(vertexSize));
+        stagingVB.Upload(vertices);
+
+        m_VertexBuffer = std::make_unique<VulkanBuffer>(*m_Allocator, MakeGPUBufferDesc(vertexSize, BufferType::Vertex));
+
+        // clang-format off
+        m_ImmediateSubmit->Submit([&](VkCommandBuffer cmd)
+        {
+            stagingVB.CopyTo(cmd, *m_VertexBuffer);
+        });
+        // clang-format on
+        // ---
     }
 
     void Renderer::RecreateSwapchain()

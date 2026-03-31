@@ -58,7 +58,7 @@ namespace ve
     void Material::UpdateUBO()
     {
         if (m_UBOBuffer)
-            m_UBOBuffer->Upload(m_UBO);
+            m_UBOBuffer->Upload(&m_UBO, sizeof(MaterialUBO));
     }
 
     // Setters

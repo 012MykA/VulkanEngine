@@ -113,7 +113,7 @@ namespace ve
         m_VertexBuffer = std::make_unique<VulkanBuffer>(allocator, MakeGPUBufferDesc(vertexSize, BufferType::Vertex));
 
         m_IndexBuffer = std::make_unique<VulkanBuffer>(allocator, MakeGPUBufferDesc(indexSize, BufferType::Index));
-
+        
         // Coping
         // clang-format off
         upload.Submit([&](VkCommandBuffer cmd)

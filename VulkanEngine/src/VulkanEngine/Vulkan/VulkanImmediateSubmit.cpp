@@ -5,10 +5,9 @@
 
 namespace ve
 {
-    VulkanImmediateSubmit::VulkanImmediateSubmit(const VulkanLogicalDevice &logicalDevice,
-                                                 const VulkanCommandPool &commandPool,
-                                                 VkQueue queue)
-        : m_Device(logicalDevice.GetVkHandle()), m_CommandPool(commandPool.GetVkHandle()), m_Queue(queue)
+    VulkanImmediateSubmit::VulkanImmediateSubmit(const VulkanLogicalDevice &logicalDevice, const VulkanCommandPool &commandPool)
+        : m_Device(logicalDevice.GetVkHandle()), m_CommandPool(commandPool.GetVkHandle()),
+          m_Queue(logicalDevice.GetTransferQueue())
     {
         VkCommandBufferAllocateInfo allocInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -55,18 +54,13 @@ namespace ve
         CHECK_VK_RESULT(result);
 
         // Submit
-        VkCommandBufferSubmitInfo cmdSubmit{
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-            .commandBuffer = m_CmdBuffer,
+        VkSubmitInfo submitInfo{
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .commandBufferCount = 1,
+            .pCommandBuffers = &m_CmdBuffer,
         };
 
-        VkSubmitInfo2 submitInfo{
-            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-            .commandBufferInfoCount = 1,
-            .pCommandBufferInfos = &cmdSubmit,
-        };
-
-        result = vkQueueSubmit2(m_Queue, 1, &submitInfo, m_Fence);
+        result = vkQueueSubmit(m_Queue, 1, &submitInfo, m_Fence);
         CHECK_VK_RESULT(result);
 
         // Wait for fences

@@ -8,6 +8,9 @@
 #include <cstring>
 #include <span>
 
+template <typename C>
+concept Spannable = requires(const C &c) { std::span{c}; };
+
 namespace ve
 {
     class VulkanLogicalDevice;
@@ -26,18 +29,27 @@ namespace ve
     {
         VkDeviceSize size = 0;
         BufferType type = BufferType::Vertex;
+
+        // Extra usage flags (TRANSFER_DST for GPU-only buffers)
         VkBufferUsageFlags extraUsage = 0;
 
         AllocationDesc allocation;
     };
 
+    // -------------------------------------------------------
+    //  VulkanBuffer - a wrapper around VkBuffer + VmaAllocation
+    //
+    // Supports:
+    // - GPU-only buffers (via staging)
+    // - CPU-visible UBO with persistentMap
+    // - Upload() - copying data via mapping
+    // -------------------------------------------------------
     class VulkanBuffer
     {
     public:
         VulkanBuffer(const VulkanAllocator &allocator, const BufferDesc &desc);
         ~VulkanBuffer();
 
-        // Copy
         VulkanBuffer(const VulkanBuffer &) = delete;
         VulkanBuffer &operator=(const VulkanBuffer &) = delete;
 
@@ -46,7 +58,10 @@ namespace ve
         VulkanBuffer &operator=(VulkanBuffer &&other) noexcept;
 
     public:
-        // Uploading from CPU
+        // --------------------------------------------------
+        // Loading data (for CPU-visible buffers only)
+        // For GPU-only buffers, first write to Staging, then CopyTo
+        // --------------------------------------------------
         void Upload(const void *data, VkDeviceSize size, VkDeviceSize offset = 0) const;
 
         template <typename T>
@@ -55,19 +70,21 @@ namespace ve
             Upload(data.data(), data.size_bytes(), offset);
         }
 
-        template <typename T>
-        void Upload(const T &value, VkDeviceSize offset = 0) const
+        template <Spannable Container>
+        void Upload(const Container &data, VkDeviceSize offset = 0) const
         {
-            Upload(&value, sizeof(T), offset);
+            Upload(std::span{data}, offset);
         }
 
+        // --------------------------------------------------
+        //  GPU-buffer -> GPU-buffer
+        // --------------------------------------------------
         void CopyTo(VkCommandBuffer cmd, const VulkanBuffer &dst,
                     VkDeviceSize srcOffset = 0,
                     VkDeviceSize dstOffset = 0,
                     VkDeviceSize size = VK_WHOLE_SIZE) const;
 
-    public:
-        // Getters
+    public: // Getters
         VkBuffer GetVkHandle() const { return m_Buffer; }
         VkDeviceSize GetSize() const { return m_Desc.size; }
         void *GetMappedPtr() const { return m_Allocation.mappedPtr; }
@@ -78,12 +95,15 @@ namespace ve
 
     private:
         const VulkanAllocator *m_Allocator = nullptr;
+
         VkBuffer m_Buffer = VK_NULL_HANDLE;
         Allocation m_Allocation = {};
         BufferDesc m_Desc = {};
     };
 
-    // Staging buffer (CPU -> GPU)
+    // Readry-to-use BufferDescs
+
+    // Staging buffer (CPU -> GPU transfer)
     inline BufferDesc MakeStagingBufferDesc(VkDeviceSize size)
     {
         return BufferDesc{
@@ -94,18 +114,18 @@ namespace ve
         };
     }
 
-    // GPU-only buffer
+    // GPU-only buffer (needs TRANSFER_DST + actual usage)
     inline BufferDesc MakeGPUBufferDesc(VkDeviceSize size, BufferType type)
     {
         return BufferDesc{
             .size = size,
             .type = type,
-            .extraUsage = 0,
+            .extraUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             .allocation = AllocationDesc{.gpuOnly = true},
         };
     }
 
-    // CPU-to-GPU for UBO
+    // CPU-to-GPU buffer for UBO (persistentMap - no staging)
     inline BufferDesc MakeUniformBufferDesc(VkDeviceSize size)
     {
         return BufferDesc{
