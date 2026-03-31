@@ -2,10 +2,9 @@
 
 #include "VulkanEngine/Vulkan/VulkanBuffer.hpp"
 #include "VulkanEngine/Vulkan/VulkanAllocator.hpp"
+#include "Vertex.hpp"
+#include "AABB.hpp"
 
-#include <glm/glm.hpp>
-
-#include <limits>
 #include <cstdint>
 #include <string>
 #include <memory>
@@ -14,29 +13,6 @@
 namespace ve
 {
     class VulkanImmediateSubmit;
-
-    struct Vertex
-    {
-        glm::vec3 position;
-        glm::vec3 normal;
-        glm::vec4 tangent;
-        glm::vec2 uv;
-    };
-
-    struct AABB
-    {
-        glm::vec3 min{std::numeric_limits<float>::max()};
-        glm::vec3 max{std::numeric_limits<float>::lowest()};
-
-        glm::vec3 Center() const { return (min + max) * 0.5f; }
-        glm::vec3 Extents() const { return (max - min) * 0.5f; }
-
-        void Expand(const glm::vec3 &p)
-        {
-            min = glm::min(min, p);
-            max = glm::max(max, p);
-        }
-    };
 
     struct SubMesh
     {
@@ -60,18 +36,19 @@ namespace ve
         Mesh &operator=(Mesh &&) noexcept = default;
 
     public:
-        void SetVertices(std::vector<Vertex> vertices);
-        void SetIndices(std::vector<uint32_t> indices);
-        void AddSubMesh(SubMesh subMesh);
-
-        void ComputeTangents();
-        void ComputeBounds();
-
         void UploadToGPU(const VulkanAllocator &allocator,
                          const VulkanImmediateSubmit &upload);
         void FreeCPUData();
 
         void Bind(VkCommandBuffer cmd) const;
+
+        void ComputeTangents();
+        void ComputeBounds();
+
+    public: // Setters
+        void SetVertices(std::vector<Vertex> vertices);
+        void SetIndices(std::vector<uint32_t> indices);
+        void AddSubMesh(SubMesh subMesh);
 
     public:
         // Getters
@@ -83,6 +60,8 @@ namespace ve
         const std::string &GetName() const { return m_Name; }
         void SetName(std::string name) { m_Name = std::move(name); }
 
+        uint32_t GetIndexCount() const { return m_IndexCount; }
+
     private:
         // CPU Data
         std::vector<Vertex> m_Vertices;
@@ -90,6 +69,8 @@ namespace ve
         std::vector<SubMesh> m_SubMeshes;
         AABB m_Bounds;
         std::string m_Name;
+
+        uint32_t m_IndexCount = 0;
 
         // GPU Data
         std::unique_ptr<VulkanBuffer> m_VertexBuffer;

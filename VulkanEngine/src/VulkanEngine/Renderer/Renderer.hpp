@@ -10,19 +10,11 @@
 #include "VulkanEngine/Vulkan/VulkanFramebuffers.hpp"
 #include "VulkanEngine/Vulkan/VulkanCommandPool.hpp"
 #include "VulkanEngine/Vulkan/VulkanFrameData.hpp"
+#include "VulkanEngine/Vulkan/VulkanImmediateSubmit.hpp"
 #include "VulkanEngine/Vulkan/VulkanPipeline.hpp"
 
 // TODO: remove
-#include "VulkanEngine/Vulkan/VulkanBuffer.hpp"
-#include "VulkanEngine/Vulkan/VulkanImmediateSubmit.hpp"
-#include <glm/glm.hpp>
-#include <vector>
-
-struct Vertex
-{
-    glm::vec3 Position;
-    glm::vec3 Color;
-};
+#include "Mesh.hpp"
 // ---
 
 #include <memory>
@@ -73,7 +65,7 @@ namespace ve
         std::unique_ptr<VulkanGraphicsPipeline> m_Pipeline;
 
         // TODO: remove
-        std::unique_ptr<VulkanBuffer> m_VertexBuffer;
+        std::unique_ptr<Mesh> m_TriangleMesh;
         // ---
 
         uint32_t m_CurrentImageIndex = 0;

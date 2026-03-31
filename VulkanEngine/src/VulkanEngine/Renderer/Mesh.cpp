@@ -2,6 +2,10 @@
 #include "VulkanEngine/Vulkan/VulkanImmediateSubmit.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 
+#include <glm/glm.hpp>
+
+#include <cassert>
+
 namespace ve
 {
     void Mesh::SetVertices(std::vector<Vertex> vertices)
@@ -96,11 +100,12 @@ namespace ve
 
     void Mesh::UploadToGPU(const VulkanAllocator &allocator, const VulkanImmediateSubmit &upload)
     {
-        if (m_Vertices.empty() || m_Indices.empty())
-            throw std::runtime_error("Mesh::UploadToGPU - empty mesh");
+        assert(!m_Vertices.empty() && !m_Indices.empty() && "Mesh::UploadToGPU - mesh must have both vertices and indices");
 
         const VkDeviceSize vertexSize = sizeof(Vertex) * m_Vertices.size();
         const VkDeviceSize indexSize = sizeof(uint32_t) * m_Indices.size();
+
+        m_IndexCount = static_cast<uint32_t>(m_Indices.size());
 
         // Staging buffers
         VulkanBuffer stagingVB(allocator, MakeStagingBufferDesc(vertexSize));
@@ -113,7 +118,7 @@ namespace ve
         m_VertexBuffer = std::make_unique<VulkanBuffer>(allocator, MakeGPUBufferDesc(vertexSize, BufferType::Vertex));
 
         m_IndexBuffer = std::make_unique<VulkanBuffer>(allocator, MakeGPUBufferDesc(indexSize, BufferType::Index));
-        
+
         // Coping
         // clang-format off
         upload.Submit([&](VkCommandBuffer cmd)
@@ -136,8 +141,11 @@ namespace ve
 
     void Mesh::Bind(VkCommandBuffer cmd) const
     {
+        assert((m_VertexBuffer && m_IndexBuffer) && "Mesh::Bind - buffers not uploaded");
+
         VkBuffer vb = m_VertexBuffer->GetVkHandle();
         VkDeviceSize offset = 0;
+
         vkCmdBindVertexBuffers(cmd, 0, 1, &vb, &offset);
         vkCmdBindIndexBuffer(cmd, m_IndexBuffer->GetVkHandle(), 0, VK_INDEX_TYPE_UINT32);
     }

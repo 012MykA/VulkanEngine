@@ -154,10 +154,8 @@ namespace ve
 
         m_Pipeline->Bind(cmd);
 
-        VkBuffer vertexBuffers[] = {m_VertexBuffer->GetVkHandle()};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
-        vkCmdDraw(cmd, 3, 1, 0, 0);
+        m_TriangleMesh->Bind(cmd);
+        vkCmdDrawIndexed(cmd, m_TriangleMesh->GetIndexCount(), 1, 0, 0, 0);
     }
 
     void Renderer::HandleResize(uint32_t width, uint32_t height)
@@ -227,9 +225,13 @@ namespace ve
                     VkVertexInputBindingDescription{.binding = 0, .stride = sizeof(Vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX},
                 },
                 .attributes = {
-                    {.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, Position)},
-                    {.location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, Color)},
+                    {.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, position)},
+                    {.location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, normal)},
+                    {.location = 2, .binding = 0, .format = VK_FORMAT_R32G32B32A32_SFLOAT, .offset = offsetof(Vertex, tangent)},
+                    {.location = 3, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(Vertex, uv)},
                 }},
+
+            // .cullMode = VK_CULL_MODE_NONE,
 
             .depthTest = false,
             .depthWrite = false,
@@ -244,24 +246,21 @@ namespace ve
 
         // TODO: remove
         const std::vector<Vertex> vertices = {
-            {{0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-            {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-            {{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+            // position                // normal         // tangent               // uv
+            {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
+            {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
+            {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+            {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
         };
 
-        const VkDeviceSize vertexSize = sizeof(Vertex) * vertices.size();
+        const std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
 
-        VulkanBuffer stagingVB(*m_Allocator, MakeStagingBufferDesc(vertexSize));
-        stagingVB.Upload(vertices);
+        m_TriangleMesh = std::make_unique<Mesh>();
+        m_TriangleMesh->SetName("Triangle");
+        m_TriangleMesh->SetVertices(vertices);
+        m_TriangleMesh->SetIndices(indices);
 
-        m_VertexBuffer = std::make_unique<VulkanBuffer>(*m_Allocator, MakeGPUBufferDesc(vertexSize, BufferType::Vertex));
-
-        // clang-format off
-        m_ImmediateSubmit->Submit([&](VkCommandBuffer cmd)
-        {
-            stagingVB.CopyTo(cmd, *m_VertexBuffer);
-        });
-        // clang-format on
+        m_TriangleMesh->UploadToGPU(*m_Allocator, *m_ImmediateSubmit);
         // ---
     }
 
