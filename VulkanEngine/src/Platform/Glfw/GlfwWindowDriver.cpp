@@ -181,7 +181,7 @@ namespace ve
 
     void *GlfwWindowDriver::GetNativeWindow() const
     {
-        return reinterpret_cast<void *>(m_WindowHandle);
+        return static_cast<void *>(m_WindowHandle);
     }
 
     void GlfwWindowDriver::SetEventCallback(const EventCallbackFn &callback)

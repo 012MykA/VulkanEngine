@@ -47,6 +47,9 @@ namespace ve
         void PushLayer(Layer *layer);
         void PushOverlay(Layer *overlay);
 
+        static Application &Get() { return *s_Instance; }
+        Window &GetWindow() { return *m_Window; }
+
     private:
         bool OnWindowClose(WindowCloseEvent &e);
         bool OnWindowResize(WindowResizeEvent &e);
