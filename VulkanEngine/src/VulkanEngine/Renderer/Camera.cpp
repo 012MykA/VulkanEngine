@@ -39,39 +39,41 @@ namespace ve
             m_Position.y -= speed * static_cast<float>(ts);
 
         // Mouse
-        if (Input::IsMouseButtonPressed(Mouse::ButtonRight))
+        auto [mouseX, mouseY] = Input::GetMousePosition();
+
+        if (m_FirstMouse)
         {
-            auto [mouseX, mouseY] = Input::GetMousePosition();
-
-            if (m_FirstMouse)
-            {
-                m_LastMouseX = mouseX;
-                m_LastMouseY = mouseY;
-                m_FirstMouse = false;
-            }
-
-            float xoffset = mouseX - m_LastMouseX;
-            float yoffset = m_LastMouseY - mouseY;
-
             m_LastMouseX = mouseX;
             m_LastMouseY = mouseY;
-
-            const float sensitivity = 0.1f;
-            xoffset *= sensitivity;
-            yoffset *= sensitivity;
-
-            m_Yaw += xoffset;
-            m_Pitch += yoffset;
-
-            if (m_Pitch > 89.0f)
-                m_Pitch = 89.0f;
-            if (m_Pitch < -89.0f)
-                m_Pitch = -89.0f;
-
-            UpdateVectors();
+            m_FirstMouse = false;
         }
 
+        float xoffset = mouseX - m_LastMouseX;
+        float yoffset = m_LastMouseY - mouseY;
+
+        m_LastMouseX = mouseX;
+        m_LastMouseY = mouseY;
+
+        const float sensitivity = 1.0f;
+        xoffset *= sensitivity;
+        yoffset *= sensitivity;
+
+        m_Yaw += xoffset;
+        m_Pitch += yoffset;
+
+        if (m_Pitch > 89.0f)
+            m_Pitch = 89.0f;
+        if (m_Pitch < -89.0f)
+            m_Pitch = -89.0f;
+
+        UpdateVectors();
         UpdateView();
+    }
+
+    void Camera::OnResize(float width, float height)
+    {
+        m_AspectRatio = width / height;
+        UpdateProjection();
     }
 
     void Camera::UpdateProjection()

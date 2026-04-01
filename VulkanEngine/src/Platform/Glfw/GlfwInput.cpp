@@ -5,6 +5,7 @@
 
 namespace ve
 {
+    // Key
     bool Input::IsKeyPressed(int keycode)
     {
         auto window = static_cast<GLFWwindow *>(ve::Application::Get().GetWindow().GetNativeWindow());
@@ -12,6 +13,7 @@ namespace ve
         return state == GLFW_PRESS || state == GLFW_REPEAT;
     }
 
+    // Mouse
     bool Input::IsMouseButtonPressed(int button)
     {
         auto window = static_cast<GLFWwindow *>(Application::Get().GetWindow().GetNativeWindow());
@@ -40,6 +42,21 @@ namespace ve
         auto [xPos, yPos] = GetMousePosition();
 
         return yPos;
+    }
+
+    // Cursor
+    void Input::SetCursorLocked(bool locked)
+    {
+        auto window = static_cast<GLFWwindow *>(Application::Get().GetWindow().GetNativeWindow());
+
+        glfwSetInputMode(window, GLFW_CURSOR, locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+    }
+
+    void Input::SetCursorVisible(bool visible)
+    {
+        auto window = static_cast<GLFWwindow *>(Application::Get().GetWindow().GetNativeWindow());
+
+        glfwSetInputMode(window, GLFW_CURSOR, visible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_HIDDEN);
     }
 
 } // namespace ve

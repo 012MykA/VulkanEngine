@@ -100,6 +100,7 @@ namespace ve
         }
         m_Minimized = false;
 
+        m_Camera->OnResize(static_cast<float>(e.GetWidth()), static_cast<float>(e.GetHeight()));
         m_Renderer->HandleResize(e.GetWidth(), e.GetHeight());
 
         return false;

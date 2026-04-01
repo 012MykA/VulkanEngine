@@ -24,6 +24,7 @@ namespace ve
         ~Camera() = default;
 
         void OnUpdate(Timestep ts);
+        void OnResize(float width, float height);
 
     public: // Getters
         const glm::mat4 &GetViewMatrix() const { return m_ViewMatrix; }

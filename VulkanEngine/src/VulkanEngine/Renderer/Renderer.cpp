@@ -298,7 +298,7 @@ namespace ve
                     {.location = 3, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(Vertex, uv)},
                 }},
 
-            .cullMode = VK_CULL_MODE_NONE,
+            // .cullMode = VK_CULL_MODE_NONE,
 
             .depthTest = false,
             .depthWrite = false,
@@ -320,7 +320,7 @@ namespace ve
             {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
         };
 
-        const std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
+        const std::vector<uint32_t> indices = {0, 2, 1, 0, 3, 2};
 
         m_TriangleMesh = std::make_unique<Mesh>();
         m_TriangleMesh->SetName("Quad");
