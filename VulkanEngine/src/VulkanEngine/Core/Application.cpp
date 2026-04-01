@@ -40,7 +40,7 @@ namespace ve
                     layer->OnUpdate(timestep);
                 }
 
-                m_Renderer->BeginFrame();
+                m_Renderer->BeginFrame(m_Camera);
                 m_Renderer->Submit();
                 m_Renderer->EndFrame();
             }

@@ -17,7 +17,7 @@ namespace ve
             m_LogicalDevice->WaitIdle();
     }
 
-    void Renderer::BeginFrame()
+    void Renderer::BeginFrame(const Camera &camera)
     {
         auto &frame = m_FrameManager->GetCurrentFrame();
 
@@ -154,6 +154,19 @@ namespace ve
 
         m_Pipeline->Bind(cmd);
 
+        static float r = 0.0f;
+
+        PushConstants pc{};
+        pc.model = glm::rotate(pc.model, glm::radians(r), {0.0f, 0.0f, 1.0f});
+
+        r += 0.1f;
+
+        vkCmdPushConstants(
+            cmd,
+            m_PipelineLayout->GetVkHandle(),
+            VK_SHADER_STAGE_VERTEX_BIT,
+            0, sizeof(PushConstants), &pc);
+
         m_TriangleMesh->Bind(cmd);
         vkCmdDrawIndexed(cmd, m_TriangleMesh->GetIndexCount(), 1, 0, 0, 0);
     }
@@ -211,7 +224,10 @@ namespace ve
         m_ImmediateSubmit = std::make_unique<VulkanImmediateSubmit>(*m_LogicalDevice, *m_TransferCommandPool);
 
         // Pipeline
-        m_PipelineLayout = std::make_unique<VulkanPipelineLayout>(VulkanPipelineLayout::Builder(*m_LogicalDevice).Build());
+        m_PipelineLayout = std::make_unique<VulkanPipelineLayout>(
+            VulkanPipelineLayout::Builder(*m_LogicalDevice)
+                .AddPushConstantRange<PushConstants>(VK_SHADER_STAGE_VERTEX_BIT)
+                .Build());
 
         VulkanShader vertexShader(*m_LogicalDevice, "../VulkanEngine/assets/shaders/triangle.vert.spv");
         VulkanShader fragmentShader(*m_LogicalDevice, "../VulkanEngine/assets/shaders/triangle.frag.spv");

@@ -5,6 +5,7 @@
 #include "VulkanEngine/Events/Event.hpp"
 #include "VulkanEngine/Events/ApplicationEvent.hpp"
 #include "VulkanEngine/Renderer/Renderer.hpp"
+#include "VulkanEngine/Renderer/Camera.hpp"
 
 #include <string>
 #include <cassert>
@@ -59,6 +60,7 @@ namespace ve
         std::unique_ptr<Window> m_Window;
         
         std::unique_ptr<Renderer> m_Renderer;
+        Camera m_Camera{};
 
     private:        
         bool m_Running = true;

@@ -11,7 +11,10 @@
 #include "VulkanEngine/Vulkan/VulkanCommandPool.hpp"
 #include "VulkanEngine/Vulkan/VulkanFrameData.hpp"
 #include "VulkanEngine/Vulkan/VulkanImmediateSubmit.hpp"
+#include "VulkanEngine/Vulkan/VulkanDescriptor.hpp"
 #include "VulkanEngine/Vulkan/VulkanPipeline.hpp"
+
+#include "Camera.hpp"
 
 // TODO: remove
 #include "Mesh.hpp"
@@ -23,6 +26,11 @@ namespace ve
 {
     class Window;
 
+    struct PushConstants
+    {
+        glm::mat4 model = glm::mat4(1.0f);
+    };
+
     class Renderer
     {
     public:
@@ -32,7 +40,7 @@ namespace ve
         Renderer(const Renderer &) = delete;
         Renderer &operator=(const Renderer &) = delete;
 
-        void BeginFrame();
+        void BeginFrame(const Camera &camera);
         void EndFrame();
 
         void Submit();
@@ -60,7 +68,7 @@ namespace ve
         std::unique_ptr<VulkanFrameManager> m_FrameManager;
         std::unique_ptr<VulkanImmediateSubmit> m_ImmediateSubmit;
 
-        // Pipeline
+        // Pipeline        
         std::unique_ptr<VulkanPipelineLayout> m_PipelineLayout;
         std::unique_ptr<VulkanGraphicsPipeline> m_Pipeline;
 

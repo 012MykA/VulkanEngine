@@ -78,11 +78,12 @@ namespace ve
         void DestroySampler();
 
         // Transitions
-        void TransitionLayout(VkCommandBuffer cmd,
-                              VkImageLayout oldLayout,
-                              VkImageLayout newLayout,
-                              VkPipelineStageFlags2 srcStage = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                              VkPipelineStageFlags2 dstStage = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) const;
+        void TransitionLayout(
+            VkCommandBuffer cmd,
+            VkImageLayout oldLayout,
+            VkImageLayout newLayout,
+            VkPipelineStageFlags2 srcStage = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+            VkPipelineStageFlags2 dstStage = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) const;
 
         void TransitionToShaderRead(VkCommandBuffer cmd) const;
         void TransitionToColorAttachment(VkCommandBuffer cmd) const;
