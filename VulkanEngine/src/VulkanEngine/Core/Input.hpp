@@ -1,5 +1,8 @@
 #pragma once
 
+#include "VulkanEngine/Core/KeyCodes.hpp"
+#include "VulkanEngine/Core/MouseCodes.hpp"
+
 #include <utility>
 
 namespace ve

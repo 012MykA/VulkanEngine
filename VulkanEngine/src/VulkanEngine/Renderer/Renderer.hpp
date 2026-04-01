@@ -26,6 +26,12 @@ namespace ve
 {
     class Window;
 
+    struct CameraUBO
+    {
+        alignas(16) glm::mat4 view = glm::mat4(1.0f);
+        alignas(16) glm::mat4 proj = glm::mat4(1.0f);
+    };
+
     struct PushConstants
     {
         glm::mat4 model = glm::mat4(1.0f);
@@ -67,6 +73,13 @@ namespace ve
         std::unique_ptr<VulkanCommandPool> m_TransferCommandPool;
         std::unique_ptr<VulkanFrameManager> m_FrameManager;
         std::unique_ptr<VulkanImmediateSubmit> m_ImmediateSubmit;
+
+        // Descriptors
+        std::unique_ptr<VulkanDescriptorSetLayout> m_GlobalSetLayout;
+        std::unique_ptr<VulkanDescriptorPool> m_DescriptorPool;
+
+        std::vector<std::unique_ptr<VulkanBuffer>> m_CameraUBOs;
+        std::vector<VkDescriptorSet> m_GlobalDescriptorSets;
 
         // Pipeline        
         std::unique_ptr<VulkanPipelineLayout> m_PipelineLayout;

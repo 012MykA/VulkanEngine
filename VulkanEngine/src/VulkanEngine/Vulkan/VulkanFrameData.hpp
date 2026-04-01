@@ -27,6 +27,7 @@ namespace ve
                            const VulkanCommandPool &commandPool);
         ~VulkanFrameManager() = default;
 
+        uint32_t GetCurrentFrameIndex() const { return m_CurrentFrameIndex; }
         VulkanFrameData &GetCurrentFrame() { return m_Frames[m_CurrentFrameIndex]; }
         const VulkanFrameData &GetCurrentFrame() const { return m_Frames[m_CurrentFrameIndex]; }
 

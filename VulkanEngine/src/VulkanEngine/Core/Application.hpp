@@ -60,7 +60,7 @@ namespace ve
         std::unique_ptr<Window> m_Window;
         
         std::unique_ptr<Renderer> m_Renderer;
-        Camera m_Camera{};
+        std::unique_ptr<Camera> m_Camera;
 
     private:        
         bool m_Running = true;

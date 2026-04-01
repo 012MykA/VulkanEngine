@@ -236,7 +236,7 @@ namespace ve
             .dstSet = set,
             .dstBinding = binding,
             .dstArrayElement = 0,
-            .descriptorCount = static_cast<uint32_t>(m_ImageInfos.size()),
+            .descriptorCount = static_cast<uint32_t>(imageInfos.size()),
             .descriptorType = type,
             .pImageInfo = m_ImageInfos.data() + offset,
         });

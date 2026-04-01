@@ -23,6 +23,11 @@ namespace ve
         m_Window->SetEventCallback(VE_BIND_EVENT_FN(OnEvent));
 
         m_Renderer = std::make_unique<Renderer>(*m_Window);
+
+        m_Camera = std::make_unique<Camera>(CameraDesc{
+            .FOV = 75.0f,
+            .aspectRatio = static_cast<float>(m_Window->GetWidth()) / static_cast<float>(m_Window->GetHeight()),
+        });
     }
 
     void Application::Run()
@@ -40,7 +45,9 @@ namespace ve
                     layer->OnUpdate(timestep);
                 }
 
-                m_Renderer->BeginFrame(m_Camera);
+                m_Camera->OnUpdate(timestep);
+
+                m_Renderer->BeginFrame(*m_Camera);
                 m_Renderer->Submit();
                 m_Renderer->EndFrame();
             }

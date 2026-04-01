@@ -20,6 +20,7 @@ namespace ve
     void Renderer::BeginFrame(const Camera &camera)
     {
         auto &frame = m_FrameManager->GetCurrentFrame();
+        const uint32_t frameIndex = m_FrameManager->GetCurrentFrameIndex();
 
         frame.syncObjects->WaitForFence();
 
@@ -40,6 +41,12 @@ namespace ve
         }
 
         frame.syncObjects->ResetFence();
+
+        CameraUBO cameraData{
+            .view = camera.GetViewMatrix(),
+            .proj = camera.GetProjectionMatrix(),
+        };
+        m_CameraUBOs[frameIndex]->Upload(&cameraData, sizeof(CameraUBO));
 
         VkCommandBuffer cmd = frame.commandBuffer;
         vkResetCommandBuffer(cmd, 0);
@@ -149,18 +156,23 @@ namespace ve
 
     void Renderer::Submit()
     {
+        const uint32_t frameIndex = m_FrameManager->GetCurrentFrameIndex();
         auto &frame = m_FrameManager->GetCurrentFrame();
         VkCommandBuffer cmd = frame.commandBuffer;
 
         m_Pipeline->Bind(cmd);
 
-        static float r = 0.0f;
+        vkCmdBindDescriptorSets(
+            cmd,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            m_PipelineLayout->GetVkHandle(),
+            0,
+            1, &m_GlobalDescriptorSets[frameIndex],
+            0, nullptr);
 
-        PushConstants pc{};
-        pc.model = glm::rotate(pc.model, glm::radians(r), {0.0f, 0.0f, 1.0f});
-
-        r += 0.1f;
-
+        PushConstants pc{
+            .model = glm::mat4(1.0f),
+        };
         vkCmdPushConstants(
             cmd,
             m_PipelineLayout->GetVkHandle(),
@@ -223,9 +235,48 @@ namespace ve
         m_FrameManager = std::make_unique<VulkanFrameManager>(*m_LogicalDevice, *m_GraphicsCommandPool);
         m_ImmediateSubmit = std::make_unique<VulkanImmediateSubmit>(*m_LogicalDevice, *m_TransferCommandPool);
 
+        // Descriptors
+        m_GlobalSetLayout = std::make_unique<VulkanDescriptorSetLayout>(
+            VulkanDescriptorSetLayout::Builder(*m_LogicalDevice)
+                .AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                .Build());
+
+        m_DescriptorPool = std::make_unique<VulkanDescriptorPool>(
+            *m_LogicalDevice,
+            DescriptorPoolDesc{
+                .maxSets = VulkanFrameManager::k_MaxFramesInFlight,
+                .poolSizes = {
+                    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VulkanFrameManager::k_MaxFramesInFlight},
+                },
+            });
+
+        m_CameraUBOs.resize(VulkanFrameManager::k_MaxFramesInFlight);
+        m_GlobalDescriptorSets.resize(VulkanFrameManager::k_MaxFramesInFlight);
+
+        for (uint32_t i = 0; i < VulkanFrameManager::k_MaxFramesInFlight; i++)
+        {
+            m_CameraUBOs[i] = std::make_unique<VulkanBuffer>(*m_Allocator, MakeUniformBufferDesc(sizeof(CameraUBO)));
+
+            m_GlobalDescriptorSets[i] = m_DescriptorPool->Allocate(m_GlobalSetLayout->GetVkHandle());
+
+            VkDescriptorBufferInfo bufferInfo{
+                .buffer = m_CameraUBOs[i]->GetVkHandle(),
+                .offset = 0,
+                .range = sizeof(CameraUBO),
+            };
+
+            VulkanDescriptorWriter(m_LogicalDevice->GetVkHandle())
+                .WriteBuffer(0,
+                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                             m_GlobalDescriptorSets[i],
+                             bufferInfo)
+                .Flush();
+        }
+
         // Pipeline
         m_PipelineLayout = std::make_unique<VulkanPipelineLayout>(
             VulkanPipelineLayout::Builder(*m_LogicalDevice)
+                .AddDescriptorSetLayout(m_GlobalSetLayout->GetVkHandle())
                 .AddPushConstantRange<PushConstants>(VK_SHADER_STAGE_VERTEX_BIT)
                 .Build());
 
@@ -247,7 +298,7 @@ namespace ve
                     {.location = 3, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(Vertex, uv)},
                 }},
 
-            // .cullMode = VK_CULL_MODE_NONE,
+            .cullMode = VK_CULL_MODE_NONE,
 
             .depthTest = false,
             .depthWrite = false,
@@ -272,7 +323,7 @@ namespace ve
         const std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
 
         m_TriangleMesh = std::make_unique<Mesh>();
-        m_TriangleMesh->SetName("Triangle");
+        m_TriangleMesh->SetName("Quad");
         m_TriangleMesh->SetVertices(vertices);
         m_TriangleMesh->SetIndices(indices);
 
