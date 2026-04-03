@@ -1,6 +1,8 @@
 #pragma once
 
 #include "VulkanEngine/Events/Event.hpp"
+#include "KeyCodes.hpp"
+#include "MouseCodes.hpp"
 
 #include <vulkan/vulkan.h>
 
@@ -40,6 +42,15 @@ namespace ve
         // Vulkan
         virtual std::vector<const char *> GetRequiredVulkanExtensions() const = 0;
         virtual VkSurfaceKHR GetVulkanSurface(VkInstance instance) const = 0;
+
+        // Input
+        virtual bool IsKeyPressed(KeyCode keycode) const = 0;
+        virtual bool IsMouseButtonPressed(MouseCode button) const = 0;
+        virtual std::pair<float, float> GetMousePosition() const = 0;
+
+        // Cursor
+        virtual bool IsCursorLocked() const = 0;
+        virtual void SetCursorLocked(bool locked) = 0;
 
         static std::unique_ptr<Window> Create(const WindowCreateInfo &createInfo);
     };

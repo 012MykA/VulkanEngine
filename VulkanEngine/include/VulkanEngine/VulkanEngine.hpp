@@ -12,7 +12,6 @@
 // ---
 
 // Input
-#include "VulkanEngine/Core/Input.hpp"
 #include "VulkanEngine/Core/KeyCodes.hpp"
 #include "VulkanEngine/Core/MouseCodes.hpp"
 // ---

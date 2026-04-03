@@ -208,4 +208,35 @@ namespace ve
         return surface;
     }
 
+    // Input
+    bool GlfwWindowDriver::IsKeyPressed(KeyCode keycode) const
+    {
+        auto state = glfwGetKey(m_WindowHandle, keycode);
+        return state == GLFW_PRESS || state == GLFW_REPEAT;
+    }
+
+    bool GlfwWindowDriver::IsMouseButtonPressed(MouseCode button) const
+    {
+        auto state = glfwGetMouseButton(m_WindowHandle, button);
+        return state == GLFW_PRESS;
+    }
+
+    std::pair<float, float> GlfwWindowDriver::GetMousePosition() const
+    {
+        double xPos, yPos;
+        glfwGetCursorPos(m_WindowHandle, &xPos, &yPos);
+        return {static_cast<float>(xPos), static_cast<float>(yPos)};
+    }
+
+    // Cursor
+    bool GlfwWindowDriver::IsCursorLocked() const
+    {
+        return glfwGetInputMode(m_WindowHandle, GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
+    }
+
+    void GlfwWindowDriver::SetCursorLocked(bool locked)
+    {
+        glfwSetInputMode(m_WindowHandle, GLFW_CURSOR, locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+    }
+
 } // namespace ve

@@ -24,10 +24,12 @@ namespace ve
 
         m_Renderer = std::make_unique<Renderer>(*m_Window);
 
-        m_Camera = std::make_unique<Camera>(CameraDesc{
-            .FOV = 75.0f,
-            .aspectRatio = static_cast<float>(m_Window->GetWidth()) / static_cast<float>(m_Window->GetHeight()),
-        });
+        m_Camera = std::make_unique<Camera>(
+            *m_Window,
+            CameraDesc{
+                .FOV = 75.0f,
+                .aspectRatio = static_cast<float>(m_Window->GetWidth()) / static_cast<float>(m_Window->GetHeight()),
+            });
     }
 
     void Application::Run()
@@ -66,6 +68,8 @@ namespace ve
         EventDispatcher dp(e);
         dp.Dispatch<WindowCloseEvent>(VE_BIND_EVENT_FN(OnWindowClose));
         dp.Dispatch<WindowResizeEvent>(VE_BIND_EVENT_FN(OnWindowResize));
+
+        m_Camera->OnEvent(e);
 
         for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); it++)
         {

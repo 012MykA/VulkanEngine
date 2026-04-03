@@ -24,6 +24,15 @@ namespace ve
         virtual std::vector<const char *> GetRequiredVulkanExtensions() const override;
         virtual VkSurfaceKHR GetVulkanSurface(VkInstance instance) const override;
 
+        // Input
+        virtual bool IsKeyPressed(KeyCode keycode) const override;
+        virtual bool IsMouseButtonPressed(MouseCode button) const override;
+        virtual std::pair<float, float> GetMousePosition() const override;
+
+        // Cursor
+        virtual bool IsCursorLocked() const override;
+        virtual void SetCursorLocked(bool locked) override;
+
     private:
         GLFWwindow *m_WindowHandle;
 
