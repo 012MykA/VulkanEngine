@@ -1,5 +1,6 @@
 #include "Mesh.hpp"
 #include "VulkanEngine/Vulkan/VulkanImmediateSubmit.hpp"
+#include "VulkanEngine/Vulkan/VulkanLogicalDevice.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 
 #include <glm/glm.hpp>
@@ -98,8 +99,19 @@ namespace ve
         }
     }
 
-    void Mesh::UploadToGPU(const VulkanAllocator &allocator, const VulkanImmediateSubmit &upload)
+    Mesh::~Mesh()
     {
+        if (m_Device)
+            m_Device->WaitIdle();
+    }
+
+    void Mesh::UploadToGPU(
+        const VulkanLogicalDevice &device,
+        const VulkanAllocator &allocator,
+        const VulkanImmediateSubmit &upload)
+    {
+        m_Device = &device;
+
         assert(!m_Vertices.empty() && !m_Indices.empty() && "Mesh::UploadToGPU - mesh must have both vertices and indices");
 
         const VkDeviceSize vertexSize = sizeof(Vertex) * m_Vertices.size();

@@ -13,6 +13,7 @@
 namespace ve
 {
     class VulkanImmediateSubmit;
+    class VulkanLogicalDevice;
 
     struct SubMesh
     {
@@ -27,7 +28,7 @@ namespace ve
     {
     public:
         Mesh() = default;
-        ~Mesh() = default;
+        ~Mesh();
 
         Mesh(const Mesh &) = delete;
         Mesh &operator=(const Mesh &) = delete;
@@ -36,7 +37,8 @@ namespace ve
         Mesh &operator=(Mesh &&) noexcept = default;
 
     public:
-        void UploadToGPU(const VulkanAllocator &allocator,
+        void UploadToGPU(const VulkanLogicalDevice &device,
+                         const VulkanAllocator &allocator,
                          const VulkanImmediateSubmit &upload);
         void FreeCPUData();
 
@@ -63,6 +65,8 @@ namespace ve
         uint32_t GetIndexCount() const { return m_IndexCount; }
 
     private:
+        const VulkanLogicalDevice *m_Device;
+
         // CPU Data
         std::vector<Vertex> m_Vertices;
         std::vector<uint32_t> m_Indices;

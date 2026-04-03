@@ -1,6 +1,7 @@
 #include "Application.hpp"
 #include "VulkanEngine/Core/Timestep.hpp"
 #include "VulkanEngine/Utils/PlatformUtils.hpp"
+#include "Generation.hpp"
 
 #include <cassert>
 
@@ -25,6 +26,22 @@ namespace ve
         m_Renderer = std::make_unique<Renderer>(*m_Window);
 
         m_Camera = std::make_unique<Camera>(*m_Window, CameraDesc{});
+
+        // TODO: remove
+        auto terrainMesh = GenerateTerrain(1000, 0.5f);
+
+        m_Renderer->UploadMesh(*terrainMesh);
+
+        auto terrainMaterial = std::make_shared<Material>();
+        terrainMaterial->SetName("TerrainMaterial");
+        m_Renderer->BuildMaterial(*terrainMaterial);
+
+        RenderObject terrain;
+        terrain.mesh = terrainMesh;
+        terrain.material = terrainMaterial;
+        terrain.transform = glm::translate(glm::mat4(1.0f), {-250.0f, -100.0f, -500.0f}); 
+
+        m_Objects.push_back(terrain);
     }
 
     void Application::Run()
@@ -45,7 +62,12 @@ namespace ve
                 m_Camera->OnUpdate(timestep);
 
                 m_Renderer->BeginFrame(*m_Camera);
-                m_Renderer->Submit();
+
+                for (const auto &obj : m_Objects)
+                {
+                    m_Renderer->Submit(*obj.mesh, *obj.material, obj.transform);
+                }
+
                 m_Renderer->EndFrame();
             }
 

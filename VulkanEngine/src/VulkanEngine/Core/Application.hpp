@@ -58,15 +58,25 @@ namespace ve
     private:
         ApplicationCreateInfo m_Info;
         std::unique_ptr<Window> m_Window;
-        
+
         std::unique_ptr<Renderer> m_Renderer;
         std::unique_ptr<Camera> m_Camera;
 
-    private:        
+    private:
         bool m_Running = true;
         bool m_Minimized = false;
         LayerStack m_LayerStack;
         float m_LastFrameTime = 0.0f;
+
+    private:
+        struct RenderObject
+        {
+            std::shared_ptr<Mesh> mesh;
+            std::shared_ptr<Material> material;
+            glm::mat4 transform = glm::mat4(1.0f);
+        };
+
+        std::vector<RenderObject> m_Objects;
 
     private:
         static Application *s_Instance;

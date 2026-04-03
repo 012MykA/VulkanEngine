@@ -1,2 +1,2 @@
-glslc "VulkanEngine/assets/shaders/triangle.vert" -o "VulkanEngine/assets/shaders/triangle.vert.spv"
-glslc "VulkanEngine/assets/shaders/triangle.frag" -o "VulkanEngine/assets/shaders/triangle.frag.spv"
+glslc "VulkanEngine/assets/shaders/phong.vert" -o "VulkanEngine/assets/shaders/phong.vert.spv"
+glslc "VulkanEngine/assets/shaders/phong.frag" -o "VulkanEngine/assets/shaders/phong.frag.spv"

@@ -15,10 +15,10 @@
 #include "VulkanEngine/Vulkan/VulkanPipeline.hpp"
 
 #include "Camera.hpp"
-
-// TODO: remove
 #include "Mesh.hpp"
-// ---
+#include "Material.hpp"
+
+#include <glm/glm.hpp>
 
 #include <memory>
 
@@ -26,10 +26,13 @@ namespace ve
 {
     class Window;
 
-    struct CameraUBO
+    struct GlobalUBO
     {
         alignas(16) glm::mat4 view = glm::mat4(1.0f);
         alignas(16) glm::mat4 proj = glm::mat4(1.0f);
+        alignas(16) glm::vec4 lightDir = glm::vec4(glm::normalize(glm::vec3(-3.0f, -1.0f, 3.0f)), 0.0f);
+        alignas(16) glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f); // w = intensity
+        alignas(16) glm::vec4 cameraPos = glm::vec4(0.0f);
     };
 
     struct PushConstants
@@ -49,12 +52,17 @@ namespace ve
         void BeginFrame(const Camera &camera);
         void EndFrame();
 
-        void Submit();
+        void Submit(const Mesh &mesh, const Material &material, const glm::mat4 &transform);
 
         void HandleResize(uint32_t width, uint32_t height);
 
-        const VulkanLogicalDevice &GetLogicalDevice() const { return *m_LogicalDevice; }
+    public: // Upload data
+        void UploadMesh(Mesh &mesh) const;
+        void BuildMaterial(Material &material) const;
+
+    public: // Getters
         const VulkanAllocator &GetAllocator() const { return *m_Allocator; }
+        const VulkanImmediateSubmit &GetImmediateSubmit() { return *m_ImmediateSubmit; }
 
     private:
         void Init(const Window &window);
@@ -75,19 +83,17 @@ namespace ve
         std::unique_ptr<VulkanImmediateSubmit> m_ImmediateSubmit;
 
         // Descriptors
-        std::unique_ptr<VulkanDescriptorSetLayout> m_GlobalSetLayout;
+        std::unique_ptr<VulkanDescriptorSetLayout> m_GlobalSetLayout;   // set = 0, binding = 0
+        std::unique_ptr<VulkanDescriptorSetLayout> m_MaterialSetLayout; // set = 1, binding = 0
         std::unique_ptr<VulkanDescriptorPool> m_DescriptorPool;
 
-        std::vector<std::unique_ptr<VulkanBuffer>> m_CameraUBOs;
+        std::vector<std::unique_ptr<VulkanBuffer>> m_GlobalUBOs;
+        GlobalUBO m_GlobalData{};
         std::vector<VkDescriptorSet> m_GlobalDescriptorSets;
 
-        // Pipeline        
+        // Pipeline
         std::unique_ptr<VulkanPipelineLayout> m_PipelineLayout;
         std::unique_ptr<VulkanGraphicsPipeline> m_Pipeline;
-
-        // TODO: remove
-        std::unique_ptr<Mesh> m_TriangleMesh;
-        // ---
 
         uint32_t m_CurrentImageIndex = 0;
 

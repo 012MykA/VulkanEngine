@@ -6,6 +6,8 @@
 
 namespace ve
 {
+    static constexpr uint32_t MAX_MATERIALS = 100;
+
     Renderer::Renderer(const Window &window)
     {
         Init(window);
@@ -42,11 +44,13 @@ namespace ve
 
         frame.syncObjects->ResetFence();
 
-        CameraUBO cameraData{
-            .view = camera.GetViewMatrix(),
-            .proj = camera.GetProjectionMatrix(),
-        };
-        m_CameraUBOs[frameIndex]->Upload(&cameraData, sizeof(CameraUBO));
+        // Updating global UBO
+        m_GlobalData.view = camera.GetViewMatrix();
+        m_GlobalData.proj = camera.GetProjectionMatrix();
+        m_GlobalData.cameraPos = glm::vec4(glm::inverse(camera.GetViewMatrix())[3]);
+
+        m_GlobalUBOs[frameIndex]->Upload(&m_GlobalData, sizeof(GlobalUBO));
+        // ---
 
         VkCommandBuffer cmd = frame.commandBuffer;
         vkResetCommandBuffer(cmd, 0);
@@ -154,7 +158,7 @@ namespace ve
         m_FrameManager->AdvanceFrame();
     }
 
-    void Renderer::Submit()
+    void Renderer::Submit(const Mesh &mesh, const Material &material, const glm::mat4 &transform)
     {
         const uint32_t frameIndex = m_FrameManager->GetCurrentFrameIndex();
         auto &frame = m_FrameManager->GetCurrentFrame();
@@ -162,16 +166,20 @@ namespace ve
 
         m_Pipeline->Bind(cmd);
 
+        VkDescriptorSet sets[] = {
+            m_GlobalDescriptorSets[frameIndex],
+            material.GetDescriptorSet(),
+        };
         vkCmdBindDescriptorSets(
             cmd,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             m_PipelineLayout->GetVkHandle(),
             0,
-            1, &m_GlobalDescriptorSets[frameIndex],
+            2, sets,
             0, nullptr);
 
         PushConstants pc{
-            .model = glm::mat4(1.0f),
+            .model = transform,
         };
         vkCmdPushConstants(
             cmd,
@@ -179,8 +187,8 @@ namespace ve
             VK_SHADER_STAGE_VERTEX_BIT,
             0, sizeof(PushConstants), &pc);
 
-        m_TriangleMesh->Bind(cmd);
-        vkCmdDrawIndexed(cmd, m_TriangleMesh->GetIndexCount(), 1, 0, 0, 0);
+        mesh.Bind(cmd);
+        vkCmdDrawIndexed(cmd, mesh.GetIndexCount(), 1, 0, 0, 0);
     }
 
     void Renderer::HandleResize(uint32_t width, uint32_t height)
@@ -191,6 +199,20 @@ namespace ve
         m_NeedsResize = true;
         m_ResizeWidth = width;
         m_ResizeHeight = height;
+    }
+
+    void Renderer::UploadMesh(Mesh &mesh) const
+    {
+        mesh.UploadToGPU(*m_LogicalDevice, *m_Allocator, *m_ImmediateSubmit);
+    }
+
+    void Renderer::BuildMaterial(Material &material) const
+    {
+        material.Build(
+            *m_Allocator,
+            *m_LogicalDevice,
+            *m_DescriptorPool,
+            *m_MaterialSetLayout);
     }
 
     void Renderer::Init(const Window &window)
@@ -235,34 +257,47 @@ namespace ve
         m_FrameManager = std::make_unique<VulkanFrameManager>(*m_LogicalDevice, *m_GraphicsCommandPool);
         m_ImmediateSubmit = std::make_unique<VulkanImmediateSubmit>(*m_LogicalDevice, *m_TransferCommandPool);
 
-        // Descriptors
+        // Descriptor set layouts
+        // set = 0, binding = 0
         m_GlobalSetLayout = std::make_unique<VulkanDescriptorSetLayout>(
             VulkanDescriptorSetLayout::Builder(*m_LogicalDevice)
-                .AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+                .AddBinding(0,
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
                 .Build());
 
+        // set = 1, binding = 0
+        m_MaterialSetLayout = std::make_unique<VulkanDescriptorSetLayout>(
+            VulkanDescriptorSetLayout::Builder(*m_LogicalDevice)
+                .AddBinding(0,
+                            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                            VK_SHADER_STAGE_FRAGMENT_BIT)
+                .Build());
+
+        // Descriptor pool
+        // maxSets: 2 (global) + MAX_MATERIALS materials
         m_DescriptorPool = std::make_unique<VulkanDescriptorPool>(
             *m_LogicalDevice,
             DescriptorPoolDesc{
-                .maxSets = VulkanFrameManager::k_MaxFramesInFlight,
+                .maxSets = VulkanFrameManager::k_MaxFramesInFlight + MAX_MATERIALS,
                 .poolSizes = {
-                    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VulkanFrameManager::k_MaxFramesInFlight},
+                    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VulkanFrameManager::k_MaxFramesInFlight + MAX_MATERIALS},
                 },
             });
 
-        m_CameraUBOs.resize(VulkanFrameManager::k_MaxFramesInFlight);
+        m_GlobalUBOs.resize(VulkanFrameManager::k_MaxFramesInFlight);
         m_GlobalDescriptorSets.resize(VulkanFrameManager::k_MaxFramesInFlight);
 
         for (uint32_t i = 0; i < VulkanFrameManager::k_MaxFramesInFlight; i++)
         {
-            m_CameraUBOs[i] = std::make_unique<VulkanBuffer>(*m_Allocator, MakeUniformBufferDesc(sizeof(CameraUBO)));
+            m_GlobalUBOs[i] = std::make_unique<VulkanBuffer>(*m_Allocator, MakeUniformBufferDesc(sizeof(GlobalUBO)));
 
             m_GlobalDescriptorSets[i] = m_DescriptorPool->Allocate(m_GlobalSetLayout->GetVkHandle());
 
             VkDescriptorBufferInfo bufferInfo{
-                .buffer = m_CameraUBOs[i]->GetVkHandle(),
+                .buffer = m_GlobalUBOs[i]->GetVkHandle(),
                 .offset = 0,
-                .range = sizeof(CameraUBO),
+                .range = sizeof(GlobalUBO),
             };
 
             VulkanDescriptorWriter(m_LogicalDevice->GetVkHandle())
@@ -277,11 +312,12 @@ namespace ve
         m_PipelineLayout = std::make_unique<VulkanPipelineLayout>(
             VulkanPipelineLayout::Builder(*m_LogicalDevice)
                 .AddDescriptorSetLayout(m_GlobalSetLayout->GetVkHandle())
+                .AddDescriptorSetLayout(m_MaterialSetLayout->GetVkHandle())
                 .AddPushConstantRange<PushConstants>(VK_SHADER_STAGE_VERTEX_BIT)
                 .Build());
 
-        VulkanShader vertexShader(*m_LogicalDevice, "../VulkanEngine/assets/shaders/triangle.vert.spv");
-        VulkanShader fragmentShader(*m_LogicalDevice, "../VulkanEngine/assets/shaders/triangle.frag.spv");
+        VulkanShader vertexShader(*m_LogicalDevice, "../VulkanEngine/assets/shaders/phong.vert.spv");
+        VulkanShader fragmentShader(*m_LogicalDevice, "../VulkanEngine/assets/shaders/phong.frag.spv");
 
         GraphicsPipelineDesc pipelineDesc{
             .vertexShader = vertexShader.GetVkHandle(),
@@ -310,25 +346,6 @@ namespace ve
         };
 
         m_Pipeline = std::make_unique<VulkanGraphicsPipeline>(*m_LogicalDevice, pipelineDesc);
-
-        // TODO: remove
-        const std::vector<Vertex> vertices = {
-            // position                // normal         // tangent               // uv
-            {{0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
-            {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-            {{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-            {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-        };
-
-        const std::vector<uint32_t> indices = {0, 2, 1, 0, 3, 2};
-
-        m_TriangleMesh = std::make_unique<Mesh>();
-        m_TriangleMesh->SetName("Quad");
-        m_TriangleMesh->SetVertices(vertices);
-        m_TriangleMesh->SetIndices(indices);
-
-        m_TriangleMesh->UploadToGPU(*m_Allocator, *m_ImmediateSubmit);
-        // ---
     }
 
     void Renderer::RecreateSwapchain()
