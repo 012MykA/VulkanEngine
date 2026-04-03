@@ -24,12 +24,7 @@ namespace ve
 
         m_Renderer = std::make_unique<Renderer>(*m_Window);
 
-        m_Camera = std::make_unique<Camera>(
-            *m_Window,
-            CameraDesc{
-                .FOV = 75.0f,
-                .aspectRatio = static_cast<float>(m_Window->GetWidth()) / static_cast<float>(m_Window->GetHeight()),
-            });
+        m_Camera = std::make_unique<Camera>(*m_Window, CameraDesc{});
     }
 
     void Application::Run()

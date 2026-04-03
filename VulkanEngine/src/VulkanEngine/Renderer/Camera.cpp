@@ -6,11 +6,7 @@
 namespace ve
 {
     Camera::Camera(Window &window, const CameraDesc &desc)
-        : m_Window(window),
-          m_FOV(desc.FOV),
-          m_AspectRatio(desc.aspectRatio),
-          m_NearClip(desc.nearClip),
-          m_FarClip(desc.farClip)
+        : m_Window(window), m_Desc(desc), m_AspectRatio(static_cast<float>(m_Window.GetWidth()) / m_Window.GetHeight())
     {
         m_Window.SetCursorLocked(true);
         UpdateProjection();
@@ -25,26 +21,28 @@ namespace ve
             return;
         }
 
-        const float speed = 2.0f;
+        const float dt = static_cast<float>(ts);
 
         // WASD
+        const float speed = m_Desc.moveSpeed;
+
         if (m_Window.IsKeyPressed(Key::W))
-            m_Position += m_Front * speed * static_cast<float>(ts);
+            m_Desc.position += m_Front * speed * dt;
 
         if (m_Window.IsKeyPressed(Key::S))
-            m_Position -= m_Front * speed * static_cast<float>(ts);
+            m_Desc.position -= m_Front * speed * dt;
 
         if (m_Window.IsKeyPressed(Key::A))
-            m_Position -= m_Right * speed * static_cast<float>(ts);
+            m_Desc.position -= m_Right * speed * dt;
 
         if (m_Window.IsKeyPressed(Key::D))
-            m_Position += m_Right * speed * static_cast<float>(ts);
+            m_Desc.position += m_Right * speed * dt;
 
         if (m_Window.IsKeyPressed(Key::Space))
-            m_Position.y += speed * static_cast<float>(ts);
+            m_Desc.position.y += speed * dt;
 
         if (m_Window.IsKeyPressed(Key::LeftControl))
-            m_Position.y -= speed * static_cast<float>(ts);
+            m_Desc.position.y -= speed * dt;
 
         // Mouse
         auto [mouseX, mouseY] = m_Window.GetMousePosition();
@@ -62,17 +60,17 @@ namespace ve
         m_LastMouseX = mouseX;
         m_LastMouseY = mouseY;
 
-        const float sensitivity = 0.1f;
+        const float sensitivity = m_Desc.mouseSensitivity;
         xoffset *= sensitivity;
         yoffset *= sensitivity;
 
-        m_Yaw += xoffset;
-        m_Pitch += yoffset;
+        m_Desc.yaw += xoffset;
+        m_Desc.pitch += yoffset;
 
-        if (m_Pitch > 89.0f)
-            m_Pitch = 89.0f;
-        if (m_Pitch < -89.0f)
-            m_Pitch = -89.0f;
+        if (m_Desc.pitch > 89.9f)
+            m_Desc.pitch = 89.9f;
+        if (m_Desc.pitch < -89.9f)
+            m_Desc.pitch = -89.9f;
 
         UpdateVectors();
         UpdateView();
@@ -93,10 +91,10 @@ namespace ve
     void Camera::UpdateProjection()
     {
         m_ProjectionMatrix = glm::perspective(
-            glm::radians(m_FOV),
+            glm::radians(m_Desc.FOV),
             m_AspectRatio,
-            m_NearClip,
-            m_FarClip);
+            m_Desc.nearClip,
+            m_Desc.farClip);
 
         // Vulkan correction
         m_ProjectionMatrix[1][1] *= -1;
@@ -105,17 +103,17 @@ namespace ve
     void Camera::UpdateView()
     {
         m_ViewMatrix = glm::lookAt(
-            m_Position,
-            m_Position + m_Front,
+            m_Desc.position,
+            m_Desc.position + m_Front,
             m_Up);
     }
 
     void Camera::UpdateVectors()
     {
         glm::vec3 front;
-        front.x = cos(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
-        front.y = sin(glm::radians(m_Pitch));
-        front.z = sin(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
+        front.x = cos(glm::radians(m_Desc.yaw)) * cos(glm::radians(m_Desc.pitch));
+        front.y = sin(glm::radians(m_Desc.pitch));
+        front.z = sin(glm::radians(m_Desc.yaw)) * cos(glm::radians(m_Desc.pitch));
 
         m_Front = glm::normalize(front);
         m_Right = glm::normalize(glm::cross(m_Front, glm::vec3(0.0f, 1.0f, 0.0f)));
