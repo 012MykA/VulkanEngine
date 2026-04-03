@@ -1,5 +1,4 @@
 #include <VulkanEngine/VulkanEngine.hpp>
-#include <VulkanEngine/Layers/FPSLayer.hpp>
 #include <VulkanEngine/Core/EntryPoint.hpp>
 
 #include "ExampleLayer.hpp"

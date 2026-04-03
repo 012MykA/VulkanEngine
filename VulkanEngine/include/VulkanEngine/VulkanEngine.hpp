@@ -5,7 +5,6 @@
 #include "VulkanEngine/Core/Log.hpp"
 #include "VulkanEngine/Core/Layer.hpp"
 #include "VulkanEngine/Core/Timestep.hpp"
-#include "VulkanEngine/Core/Timer.hpp"
 #include "VulkanEngine/Events/Event.hpp"
 #include "VulkanEngine/Events/ApplicationEvent.hpp"
 #include "VulkanEngine/Events/KeyEvent.hpp"
@@ -15,4 +14,12 @@
 // Input
 #include "VulkanEngine/Core/KeyCodes.hpp"
 #include "VulkanEngine/Core/MouseCodes.hpp"
+// ---
+
+// Utils
+#include "VulkanEngine/Core/Timer.hpp"
+// ---
+
+// Layers
+#include "VulkanEngine/Layers/FPSLayer.hpp"
 // ---
