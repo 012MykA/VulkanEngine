@@ -2,6 +2,7 @@
 
 // Application
 #include "VulkanEngine/Core/Application.hpp"
+#include "VulkanEngine/Core/Log.hpp"
 #include "VulkanEngine/Core/Layer.hpp"
 #include "VulkanEngine/Core/Timestep.hpp"
 #include "VulkanEngine/Core/Timer.hpp"

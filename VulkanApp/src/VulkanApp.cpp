@@ -1,4 +1,5 @@
 #include <VulkanEngine/VulkanEngine.hpp>
+#include <VulkanEngine/Layers/FPSLayer.hpp>
 #include <VulkanEngine/Core/EntryPoint.hpp>
 
 #include "ExampleLayer.hpp"
@@ -9,6 +10,12 @@ public:
     VulkanApp(const ve::ApplicationCreateInfo &createInfo) : ve::Application(createInfo)
     {
         PushLayer(new ExampleLayer());
+
+        // clang-format off
+        PushOverlay(new ve::FPSLayer([&](uint32_t fps) {
+            VE_TRACE("Current FPS: {}", fps);
+        }));
+        // clang-format on
     }
 };
 
