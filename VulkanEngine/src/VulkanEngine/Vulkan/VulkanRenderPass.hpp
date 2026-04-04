@@ -9,7 +9,9 @@ namespace ve
     class VulkanRenderPass
     {
     public:
-        VulkanRenderPass(const VulkanLogicalDevice &logicalDevice, VkFormat swapchainFormat);
+        VulkanRenderPass(const VulkanLogicalDevice &logicalDevice,
+                         VkFormat swapchainFormat,
+                         VkFormat depthFormat =  VK_FORMAT_UNDEFINED);
         ~VulkanRenderPass();
 
         VulkanRenderPass(const VulkanRenderPass &) = delete;
