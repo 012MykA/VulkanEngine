@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VulkanEngine/Events/Event.hpp"
+#include "VulkanEngine/Core/MouseCodes.hpp"
 
 namespace ve
 {
@@ -22,8 +23,7 @@ namespace ve
     class MouseScrolledEvent : public Event
     {
     public:
-        MouseScrolledEvent(float xOffset, float yOffset)
-            : m_XOffset(xOffset), m_YOffset(yOffset) {}
+        MouseScrolledEvent(float xOffset, float yOffset) : m_XOffset(xOffset), m_YOffset(yOffset) {}
 
         float GetXOffset() const { return m_XOffset; }
         float GetYOffset() const { return m_YOffset; }
@@ -38,20 +38,20 @@ namespace ve
     class MouseButtonEvent : public Event
     {
     public:
-        inline int GetMouseButton() const { return m_Button; }
+        inline MouseCode GetMouseButton() const { return m_Button; }
 
         EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
 
     protected:
-        MouseButtonEvent(int button) : m_Button(button) {}
+        MouseButtonEvent(MouseCode button) : m_Button(button) {}
 
-        int m_Button;
+        MouseCode m_Button;
     };
 
     class MouseButtonPressedEvent : public MouseButtonEvent
     {
     public:
-        MouseButtonPressedEvent(int button) : MouseButtonEvent(button) {}
+        MouseButtonPressedEvent(MouseCode button) : MouseButtonEvent(button) {}
 
         EVENT_CLASS_TYPE(MouseButtonPressed)
     };
@@ -59,8 +59,7 @@ namespace ve
     class MouseButtonReleasedEvent : public MouseButtonEvent
     {
     public:
-        MouseButtonReleasedEvent(int button)
-            : MouseButtonEvent(button) {}
+        MouseButtonReleasedEvent(MouseCode button) : MouseButtonEvent(button) {}
 
         EVENT_CLASS_TYPE(MouseButtonReleased)
     };

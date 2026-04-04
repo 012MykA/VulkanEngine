@@ -1,26 +1,27 @@
 #pragma once
 
 #include "VulkanEngine/Events/Event.hpp"
+#include "VulkanEngine/Core/KeyCodes.hpp"
 
 namespace ve
 {
     class KeyEvent : public Event
     {
     public:
-        int GetKeyCode() const { return m_KeyCode; }
+        KeyCode GetKeyCode() const { return m_KeyCode; }
 
         EVENT_CLASS_CATEGORY(EventCategoryKeyboard | EventCategoryInput)
 
     protected:
-        KeyEvent(int keycode) : m_KeyCode(keycode) {}
+        KeyEvent(KeyCode keycode) : m_KeyCode(keycode) {}
 
-        int m_KeyCode;
+        KeyCode m_KeyCode;
     };
 
     class KeyPressedEvent : public KeyEvent
     {
     public:
-        KeyPressedEvent(int keycode, int repeatCount) : KeyEvent(keycode), m_RepeatCount(repeatCount) {}
+        KeyPressedEvent(KeyCode keycode, int repeatCount) : KeyEvent(keycode), m_RepeatCount(repeatCount) {}
 
         int GetRepeatCount() const { return m_RepeatCount; }
 
@@ -33,7 +34,7 @@ namespace ve
     class KeyReleasedEvent : public KeyEvent
     {
     public:
-        KeyReleasedEvent(int keycode) : KeyEvent(keycode) {}
+        KeyReleasedEvent(KeyCode keycode) : KeyEvent(keycode) {}
 
         EVENT_CLASS_TYPE(KeyReleased)
     };
@@ -41,7 +42,7 @@ namespace ve
     class KeyTypedEvent : public KeyEvent
     {
     public:
-        KeyTypedEvent(unsigned int codepoint) : KeyEvent(codepoint) {}
+        KeyTypedEvent(KeyCode codepoint) : KeyEvent(codepoint) {}
 
         EVENT_CLASS_TYPE(KeyTyped)
     };
