@@ -9,16 +9,10 @@ namespace ve
     class GlfwWindowDriver : public Window
     {
     public:
-        GlfwWindowDriver(const WindowCreateInfo &createInfo);
+        GlfwWindowDriver(const WindowDesc &desc);
         ~GlfwWindowDriver() override;
 
         virtual void OnUpdate() override;
-
-        virtual uint32_t GetWidth() const override;
-        virtual uint32_t GetHeight() const override;
-        virtual void *GetNativeWindow() const override;
-
-        virtual void SetEventCallback(const EventCallbackFn &callback) override;
 
         // Vulkan
         virtual std::vector<const char *> GetRequiredVulkanExtensions() const override;
@@ -33,14 +27,22 @@ namespace ve
         virtual bool IsCursorLocked() const override;
         virtual void SetCursorLocked(bool locked) override;
 
+    public: // Getters
+        virtual uint32_t GetWidth() const override;
+        virtual uint32_t GetHeight() const override;
+        virtual void *GetNativeWindow() const override;
+
+    public: // Setters
+        virtual void SetEventCallback(const EventCallbackFn &callback) override;
+
     private:
         GLFWwindow *m_WindowHandle;
 
         struct WindowData
         {
-            std::string Title;
-            uint32_t Width, Height;
-            EventCallbackFn EventCallback;
+            std::string title;
+            uint32_t width, height;
+            EventCallbackFn eventCallback;
         } m_Data;
     };
 

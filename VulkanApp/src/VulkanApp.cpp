@@ -6,7 +6,7 @@
 class VulkanApp : public ve::Application
 {
 public:
-    VulkanApp(const ve::ApplicationCreateInfo &createInfo) : ve::Application(createInfo)
+    VulkanApp(const ve::ApplicationDesc &createInfo) : ve::Application(createInfo)
     {
         PushLayer(new ExampleLayer());
 
@@ -20,16 +20,14 @@ public:
 
 ve::Application *ve::CreateApplication(ApplicationCommandLineArgs args)
 {
-    ve::ApplicationCreateInfo appInfo{
-        .Name = "VulkanApp",
-        .WorkingDirectory = "VulkanApp/",
-        .CommandLineArgs = args,
-        .WindowInfo{
-            .Title = "VulkanApp",
-            .IconPath = "assets/icons/vulkan.png",
-            .Width = 1280,
-            .Height = 720,
-            .Resizable = true,
+    ve::ApplicationDesc appInfo{
+        .name = "VulkanApp",
+        .workingDirectory = "VulkanApp/",
+        .commandLineArgs = args,
+        .windowDesc{
+            .title = "VulkanApp",
+            .iconPath = "assets/icons/vulkan.png",
+            .centered = true,
         },
     };
 

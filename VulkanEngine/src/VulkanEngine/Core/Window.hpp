@@ -15,13 +15,15 @@
 
 namespace ve
 {
-    struct WindowCreateInfo
+    struct WindowDesc
     {
-        std::string Title = "Untitled Window";
-        std::filesystem::path IconPath;
-        uint32_t Width = 800, Height = 600;
-        bool Resizable = false;
-        bool Fullscreen = false;
+        std::string title = "Untitled Window";
+        std::filesystem::path iconPath;
+        uint32_t width = 1280, height = 720;
+        uint32_t posX = 100, posY = 100;
+        bool resizable = true;
+        bool fullscreen = false;
+        bool centered = false;
     };
 
     class Window
@@ -29,15 +31,11 @@ namespace ve
     public:
         using EventCallbackFn = std::function<void(Event &)>;
 
+        static std::unique_ptr<Window> Create(const WindowDesc &createInfo);
+
         virtual ~Window() = default;
 
         virtual void OnUpdate() = 0;
-
-        virtual uint32_t GetWidth() const = 0;
-        virtual uint32_t GetHeight() const = 0;
-        virtual void *GetNativeWindow() const = 0;
-
-        virtual void SetEventCallback(const EventCallbackFn &callback) = 0;
 
         // Vulkan
         virtual std::vector<const char *> GetRequiredVulkanExtensions() const = 0;
@@ -52,7 +50,13 @@ namespace ve
         virtual bool IsCursorLocked() const = 0;
         virtual void SetCursorLocked(bool locked) = 0;
 
-        static std::unique_ptr<Window> Create(const WindowCreateInfo &createInfo);
+    public: // Getters
+        virtual uint32_t GetWidth() const = 0;
+        virtual uint32_t GetHeight() const = 0;
+        virtual void *GetNativeWindow() const = 0;
+
+    public: // Setters
+        virtual void SetEventCallback(const EventCallbackFn &callback) = 0;
     };
 
 } // namespace ve

@@ -3,9 +3,9 @@
 
 namespace ve
 {
-    std::unique_ptr<Window> ve::Window::Create(const WindowCreateInfo &createInfo)
+    std::unique_ptr<Window> ve::Window::Create(const WindowDesc &desc)
     {
-        return std::make_unique<GlfwWindowDriver>(createInfo);
+        return std::make_unique<GlfwWindowDriver>(desc);
     }
 
 } // namespace ve

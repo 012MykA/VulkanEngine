@@ -25,18 +25,18 @@ namespace ve
         }
     };
 
-    struct ApplicationCreateInfo
+    struct ApplicationDesc
     {
-        std::string Name = "VulkanEngine App";
-        std::string WorkingDirectory;
-        ApplicationCommandLineArgs CommandLineArgs;
-        WindowCreateInfo WindowInfo;
+        std::string name = "VulkanEngine App";
+        std::string workingDirectory;
+        ApplicationCommandLineArgs commandLineArgs;
+        WindowDesc windowDesc;
     };
 
     class Application
     {
     public:
-        Application(const ApplicationCreateInfo &createInfo);
+        Application(const ApplicationDesc &desc);
         virtual ~Application();
 
     public:
@@ -56,7 +56,7 @@ namespace ve
         bool OnWindowResize(WindowResizeEvent &e);
 
     private:
-        ApplicationCreateInfo m_Info;
+        ApplicationDesc m_Desc;
         std::unique_ptr<Window> m_Window;
 
         std::unique_ptr<Renderer> m_Renderer;

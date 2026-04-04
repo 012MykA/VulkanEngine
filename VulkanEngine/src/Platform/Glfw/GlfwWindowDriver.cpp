@@ -23,11 +23,11 @@ namespace ve
         }
     }
 
-    GlfwWindowDriver::GlfwWindowDriver(const WindowCreateInfo &createInfo)
+    GlfwWindowDriver::GlfwWindowDriver(const WindowDesc &desc)
     {
-        m_Data.Title = createInfo.Title;
-        m_Data.Width = createInfo.Width;
-        m_Data.Height = createInfo.Height;
+        m_Data.title = desc.title;
+        m_Data.width = desc.width;
+        m_Data.height = desc.height;
 
         // Glfw error callback
         glfwSetErrorCallback(GlfwErrorCallback);
@@ -46,23 +46,46 @@ namespace ve
             throw std::runtime_error("Vulkan is not supported by GLFW!");
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, createInfo.Resizable ? GLFW_TRUE : GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, desc.resizable ? GLFW_TRUE : GLFW_FALSE);
 
         // Handle Fullscreen
-        GLFWmonitor *const monitor = createInfo.Fullscreen ? glfwGetPrimaryMonitor() : nullptr;
-        m_WindowHandle = glfwCreateWindow(createInfo.Width, createInfo.Height, createInfo.Title.c_str(), monitor, nullptr);
+        GLFWmonitor *monitor = desc.fullscreen ? glfwGetPrimaryMonitor() : nullptr;
+
+        m_WindowHandle = glfwCreateWindow(desc.width, desc.height, desc.title.c_str(), monitor, nullptr);
         if (!m_WindowHandle)
             throw std::runtime_error("failed to create GLFW window!");
 
+        // Set Window Pos
+        if (!desc.fullscreen)
+        {
+            if (desc.centered)
+            {
+                monitor = glfwGetPrimaryMonitor();
+                const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+
+                if (mode)
+                {
+                    int xpos = (mode->width - static_cast<int>(desc.width)) / 2;
+                    int ypos = (mode->height - static_cast<int>(desc.height)) / 2;
+
+                    glfwSetWindowPos(m_WindowHandle, xpos, ypos);
+                }
+            }
+            else
+            {
+                glfwSetWindowPos(m_WindowHandle, static_cast<int>(desc.posX), static_cast<int>(desc.posY));
+            }
+        }
+
         // Set Window Icon
-        if (!createInfo.IconPath.empty())
+        if (!desc.iconPath.empty())
         {
             GLFWimage icon;
-            icon.pixels = stbi_load(createInfo.IconPath.string().c_str(), &icon.width, &icon.height, nullptr, STBI_rgb_alpha);
+            icon.pixels = stbi_load(desc.iconPath.string().c_str(), &icon.width, &icon.height, nullptr, STBI_rgb_alpha);
 
             if (icon.pixels == nullptr)
             {
-                VE_CORE_ERROR("failed to load window icon: {0}", createInfo.IconPath);
+                VE_CORE_ERROR("failed to load window icon: {0}", desc.iconPath);
             }
             else
             {
@@ -74,25 +97,26 @@ namespace ve
         // User pointer
         glfwSetWindowUserPointer(m_WindowHandle, &m_Data);
 
+        // clang-format off
+
         // Set GLFW callbacks
-        glfwSetWindowSizeCallback(m_WindowHandle, [](GLFWwindow *window, int width, int height)
-                                  {
+        glfwSetWindowSizeCallback(m_WindowHandle, [](GLFWwindow *window, int width, int height) {
             WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
-            data.Width = static_cast<uint32_t>(width);
-            data.Height = static_cast<uint32_t>(height);
+            data.width = static_cast<uint32_t>(width);
+            data.height = static_cast<uint32_t>(height);
 
             WindowResizeEvent event(width, height);
-            data.EventCallback(event); });
+            data.eventCallback(event);
+        });
 
-        glfwSetWindowCloseCallback(m_WindowHandle, [](GLFWwindow *window)
-                                   {
+        glfwSetWindowCloseCallback(m_WindowHandle, [](GLFWwindow *window) {
             WindowData& data =*reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
             WindowCloseEvent event;
-            data.EventCallback(event); });
+            data.eventCallback(event);
+        });
 
-        glfwSetKeyCallback(m_WindowHandle, [](GLFWwindow *window, int key, int, int action, int)
-                           {
+        glfwSetKeyCallback(m_WindowHandle, [](GLFWwindow *window, int key, int, int action, int) {
             WindowData& data =*reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
             switch (action)
@@ -100,31 +124,31 @@ namespace ve
                 case GLFW_PRESS:
                 {
                     KeyPressedEvent event(static_cast<KeyCode>(key), 0);
-                    data.EventCallback(event);
+                    data.eventCallback(event);
                     break;
                 }
                 case GLFW_RELEASE:
                 {
                     KeyReleasedEvent event(static_cast<KeyCode>(key));
-                    data.EventCallback(event);
+                    data.eventCallback(event);
                     break;
                 }
                 case GLFW_REPEAT:
                 {
                     KeyPressedEvent event(static_cast<KeyCode>(key), 1);
-                    data.EventCallback(event);
+                    data.eventCallback(event);
                     break;
                 }
-            } });
+            }
+        });
 
-        glfwSetCharCallback(m_WindowHandle, [](GLFWwindow *window, unsigned int keycode)
-                            {
+        glfwSetCharCallback(m_WindowHandle, [](GLFWwindow *window, unsigned int keycode) {
             WindowData& data =*reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
             KeyTypedEvent event(static_cast<KeyCode>(keycode));
-            data.EventCallback(event); });
+            data.eventCallback(event);
+        });
 
-        glfwSetMouseButtonCallback(m_WindowHandle, [](GLFWwindow *window, int button, int action, int)
-                                   {
+        glfwSetMouseButtonCallback(m_WindowHandle, [](GLFWwindow *window, int button, int action, int) {
             WindowData& data =*reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
             switch (action)
@@ -132,30 +156,33 @@ namespace ve
                 case GLFW_PRESS:
                 {
                     MouseButtonPressedEvent event(static_cast<MouseCode>(button));
-                    data.EventCallback(event);
+                    data.eventCallback(event);
                     break;
                 }
                 case GLFW_RELEASE:
                 {
                     MouseButtonReleasedEvent event(static_cast<MouseCode>(button));
-                    data.EventCallback(event);
+                    data.eventCallback(event);
                     break;
                 }
-            } });
+            }
+        });
 
-        glfwSetScrollCallback(m_WindowHandle, [](GLFWwindow *window, double xOffset, double yOffset)
-                              {
+        glfwSetScrollCallback(m_WindowHandle, [](GLFWwindow *window, double xOffset, double yOffset) {
             WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
             
             MouseScrolledEvent event(static_cast<float>(xOffset), static_cast<float>(yOffset));
-            data.EventCallback(event); });
+            data.eventCallback(event);
+        });
 
-        glfwSetCursorPosCallback(m_WindowHandle, [](GLFWwindow *window, double xPos, double yPos)
-                                 {
+        glfwSetCursorPosCallback(m_WindowHandle, [](GLFWwindow *window, double xPos, double yPos) {
             WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
             MouseMovedEvent event(static_cast<float>(xPos), static_cast<float>(yPos));
-            data.EventCallback(event); });
+            data.eventCallback(event);
+        });
+
+        // clang-format on
     }
 
     GlfwWindowDriver::~GlfwWindowDriver()
@@ -171,12 +198,12 @@ namespace ve
 
     uint32_t GlfwWindowDriver::GetWidth() const
     {
-        return m_Data.Width;
+        return m_Data.width;
     }
 
     uint32_t GlfwWindowDriver::GetHeight() const
     {
-        return m_Data.Height;
+        return m_Data.height;
     }
 
     void *GlfwWindowDriver::GetNativeWindow() const
@@ -186,7 +213,7 @@ namespace ve
 
     void GlfwWindowDriver::SetEventCallback(const EventCallbackFn &callback)
     {
-        m_Data.EventCallback = callback;
+        m_Data.eventCallback = callback;
     }
 
     std::vector<const char *> GlfwWindowDriver::GetRequiredVulkanExtensions() const

@@ -8,18 +8,18 @@ namespace ve
 {
     Application *Application::s_Instance = nullptr;
 
-    Application::Application(const ApplicationCreateInfo &createInfo) : m_Info(createInfo)
+    Application::Application(const ApplicationDesc &desc) : m_Desc(desc)
     {
         assert(!s_Instance && "Application already exists!");
         s_Instance = this;
 
-        std::filesystem::path workingDir(createInfo.WorkingDirectory);
+        std::filesystem::path workingDir(m_Desc.workingDirectory);
         if (std::filesystem::exists(workingDir))
         {
             std::filesystem::current_path(workingDir);
         }
 
-        m_Window = Window::Create(createInfo.WindowInfo);
+        m_Window = Window::Create(m_Desc.windowDesc);
         m_Window->SetEventCallback(VE_BIND_EVENT_FN(OnEvent));
 
         m_Renderer = std::make_unique<Renderer>(*m_Window);
