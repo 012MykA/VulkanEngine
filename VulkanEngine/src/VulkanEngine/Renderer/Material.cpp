@@ -4,21 +4,13 @@
 #include "VulkanEngine/Core/Log.hpp"
 
 namespace ve
-{
-    Material::~Material()
-    {
-        if (m_Device)
-            m_Device->WaitIdle();
-    }
-    
+{    
     void Material::Build(
         const VulkanAllocator &allocator,
         const VulkanLogicalDevice &device,
         const VulkanDescriptorPool &pool,
         const VulkanDescriptorSetLayout &layout)
     {
-        m_Device = &device;
-
         m_UBO = std::make_unique<VulkanBuffer>(allocator, MakeUniformBufferDesc(sizeof(MaterialData)));
 
         m_UBO->Upload(&m_Data, sizeof(MaterialData));

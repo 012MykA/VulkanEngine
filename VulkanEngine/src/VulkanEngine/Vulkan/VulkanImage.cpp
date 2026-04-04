@@ -2,6 +2,8 @@
 #include "VulkanLogicalDevice.hpp"
 #include "Debug/VulkanValidation.hpp"
 
+#include <array>
+
 namespace ve
 {
     VulkanImage::VulkanImage(const VulkanAllocator &allocator,
@@ -35,6 +37,9 @@ namespace ve
           m_Aspect(aspect),
           m_OwnsImage(false)
     {
+        // Swapchain images не принадлежат нам (OwnsImage=false),
+        // но ImageView нужен для Framebuffer
+        CreateImageView(aspect, VK_IMAGE_VIEW_TYPE_2D);
     }
 
     VulkanImage::~VulkanImage()
@@ -166,44 +171,49 @@ namespace ve
         vkCmdPipelineBarrier2(cmd, &depInfo);
     }
 
-    void VulkanImage::TransitionToShaderRead(VkCommandBuffer cmd) const
+    void VulkanImage::TransitionToShaderRead(VkCommandBuffer cmd)
     {
         TransitionLayout(cmd, m_CurrentLayout,
                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                          VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
                          VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT);
+        m_CurrentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
 
-    void VulkanImage::TransitionToColorAttachment(VkCommandBuffer cmd) const
+    void VulkanImage::TransitionToColorAttachment(VkCommandBuffer cmd)
     {
         TransitionLayout(cmd, m_CurrentLayout,
                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                          VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
                          VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
+        m_CurrentLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     }
 
-    void VulkanImage::TransitionToDepthAttachment(VkCommandBuffer cmd) const
+    void VulkanImage::TransitionToDepthAttachment(VkCommandBuffer cmd)
     {
         TransitionLayout(cmd, m_CurrentLayout,
                          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                          VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
                          VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT);
+        m_CurrentLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     }
 
-    void VulkanImage::TransitionToTransferDst(VkCommandBuffer cmd) const
+    void VulkanImage::TransitionToTransferDst(VkCommandBuffer cmd)
     {
         TransitionLayout(cmd, m_CurrentLayout,
                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                          VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
                          VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+        m_CurrentLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     }
 
-    void VulkanImage::TransitionToTransferSrc(VkCommandBuffer cmd) const
+    void VulkanImage::TransitionToTransferSrc(VkCommandBuffer cmd)
     {
         TransitionLayout(cmd, m_CurrentLayout,
                          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                          VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
                          VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+        m_CurrentLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     }
 
     void VulkanImage::CopyFromBuffer(VkCommandBuffer cmd, VkBuffer srcBuffer,
@@ -285,22 +295,44 @@ namespace ve
             mipHeight = nextH;
         }
 
-        VkImageMemoryBarrier2 finalBarrier{
+        // Последний mip-уровень остался в TRANSFER_DST (он не был переведён в TRANSFER_SRC в цикле).
+        // Нужно два отдельных барьера: один для [0..mipLevels-2] из SRC, другой для последнего из DST.
+        std::array<VkImageMemoryBarrier2, 2> finalBarriers{};
+
+        // Уровни [0 .. mipLevels-2]: TRANSFER_SRC -> SHADER_READ_ONLY
+        finalBarriers[0] = VkImageMemoryBarrier2{
             .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
             .srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-            .srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT,
+            .srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
             .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
             .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
             .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
             .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .image = m_Image,
-            .subresourceRange = {m_Aspect, 0, m_MipLevels, 0, m_ArrayLayers},
+            .subresourceRange = {m_Aspect, 0, m_MipLevels - 1, 0, m_ArrayLayers},
         };
 
-        VkDependencyInfo dep{.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-                             .imageMemoryBarrierCount = 1,
-                             .pImageMemoryBarriers = &finalBarrier};
+        // Последний уровень: TRANSFER_DST -> SHADER_READ_ONLY
+        finalBarriers[1] = VkImageMemoryBarrier2{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+            .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+            .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .image = m_Image,
+            .subresourceRange = {m_Aspect, m_MipLevels - 1, 1, 0, m_ArrayLayers},
+        };
+
+        VkDependencyInfo dep{
+            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+            .imageMemoryBarrierCount = static_cast<uint32_t>(finalBarriers.size()),
+            .pImageMemoryBarriers = finalBarriers.data(),
+        };
         vkCmdPipelineBarrier2(cmd, &dep);
+
+        m_CurrentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
 
     VkDescriptorImageInfo VulkanImage::GetDescriptorInfo() const

@@ -27,17 +27,16 @@ namespace ve
     {
     public:
         Material() = default;
-        ~Material();
+        ~Material() = default;
 
         Material(const Material &) = delete;
         Material &operator=(const Material &) = delete;
 
     public: // GPU resources
-        void Build(
-            const VulkanAllocator &allocator,
-            const VulkanLogicalDevice &device,
-            const VulkanDescriptorPool &pool,
-            const VulkanDescriptorSetLayout &layout);
+        void Build(const VulkanAllocator &allocator,
+                   const VulkanLogicalDevice &device,
+                   const VulkanDescriptorPool &pool,
+                   const VulkanDescriptorSetLayout &layout);
 
         void UpdateGPU();
 
@@ -53,8 +52,6 @@ namespace ve
         bool IsBuilt() const { return m_UBO != nullptr; }
 
     private:
-        const VulkanLogicalDevice *m_Device;
-
         std::string m_Name = "Unnamed";
         MaterialData m_Data{};
 

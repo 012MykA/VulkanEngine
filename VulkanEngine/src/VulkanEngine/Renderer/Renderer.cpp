@@ -191,6 +191,11 @@ namespace ve
         vkCmdDrawIndexed(cmd, mesh.GetIndexCount(), 1, 0, 0, 0);
     }
 
+    void Renderer::WaitIdle() const
+    {
+        m_LogicalDevice->WaitIdle();
+    }
+
     void Renderer::HandleResize(uint32_t width, uint32_t height)
     {
         if (width == 0 || height == 0)
@@ -203,7 +208,7 @@ namespace ve
 
     void Renderer::UploadMesh(Mesh &mesh) const
     {
-        mesh.UploadToGPU(*m_LogicalDevice, *m_Allocator, *m_ImmediateSubmit);
+        mesh.UploadToGPU(*m_Allocator, *m_ImmediateSubmit);
     }
 
     void Renderer::BuildMaterial(Material &material) const

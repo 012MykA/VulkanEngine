@@ -37,7 +37,7 @@ namespace ve
     {
     public:
         Application(const ApplicationCreateInfo &createInfo);
-        virtual ~Application() {}
+        virtual ~Application();
 
     public:
         void Run();
@@ -69,14 +69,9 @@ namespace ve
         float m_LastFrameTime = 0.0f;
 
     private:
-        struct RenderObject
-        {
-            std::shared_ptr<Mesh> mesh;
-            std::shared_ptr<Material> material;
-            glm::mat4 transform = glm::mat4(1.0f);
-        };
-
-        std::vector<RenderObject> m_Objects;
+        std::shared_ptr<Mesh> mesh;
+        std::shared_ptr<Material> material;
+        glm::mat4 transform = glm::mat4(1.0f);
 
     private:
         static Application *s_Instance;

@@ -54,6 +54,7 @@ namespace ve
 
         void Submit(const Mesh &mesh, const Material &material, const glm::mat4 &transform);
 
+        void WaitIdle() const;
         void HandleResize(uint32_t width, uint32_t height);
 
     public: // Upload data

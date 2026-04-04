@@ -85,11 +85,11 @@ namespace ve
             VkPipelineStageFlags2 srcStage = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
             VkPipelineStageFlags2 dstStage = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) const;
 
-        void TransitionToShaderRead(VkCommandBuffer cmd) const;
-        void TransitionToColorAttachment(VkCommandBuffer cmd) const;
-        void TransitionToDepthAttachment(VkCommandBuffer cmd) const;
-        void TransitionToTransferDst(VkCommandBuffer cmd) const;
-        void TransitionToTransferSrc(VkCommandBuffer cmd) const;
+        void TransitionToShaderRead(VkCommandBuffer cmd);
+        void TransitionToColorAttachment(VkCommandBuffer cmd);
+        void TransitionToDepthAttachment(VkCommandBuffer cmd);
+        void TransitionToTransferDst(VkCommandBuffer cmd);
+        void TransitionToTransferSrc(VkCommandBuffer cmd);
 
         // Copy
         void CopyFromBuffer(VkCommandBuffer cmd, VkBuffer srcBuffer,

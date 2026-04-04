@@ -36,12 +36,14 @@ namespace ve
         terrainMaterial->SetName("TerrainMaterial");
         m_Renderer->BuildMaterial(*terrainMaterial);
 
-        RenderObject terrain;
-        terrain.mesh = terrainMesh;
-        terrain.material = terrainMaterial;
-        terrain.transform = glm::translate(glm::mat4(1.0f), {-250.0f, -100.0f, -500.0f}); 
+        mesh = terrainMesh;
+        material = terrainMaterial;
+        transform = glm::translate(glm::mat4(1.0f), {-250.0f, -100.0f, -500.0f});
+    }
 
-        m_Objects.push_back(terrain);
+    Application::~Application()
+    {
+        m_Renderer->WaitIdle();
     }
 
     void Application::Run()
@@ -62,12 +64,7 @@ namespace ve
                 m_Camera->OnUpdate(timestep);
 
                 m_Renderer->BeginFrame(*m_Camera);
-
-                for (const auto &obj : m_Objects)
-                {
-                    m_Renderer->Submit(*obj.mesh, *obj.material, obj.transform);
-                }
-
+                m_Renderer->Submit(*mesh, *material, transform);
                 m_Renderer->EndFrame();
             }
 

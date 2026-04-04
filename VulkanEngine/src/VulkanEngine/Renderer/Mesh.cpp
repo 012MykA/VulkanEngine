@@ -99,19 +99,8 @@ namespace ve
         }
     }
 
-    Mesh::~Mesh()
+    void Mesh::UploadToGPU(const VulkanAllocator &allocator, const VulkanImmediateSubmit &upload)
     {
-        if (m_Device)
-            m_Device->WaitIdle();
-    }
-
-    void Mesh::UploadToGPU(
-        const VulkanLogicalDevice &device,
-        const VulkanAllocator &allocator,
-        const VulkanImmediateSubmit &upload)
-    {
-        m_Device = &device;
-
         assert(!m_Vertices.empty() && !m_Indices.empty() && "Mesh::UploadToGPU - mesh must have both vertices and indices");
 
         const VkDeviceSize vertexSize = sizeof(Vertex) * m_Vertices.size();
