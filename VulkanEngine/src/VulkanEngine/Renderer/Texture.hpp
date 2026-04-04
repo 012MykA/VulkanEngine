@@ -79,10 +79,11 @@ namespace ve
             uint32_t height,
             uint32_t channels,
             const VulkanAllocator &allocator,
+            const VulkanLogicalDevice &logicalDevice,
             const VulkanImmediateSubmit &upload);
 
     private:
-        static VkFormat ResolveVkFormat(TextureFormat fmt);
+        static VkFormat ResolveVkFormat(TextureFormat format);
         static uint32_t CalcMipLevels(uint32_t w, uint32_t h);
 
     private:

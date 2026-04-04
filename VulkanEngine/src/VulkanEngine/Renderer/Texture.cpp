@@ -33,10 +33,10 @@ namespace ve
                 reinterpret_cast<const uint8_t *>(pixels),
                 static_cast<uint32_t>(w),
                 static_cast<uint32_t>(h),
-                4, allocator, upload);
+                4, allocator, logicalDevice, upload);
 
             stbi_image_free(pixels);
-            VE_CORE_TRACE("Texture loaded (HDR): {}", path);
+            VE_CORE_TRACE("Texture loaded (HDR): {} ({}x{})", path, w, h);
             return tex;
         }
 
@@ -49,7 +49,7 @@ namespace ve
         tex->UploadPixels(pixels,
                           static_cast<uint32_t>(w),
                           static_cast<uint32_t>(h),
-                          4, allocator, upload);
+                          4, allocator, logicalDevice, upload);
 
         stbi_image_free(pixels);
         VE_CORE_TRACE("Texture loaded: {} ({}x{})", path, w, h);
@@ -76,7 +76,7 @@ namespace ve
             pixels,
             static_cast<uint32_t>(w),
             static_cast<uint32_t>(h),
-            4, allocator, upload);
+            4, allocator, device, upload);
 
         stbi_image_free(pixels);
         return tex;
@@ -116,7 +116,7 @@ namespace ve
     {
         uint8_t pixels[4] = {r, g, b, a};
         auto tex = std::make_shared<Texture>();
-        tex->UploadPixels(pixels, 1, 1, 4, allocator, upload);
+        tex->UploadPixels(pixels, 1, 1, 4, allocator, device, upload);
         return tex;
     }
 
@@ -129,6 +129,7 @@ namespace ve
         const uint8_t *pixels,
         uint32_t width, uint32_t height, uint32_t channels,
         const VulkanAllocator &allocator,
+        const VulkanLogicalDevice &logicalDevice,
         const VulkanImmediateSubmit &upload)
     {
         m_Width = width;
@@ -141,6 +142,7 @@ namespace ve
         VulkanBuffer staging(allocator, MakeStagingBufferDesc(imageSize));
         staging.Upload(pixels, imageSize);
 
+        // m_Image создаётся ДО submit — иначе лямбда захватит nullptr
         ImageDesc imageDesc{
             .width = width,
             .height = height,
@@ -149,6 +151,7 @@ namespace ve
             .format = VK_FORMAT_R8G8B8A8_SRGB,
             .type = ImageType::Texture2D,
         };
+        m_Image = std::make_unique<VulkanImage>(allocator, logicalDevice, imageDesc);
 
         upload.Submit([&](VkCommandBuffer cmd)
                       {
@@ -159,23 +162,20 @@ namespace ve
         m_Image->CreateSampler();
     }
 
-    VkFormat Texture::ResolveVkFormat(TextureFormat fmt)
+    VkFormat Texture::ResolveVkFormat(TextureFormat format)
     {
-        switch (fmt)
+        // clang-format off
+        switch (format)
         {
-        case TextureFormat::RGBA8_SRGB:
-            return VK_FORMAT_R8G8B8A8_SRGB;
-        case TextureFormat::RGBA8_UNORM:
-            return VK_FORMAT_R8G8B8A8_UNORM;
-        case TextureFormat::RGBA16_SFLOAT:
-            return VK_FORMAT_R16G16B16A16_SFLOAT;
-        case TextureFormat::RG8_UNORM:
-            return VK_FORMAT_R8G8B8A8_UNORM;
-        case TextureFormat::R8_UNORM:
-            return VK_FORMAT_R8G8B8A8_UNORM;
-        default:
-            throw std::runtime_error("Texture: unknown format");
+        case TextureFormat::RGBA8_SRGB:     return VK_FORMAT_R8G8B8A8_SRGB;
+        case TextureFormat::RGBA8_UNORM:    return VK_FORMAT_R8G8B8A8_UNORM;
+        case TextureFormat::RGBA16_SFLOAT:  return VK_FORMAT_R16G16B16A16_SFLOAT;
+        case TextureFormat::RG8_UNORM:      return VK_FORMAT_R8G8B8A8_UNORM;
+        case TextureFormat::R8_UNORM:       return VK_FORMAT_R8G8B8A8_UNORM;
+
+        default:                            throw std::runtime_error("Texture: unknown format");
         }
+        // clang-format on
     }
 
     uint32_t Texture::CalcMipLevels(uint32_t w, uint32_t h)
