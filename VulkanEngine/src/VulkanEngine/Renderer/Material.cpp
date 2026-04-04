@@ -26,15 +26,14 @@ namespace ve
         VulkanDescriptorWriter(device.GetVkHandle())
             .WriteBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_DescriptorSet, bufferInfo)
             .Flush();
+
+        VE_CORE_TRACE("Material '{}' built", m_Name);
     }
 
     void Material::UpdateGPU()
     {
         if (m_UBO)
-        {
             m_UBO->Upload(&m_Data, sizeof(MaterialData));
-            VE_CORE_TRACE("Material '{}' uploaded", m_Name);
-        }
     }
 
 } // namespace ve

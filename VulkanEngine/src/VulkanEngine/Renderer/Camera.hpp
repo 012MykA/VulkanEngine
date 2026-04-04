@@ -23,7 +23,7 @@ namespace ve
         float yaw = -90.0f;
         float pitch = 0.0f;
 
-        float moveSpeed = 10.0f;
+        float moveSpeed = 2.0f;
         float mouseSensitivity = 0.05f;
     };
 
@@ -50,10 +50,8 @@ namespace ve
 
     private:
         Window &m_Window;
-
         CameraDesc m_Desc;
 
-    private:
         glm::mat4 m_ViewMatrix = glm::mat4(1.0f);
         glm::mat4 m_ProjectionMatrix = glm::mat4(1.0f);
 

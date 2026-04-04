@@ -193,6 +193,12 @@ namespace ve
         vkCmdDrawIndexed(cmd, mesh.GetIndexCount(), 1, 0, 0, 0);
     }
 
+    void Renderer::SetLight(const glm::vec3 &direction, const glm::vec3 &color, float intencity)
+    {
+        m_GlobalData.lightDir = glm::vec4(glm::normalize(direction), 0.0f);
+        m_GlobalData.lightColor = glm::vec4(color, intencity);
+    }
+
     void Renderer::WaitIdle() const
     {
         m_LogicalDevice->WaitIdle();

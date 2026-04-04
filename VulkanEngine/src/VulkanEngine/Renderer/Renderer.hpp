@@ -31,7 +31,7 @@ namespace ve
     {
         alignas(16) glm::mat4 view = glm::mat4(1.0f);
         alignas(16) glm::mat4 proj = glm::mat4(1.0f);
-        alignas(16) glm::vec4 lightDir = glm::vec4(glm::normalize(glm::vec3(-3.0f, -1.0f, 3.0f)), 0.0f);
+        alignas(16) glm::vec4 lightDir = glm::vec4(glm::normalize(glm::vec3(-0.3f, -0.8f, -0.5f)), 0.0f);
         alignas(16) glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f); // w = intensity
         alignas(16) glm::vec4 cameraPos = glm::vec4(0.0f);
     };
@@ -54,6 +54,8 @@ namespace ve
         void EndFrame();
 
         void Submit(const Mesh &mesh, const Material &material, const glm::mat4 &transform);
+
+        void SetLight(const glm::vec3 &direction, const glm::vec3 &color = glm::vec3(1.0f), float intencity = 1.0f);
 
         void WaitIdle() const;
         void HandleResize(uint32_t width, uint32_t height);

@@ -17,10 +17,9 @@ namespace ve
 
     struct MaterialData
     {
-        alignas(16) glm::vec4 ambientColor = glm::vec4(0.24725f, 0.1995f, 0.0745f, 0.0f);
-        alignas(16) glm::vec4 diffuseColor = glm::vec4(0.75164f, 0.60648f, 0.22648f, 0.0f);
-        // xyz = specular color, w = shininess
-        alignas(16) glm::vec4 specularColor = glm::vec4(0.628281f, 0.555802f, 0.366065f, 51.2f);
+        alignas(16) glm::vec4 ambientColor = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
+        alignas(16) glm::vec4 diffuseColor = glm::vec4(0.8f, 0.8f, 0.8f, 1.0f); // w - unused
+        alignas(16) glm::vec4 specularColor = glm::vec4(0.5f, 0.5f, 0.5f, 32.0f); // xyz = specular color, w = shininess
     };
 
     class Material
@@ -52,7 +51,7 @@ namespace ve
         bool IsBuilt() const { return m_UBO != nullptr; }
 
     private:
-        std::string m_Name = "Unnamed";
+        std::string m_Name = "Default";
         MaterialData m_Data{};
 
         std::unique_ptr<VulkanBuffer> m_UBO;
