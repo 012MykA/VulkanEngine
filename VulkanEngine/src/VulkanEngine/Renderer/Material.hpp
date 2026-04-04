@@ -18,8 +18,11 @@ namespace ve
     struct MaterialData
     {
         alignas(16) glm::vec4 ambientColor = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
-        alignas(16) glm::vec4 diffuseColor = glm::vec4(0.8f, 0.8f, 0.8f, 1.0f); // w - unused
-        alignas(16) glm::vec4 specularColor = glm::vec4(0.5f, 0.5f, 0.5f, 32.0f); // xyz = specular color, w = shininess
+        alignas(16) glm::vec4 diffuseColor = glm::vec4(0.8f, 0.8f, 0.8f, 1.0f); // a - unused
+        alignas(16) glm::vec4 specularColor = glm::vec4(0.5f, 0.5f, 0.5f, 32.0f); // rgb = specular color, a = shininess
+
+        // alignas(4) int hasAlbedoTex = 0;
+        // alignas(4) float _pad0 = 0, _pad1 = 0, _pad2 = 0;
     };
 
     class Material
@@ -43,7 +46,8 @@ namespace ve
         void SetName(const std::string &name) { m_Name = name; }
         void SetAmbient(glm::vec3 color) { m_Data.ambientColor = glm::vec4(color, 1.0f); }
         void SetDiffuse(glm::vec3 color) { m_Data.diffuseColor = glm::vec4(color, 1.0f); }
-        void SetSpecular(glm::vec3 color, float shine) { m_Data.specularColor = glm::vec4(color, shine); }
+        void SetSpecular(glm::vec3 color) { m_Data.specularColor = glm::vec4(color, m_Data.specularColor.a); }
+        void SetShininess(float shininess) { m_Data.specularColor.a = shininess; }
 
         // Getters
         VkDescriptorSet GetDescriptorSet() const { return m_DescriptorSet; }

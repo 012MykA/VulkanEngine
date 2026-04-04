@@ -10,9 +10,9 @@ layout(location = 3) in vec2 inTexCoord;
 layout(set = 0, binding = 0) uniform GlobalUBO {
     mat4 view;
     mat4 proj;
-    vec4 lightDir;    // xyz - direction, w - unused
-    vec4 lightColor; // xyz - color,     w - intencity
-    vec4 cameraPos;  // xyz - position   w - unused
+    vec4 lightDir;    // rgb - direction, a - unused
+    vec4 lightColor; // rgb - color,     a - intencity
+    vec4 cameraPos;  // rgb - position   a - unused
 } u_Global;
 
 // Push constants
@@ -25,7 +25,7 @@ layout(location = 1) out vec3 outNormal;
 
 void main() {
     vec4 worldPos = u_Push.model * vec4(inPosition, 1.0);
-    outWorldPos = worldPos.xyz;
+    outWorldPos = worldPos.rgb;
 
     outNormal = normalize(mat3(transpose(inverse(u_Push.model))) * inNormal);
     
