@@ -4,6 +4,8 @@
 #include "VulkanEngine/Core/Timer.hpp"
 #include "VulkanEngine/Vulkan/Debug/VulkanValidation.hpp"
 
+#include <array>
+
 namespace ve
 {
     static constexpr uint32_t MAX_MATERIALS = 100;
@@ -64,9 +66,9 @@ namespace ve
         CHECK_VK_RESULT(result);
 
         // RenderPass
-        VkClearValue clearColor = {
-            .color = {{0.1f, 0.1f, 0.1f, 1.0f}},
-        };
+        std::array<VkClearValue, 2> clearValues{};
+        clearValues[0].color = {{0.1f, 0.1f, 0.1f, 1.0f}};
+        clearValues[1].depthStencil = {1.0f, 0};
 
         VkRenderPassBeginInfo rpBegin{
             .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
@@ -76,8 +78,8 @@ namespace ve
                 .offset = {0, 0},
                 .extent = m_Swapchain->GetExtent(),
             },
-            .clearValueCount = 1,
-            .pClearValues = &clearColor,
+            .clearValueCount = static_cast<uint32_t>(clearValues.size()),
+            .pClearValues = clearValues.data(),
         };
 
         vkCmdBeginRenderPass(cmd, &rpBegin, VK_SUBPASS_CONTENTS_INLINE);
@@ -249,8 +251,24 @@ namespace ve
                 .height = window.GetHeight(),
             });
 
-        m_RenderPass = std::make_unique<VulkanRenderPass>(*m_LogicalDevice, m_Swapchain->GetFormat());
-        m_Framebuffers = std::make_unique<VulkanFramebuffers>(*m_LogicalDevice, *m_Swapchain, *m_RenderPass);
+        m_DepthBuffer = std::make_unique<VulkanDepthBuffer>(
+            *m_LogicalDevice,
+            *m_PhysicalDevice,
+            *m_Allocator,
+            m_Swapchain->GetExtent().width,
+            m_Swapchain->GetExtent().height);
+
+        m_RenderPass = std::make_unique<VulkanRenderPass>(
+            *m_LogicalDevice,
+            m_Swapchain->GetFormat(),
+            m_DepthBuffer->GetFormat());
+
+        m_Framebuffers = std::make_unique<VulkanFramebuffers>(
+            *m_LogicalDevice,
+            *m_Swapchain,
+            *m_RenderPass,
+            *m_DepthBuffer);
+
         m_GraphicsCommandPool = std::make_unique<VulkanCommandPool>(
             *m_LogicalDevice, *m_PhysicalDevice,
             CommandPoolDesc{.type = CommandPoolType::Graphics, .resetBuffer = true});
@@ -360,7 +378,8 @@ namespace ve
         Timer timer;
 
         m_Swapchain->Recreate(m_ResizeWidth, m_ResizeHeight);
-        m_Framebuffers->Recreate(*m_Swapchain, *m_RenderPass);
+        m_DepthBuffer->Recreate(*m_Allocator, m_ResizeWidth, m_ResizeHeight);
+        m_Framebuffers->Recreate(*m_Swapchain, *m_RenderPass, *m_DepthBuffer);
 
         VE_CORE_TRACE("Swapchain recreated: {}x{} ({} ms)", m_ResizeWidth, m_ResizeHeight, timer.ElapsedMilliseconds());
     }

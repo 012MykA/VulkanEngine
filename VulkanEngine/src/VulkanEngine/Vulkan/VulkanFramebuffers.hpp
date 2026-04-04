@@ -10,19 +10,23 @@ namespace ve
     class VulkanLogicalDevice;
     class VulkanSwapchain;
     class VulkanRenderPass;
+    class VulkanDepthBuffer;
 
     class VulkanFramebuffers
     {
     public:
         VulkanFramebuffers(const VulkanLogicalDevice &logicalDevice,
                            const VulkanSwapchain &swapchain,
-                           const VulkanRenderPass &renderPass);
+                           const VulkanRenderPass &renderPass,
+                           const VulkanDepthBuffer &depthBuffer);
         ~VulkanFramebuffers();
 
         VulkanFramebuffers(const VulkanFramebuffers &) = delete;
         VulkanFramebuffers &operator=(const VulkanFramebuffers &) = delete;
 
-        void Recreate(const VulkanSwapchain &swapchain, const VulkanRenderPass &renderPass);
+        void Recreate(const VulkanSwapchain &swapchain,
+                      const VulkanRenderPass &renderPass,
+                      const VulkanDepthBuffer &depthBuffer);
 
     public:
         // Getters
@@ -30,7 +34,9 @@ namespace ve
         uint32_t GetCount() const { return static_cast<uint32_t>(m_Framebuffers.size()); }
 
     private:
-        void Create(const VulkanSwapchain &swapchain, const VulkanRenderPass &renderPass);
+        void Create(const VulkanSwapchain &swapchain,
+                    const VulkanRenderPass &renderPass,
+                    const VulkanDepthBuffer &depthBuffer);
         void Destroy();
 
     private:

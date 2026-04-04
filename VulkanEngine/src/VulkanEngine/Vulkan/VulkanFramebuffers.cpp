@@ -2,6 +2,7 @@
 #include "VulkanLogicalDevice.hpp"
 #include "VulkanSwapchain.hpp"
 #include "VulkanRenderPass.hpp"
+#include "VulkanDepthBuffer.hpp"
 #include "Debug/VulkanValidation.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 
@@ -10,10 +11,11 @@ namespace ve
     VulkanFramebuffers::VulkanFramebuffers(
         const VulkanLogicalDevice &logicalDevice,
         const VulkanSwapchain &swapchain,
-        const VulkanRenderPass &renderPass)
+        const VulkanRenderPass &renderPass,
+        const VulkanDepthBuffer &depthBuffer)
         : m_Device(logicalDevice.GetVkHandle())
     {
-        Create(swapchain, renderPass);
+        Create(swapchain, renderPass, depthBuffer);
     }
 
     VulkanFramebuffers::~VulkanFramebuffers()
@@ -21,13 +23,17 @@ namespace ve
         Destroy();
     }
 
-    void VulkanFramebuffers::Recreate(const VulkanSwapchain &swapchain, const VulkanRenderPass &renderPass)
+    void VulkanFramebuffers::Recreate(const VulkanSwapchain &swapchain,
+                                      const VulkanRenderPass &renderPass,
+                                      const VulkanDepthBuffer &depthBuffer)
     {
         Destroy();
-        Create(swapchain, renderPass);
+        Create(swapchain, renderPass, depthBuffer);
     }
 
-    void VulkanFramebuffers::Create(const VulkanSwapchain &swapchain, const VulkanRenderPass &renderPass)
+    void VulkanFramebuffers::Create(const VulkanSwapchain &swapchain,
+                                    const VulkanRenderPass &renderPass,
+                                    const VulkanDepthBuffer &depthBuffer)
     {
         const auto &imageViews = swapchain.GetImageViews();
         const VkExtent2D &extent = swapchain.GetExtent();
@@ -36,12 +42,15 @@ namespace ve
 
         for (size_t i = 0; i < imageViews.size(); ++i)
         {
-            VkImageView attachments[] = {imageViews[i]};
+            VkImageView attachments[] = {
+                imageViews[i],
+                depthBuffer.GetView(),
+            };
 
             VkFramebufferCreateInfo framebufferInfo{
                 .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
                 .renderPass = renderPass.GetVkHandle(),
-                .attachmentCount = 1,
+                .attachmentCount = 2,
                 .pAttachments = attachments,
                 .width = extent.width,
                 .height = extent.height,
