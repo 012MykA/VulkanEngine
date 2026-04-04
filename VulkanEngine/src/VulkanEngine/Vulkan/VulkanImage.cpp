@@ -1,8 +1,7 @@
 #include "VulkanImage.hpp"
+#include <array>
 #include "VulkanLogicalDevice.hpp"
 #include "Debug/VulkanValidation.hpp"
-
-#include <array>
 
 namespace ve
 {
@@ -37,8 +36,6 @@ namespace ve
           m_Aspect(aspect),
           m_OwnsImage(false)
     {
-        // Swapchain images не принадлежат нам (OwnsImage=false),
-        // но ImageView нужен для Framebuffer
         CreateImageView(aspect, VK_IMAGE_VIEW_TYPE_2D);
     }
 
@@ -295,11 +292,8 @@ namespace ve
             mipHeight = nextH;
         }
 
-        // Последний mip-уровень остался в TRANSFER_DST (он не был переведён в TRANSFER_SRC в цикле).
-        // Нужно два отдельных барьера: один для [0..mipLevels-2] из SRC, другой для последнего из DST.
         std::array<VkImageMemoryBarrier2, 2> finalBarriers{};
 
-        // Уровни [0 .. mipLevels-2]: TRANSFER_SRC -> SHADER_READ_ONLY
         finalBarriers[0] = VkImageMemoryBarrier2{
             .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
             .srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
@@ -312,7 +306,6 @@ namespace ve
             .subresourceRange = {m_Aspect, 0, m_MipLevels - 1, 0, m_ArrayLayers},
         };
 
-        // Последний уровень: TRANSFER_DST -> SHADER_READ_ONLY
         finalBarriers[1] = VkImageMemoryBarrier2{
             .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
             .srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
