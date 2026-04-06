@@ -10,7 +10,7 @@
 #include "VulkanEngine/Vulkan/VulkanDepthBuffer.hpp"
 #include "VulkanEngine/Vulkan/VulkanFramebuffers.hpp"
 #include "VulkanEngine/Vulkan/VulkanCommandPool.hpp"
-#include "VulkanEngine/Vulkan/VulkanFrameData.hpp"
+#include "VulkanEngine/Vulkan/VulkanFrameManager.hpp"
 #include "VulkanEngine/Vulkan/VulkanImmediateSubmit.hpp"
 #include "VulkanEngine/Vulkan/VulkanDescriptor.hpp"
 #include "VulkanEngine/Vulkan/VulkanPipeline.hpp"

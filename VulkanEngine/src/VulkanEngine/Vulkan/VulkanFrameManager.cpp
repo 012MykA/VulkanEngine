@@ -1,4 +1,4 @@
-#include "VulkanFrameData.hpp"
+#include "VulkanFrameManager.hpp"
 #include "VulkanLogicalDevice.hpp"
 #include "VulkanCommandPool.hpp"
 #include "VulkanEngine/Core/Log.hpp"
