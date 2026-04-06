@@ -8,7 +8,7 @@
 
 namespace ve
 {
-    static constexpr uint32_t MAX_MATERIALS = 100;
+    static constexpr uint32_t MAX_MATERIALS = 10005;
 
     Renderer::Renderer(const Window &window)
     {
@@ -365,8 +365,8 @@ namespace ve
 
             // .cullMode = VK_CULL_MODE_NONE,
 
-            .depthTest = false,
-            .depthWrite = false,
+            .depthTest = true,
+            .depthWrite = true,
 
             .colorBlendAttachment = MakeOpaqueBlend(),
 

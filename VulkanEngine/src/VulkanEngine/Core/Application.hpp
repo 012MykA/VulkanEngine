@@ -69,9 +69,13 @@ namespace ve
         float m_LastFrameTime = 0.0f;
 
     private:
-        std::shared_ptr<Mesh> mesh;
-        std::shared_ptr<Material> material;
-        glm::mat4 transform = glm::mat4(1.0f);
+        struct RenderObject
+        {
+            std::shared_ptr<Mesh> mesh;
+            std::shared_ptr<Material> material;
+            glm::mat4 model = glm::mat4(1.0f);
+        };
+        std::vector<RenderObject> m_Objects;
 
     private:
         static Application *s_Instance;

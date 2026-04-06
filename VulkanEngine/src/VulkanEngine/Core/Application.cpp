@@ -1,8 +1,11 @@
 #include "Application.hpp"
-#include "VulkanEngine/Core/Timestep.hpp"
 #include "VulkanEngine/Utils/PlatformUtils.hpp"
+#include "VulkanEngine/Core/Timestep.hpp"
+#include "VulkanEngine/Core/Log.hpp"
 
 #include <cassert>
+
+#include <random>
 
 namespace ve
 {
@@ -24,7 +27,7 @@ namespace ve
 
         m_Renderer = std::make_unique<Renderer>(*m_Window);
 
-        m_Camera = std::make_unique<Camera>(*m_Window, CameraDesc{});
+        m_Camera = std::make_unique<Camera>(*m_Window, CameraDesc{.moveSpeed = 20.0f});
 
         // TODO: remove
         std::vector<Vertex> vertices = {
@@ -76,9 +79,43 @@ namespace ve
         auto defaultMaterial = std::make_shared<Material>();
         m_Renderer->BuildMaterial(*defaultMaterial);
 
-        mesh = cubeMesh;
-        material = defaultMaterial;
-        transform = glm::mat4(1.0f);
+        int count = 100;
+        float spacing = 2.0f;
+        float halfGrid = ((float)count - 1.0f) * spacing * 0.5f;
+
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+
+        for (int i = 0; i < count; ++i)
+        {
+            for (int j = 0; j < count; ++j)
+            {
+                float xPos = (float)i * spacing - halfGrid;
+                float yPos = (float)j * spacing - halfGrid;
+                float zPos = -10.0f;
+
+                auto material = std::make_shared<Material>();
+
+                float r = dis(gen);
+                float g = dis(gen);
+                float b = dis(gen);
+
+                material->SetAmbient({r, g, b});
+                material->SetName(std::to_string(r) + " " + std::to_string(g) + " " + std::to_string(b));
+                m_Renderer->BuildMaterial(*material);
+
+                RenderObject obj{
+                    .mesh = cubeMesh,
+                    .material = material,
+                    .model = glm::translate(glm::mat4(1.0f), glm::vec3(xPos, yPos, zPos)),
+                };
+
+                m_Objects.push_back(obj);
+            }
+        }
+
+        VE_CORE_INFO("Objects count: {}", m_Objects.size());
     }
 
     Application::~Application()
@@ -91,20 +128,32 @@ namespace ve
         while (m_Running)
         {
             float time = Time::GetTime();
-            Timestep timestep = time - m_LastFrameTime;
+            Timestep ts = time - m_LastFrameTime;
             m_LastFrameTime = time;
 
             if (!m_Minimized)
             {
                 for (Layer *layer : m_LayerStack)
                 {
-                    layer->OnUpdate(timestep);
+                    layer->OnUpdate(ts);
                 }
 
-                m_Camera->OnUpdate(timestep);
+                m_Camera->OnUpdate(ts);
 
                 m_Renderer->BeginFrame(*m_Camera);
-                m_Renderer->Submit(*mesh, *material, transform);
+
+                static float rot = 0.0f;
+                float speed = 50.0f;
+
+                for (const auto &obj : m_Objects)
+                {
+                    glm::mat4 transform = glm::rotate(obj.model, glm::radians(rot), glm::vec3(0.0f, 1.0f, 0.0f));
+
+                    m_Renderer->Submit(*obj.mesh, *obj.material, transform);
+                }
+
+                rot += speed * ts;
+
                 m_Renderer->EndFrame();
             }
 
