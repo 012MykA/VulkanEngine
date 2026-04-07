@@ -9,7 +9,8 @@ namespace ve
         const VulkanAllocator &allocator,
         const VulkanLogicalDevice &device,
         const VulkanDescriptorPool &pool,
-        const VulkanDescriptorSetLayout &layout)
+        const VulkanDescriptorSetLayout &layout,
+        const Texture& defaultWhite)
     {
         m_UBO = std::make_unique<VulkanBuffer>(allocator, MakeUniformBufferDesc(sizeof(MaterialData)));
 
@@ -23,8 +24,11 @@ namespace ve
             .range = sizeof(MaterialData),
         };
 
+        VkDescriptorImageInfo baseColorInfo = (m_BaseColorTexture ? *m_BaseColorTexture : defaultWhite).GetDescriptorInfo();
+
         VulkanDescriptorWriter(device.GetVkHandle())
             .WriteBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_DescriptorSet, bufferInfo)
+            .WriteImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_DescriptorSet, baseColorInfo)
             .Flush();
 
         VE_CORE_TRACE("Material '{}' built", m_Name);

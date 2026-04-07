@@ -92,17 +92,20 @@ namespace ve
         std::unique_ptr<VulkanFramebuffers> m_Framebuffers;
         std::unique_ptr<VulkanCommandPool> m_GraphicsCommandPool;
         std::unique_ptr<VulkanCommandPool> m_TransferCommandPool;
-        std::unique_ptr<VulkanFrameManager> m_FrameManager;
         std::unique_ptr<VulkanImmediateSubmit> m_GraphicsImmediateSubmit;
         std::unique_ptr<VulkanImmediateSubmit> m_TransferImmediateSubmit;
+        std::unique_ptr<VulkanFrameManager> m_FrameManager;
+
+        // Default resources
+        std::shared_ptr<Texture> m_DefaultWhiteTexture;
 
         // Descriptors
         std::unique_ptr<VulkanDescriptorSetLayout> m_GlobalSetLayout;   // set = 0, binding = 0
         std::unique_ptr<VulkanDescriptorSetLayout> m_MaterialSetLayout; // set = 1, binding = 0
         std::unique_ptr<VulkanDescriptorPool> m_DescriptorPool;
 
-        std::vector<std::unique_ptr<VulkanBuffer>> m_GlobalUBOs;
         GlobalUBO m_GlobalData{};
+        std::vector<std::unique_ptr<VulkanBuffer>> m_GlobalUBOs;
         std::vector<VkDescriptorSet> m_GlobalDescriptorSets;
 
         // Pipeline

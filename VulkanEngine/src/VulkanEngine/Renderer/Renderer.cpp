@@ -225,7 +225,8 @@ namespace ve
             *m_Allocator,
             *m_LogicalDevice,
             *m_DescriptorPool,
-            *m_MaterialSetLayout);
+            *m_MaterialSetLayout,
+            *m_DefaultWhiteTexture);
     }
 
     std::shared_ptr<Texture> Renderer::LoadTexture(const std::string &path, const TextureDesc &desc) const
@@ -308,6 +309,12 @@ namespace ve
 
         m_FrameManager = std::make_unique<VulkanFrameManager>(*m_LogicalDevice, *m_GraphicsCommandPool);
 
+        // Default resources
+        m_DefaultWhiteTexture = Texture::CreateSolid(
+            255, 255, 255, 255,
+            *m_Allocator, *m_LogicalDevice, *m_GraphicsImmediateSubmit);
+        // ---
+
         // Descriptor set layouts
         // set = 0, binding = 0
         m_GlobalSetLayout = std::make_unique<VulkanDescriptorSetLayout>(
@@ -317,11 +324,18 @@ namespace ve
                             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
                 .Build());
 
-        // set = 1, binding = 0
+        /**
+         * set = 1
+         * binding = 0 - MaterialData
+         * binding = 1 - BaseColorTexture
+         */
         m_MaterialSetLayout = std::make_unique<VulkanDescriptorSetLayout>(
             VulkanDescriptorSetLayout::Builder(*m_LogicalDevice)
                 .AddBinding(0,
                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                            VK_SHADER_STAGE_FRAGMENT_BIT)
+                .AddBinding(1,
+                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                             VK_SHADER_STAGE_FRAGMENT_BIT)
                 .Build());
 
@@ -333,6 +347,8 @@ namespace ve
                 .maxSets = VulkanFrameManager::k_MaxFramesInFlight + MAX_MATERIALS,
                 .poolSizes = {
                     {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VulkanFrameManager::k_MaxFramesInFlight + MAX_MATERIALS},
+                    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                     VulkanFrameManager::k_MaxFramesInFlight + MAX_MATERIALS * 1} // 1 textures by material count
                 },
             });
 
