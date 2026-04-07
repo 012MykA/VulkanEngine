@@ -14,7 +14,9 @@ namespace ve
         using RecordFn = std::function<void(VkCommandBuffer)>;
 
     public:
-        VulkanImmediateSubmit(const VulkanLogicalDevice &logicalDevice, const VulkanCommandPool &commandPool);
+        VulkanImmediateSubmit(const VulkanLogicalDevice &logicalDevice,
+                              const VulkanCommandPool &commandPool,
+                              VkQueue queue);
 
         ~VulkanImmediateSubmit();
 

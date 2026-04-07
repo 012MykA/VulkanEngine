@@ -5,9 +5,12 @@
 
 namespace ve
 {
-    VulkanImmediateSubmit::VulkanImmediateSubmit(const VulkanLogicalDevice &logicalDevice, const VulkanCommandPool &commandPool)
-        : m_Device(logicalDevice.GetVkHandle()), m_CommandPool(commandPool.GetVkHandle()),
-          m_Queue(logicalDevice.GetTransferQueue())
+    VulkanImmediateSubmit::VulkanImmediateSubmit(const VulkanLogicalDevice &logicalDevice,
+                                                 const VulkanCommandPool &commandPool,
+                                                 VkQueue queue)
+        : m_Device(logicalDevice.GetVkHandle()),
+          m_CommandPool(commandPool.GetVkHandle()),
+          m_Queue(queue)
     {
         VkCommandBufferAllocateInfo allocInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,

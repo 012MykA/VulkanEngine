@@ -31,7 +31,6 @@ namespace ve
         VkFormat format = VK_FORMAT_UNDEFINED;
         ImageType type = ImageType::Texture2D;
         VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
-
         VkImageUsageFlags extraUsage = 0;
     };
 
@@ -41,12 +40,10 @@ namespace ve
         VkFilter minFilter = VK_FILTER_LINEAR;
         VkSamplerMipmapMode mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
         VkSamplerAddressMode addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-
         float mipLodBias = 0.0f;
         float minLod = 0.0f;
         float maxLod = VK_LOD_CLAMP_NONE;
-        float maxAnisotropy = 16.0f;
-
+        float maxAnisotropy = 1.0f;
         VkBorderColor borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
         bool unnormalizedCoords = false;
     };
@@ -58,7 +55,7 @@ namespace ve
                     const VulkanLogicalDevice &logicalDevice,
                     const ImageDesc &desc);
 
-        // For swapchain image
+        // Constructor for swapchain image
         VulkanImage(const VulkanLogicalDevice &logicalDevice,
                     VkImage existingImage,
                     VkFormat format,
@@ -73,17 +70,17 @@ namespace ve
         VulkanImage &operator=(VulkanImage &&other) noexcept;
 
     public:
-        // Sampler
         void CreateSampler(const SamplerDesc &desc = {});
         void DestroySampler();
 
-        // Transitions
         void TransitionLayout(
             VkCommandBuffer cmd,
             VkImageLayout oldLayout,
             VkImageLayout newLayout,
-            VkPipelineStageFlags2 srcStage = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-            VkPipelineStageFlags2 dstStage = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) const;
+            VkPipelineStageFlags srcStage,
+            VkPipelineStageFlags dstStage,
+            VkAccessFlags srcAccess,
+            VkAccessFlags dstAccess);
 
         void TransitionToShaderRead(VkCommandBuffer cmd);
         void TransitionToColorAttachment(VkCommandBuffer cmd);
@@ -91,15 +88,14 @@ namespace ve
         void TransitionToTransferDst(VkCommandBuffer cmd);
         void TransitionToTransferSrc(VkCommandBuffer cmd);
 
-        // Copy
         void CopyFromBuffer(VkCommandBuffer cmd, VkBuffer srcBuffer,
                             uint32_t mipLevel = 0, uint32_t layer = 0) const;
 
-        // Mipmaps
+        // Must be in TRANSFER_DST before generating mips
+        // After it becomes SHADER_READ_ONLY_OPTIMAl
         void GenerateMipmaps(VkCommandBuffer cmd);
 
-    public:
-        // Getters
+    public: // Getters
         VkImage GetVkHandle() const { return m_Image; }
         VkImageView GetView() const { return m_ImageView; }
         VkSampler GetSampler() const { return m_Sampler; }
@@ -118,15 +114,12 @@ namespace ve
         void CreateImageView(VkImageAspectFlags aspect, VkImageViewType viewType);
         void Destroy();
 
-    private:
         static VkImageUsageFlags ResolveUsageFlags(const ImageDesc &desc);
         static VkImageAspectFlags ResolveAspectFlags(VkFormat format);
         static VkImageViewType ResolveViewType(const ImageDesc &desc);
 
     private:
         VkDevice m_Device = VK_NULL_HANDLE;
-
-        // nullptr for swapchain images
         const VulkanAllocator *m_Allocator = nullptr;
 
         VkImage m_Image = VK_NULL_HANDLE;
@@ -134,18 +127,14 @@ namespace ve
         VkSampler m_Sampler = VK_NULL_HANDLE;
 
         Allocation m_Allocation = {};
-
         VkFormat m_Format = VK_FORMAT_UNDEFINED;
         VkImageLayout m_CurrentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
         uint32_t m_Width = 0;
         uint32_t m_Height = 0;
         uint32_t m_MipLevels = 1;
         uint32_t m_ArrayLayers = 1;
-
         VkImageAspectFlags m_Aspect = VK_IMAGE_ASPECT_COLOR_BIT;
-
-        bool m_OwnsImage = true; // false for swapchain images
+        bool m_OwnsImage = true;
     };
 
 } // namespace ve

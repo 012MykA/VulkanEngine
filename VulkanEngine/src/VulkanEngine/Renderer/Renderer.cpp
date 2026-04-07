@@ -8,7 +8,7 @@
 
 namespace ve
 {
-    static constexpr uint32_t MAX_MATERIALS = 10005;
+    static constexpr uint32_t MAX_MATERIALS = 100;
 
     Renderer::Renderer(const Window &window)
     {
@@ -216,7 +216,7 @@ namespace ve
 
     void Renderer::UploadMesh(Mesh &mesh) const
     {
-        mesh.UploadToGPU(*m_Allocator, *m_ImmediateSubmit);
+        mesh.UploadToGPU(*m_Allocator, *m_TransferImmediateSubmit);
     }
 
     void Renderer::BuildMaterial(Material &material) const
@@ -226,6 +226,15 @@ namespace ve
             *m_LogicalDevice,
             *m_DescriptorPool,
             *m_MaterialSetLayout);
+    }
+
+    std::shared_ptr<Texture> Renderer::LoadTexture(const std::string &path, const TextureDesc &desc) const
+    {
+        return Texture::LoadFromFile(
+            path, desc,
+            *m_Allocator,
+            *m_LogicalDevice,
+            *m_GraphicsImmediateSubmit);
     }
 
     void Renderer::Init(const Window &window)
@@ -275,16 +284,29 @@ namespace ve
             *m_RenderPass,
             *m_DepthBuffer);
 
+        // Graphics command pool + graphics immediate submit
         m_GraphicsCommandPool = std::make_unique<VulkanCommandPool>(
             *m_LogicalDevice, *m_PhysicalDevice,
             CommandPoolDesc{.type = CommandPoolType::Graphics, .resetBuffer = true});
 
+        m_GraphicsImmediateSubmit = std::make_unique<VulkanImmediateSubmit>(
+            *m_LogicalDevice,
+            *m_GraphicsCommandPool,
+            m_LogicalDevice->GetGraphicsQueue());
+        // ---
+
+        // Transfer command pool + transfer immediate submit
         m_TransferCommandPool = std::make_unique<VulkanCommandPool>(
             *m_LogicalDevice, *m_PhysicalDevice,
             CommandPoolDesc{.type = CommandPoolType::Transfer, .transient = true});
 
+        m_TransferImmediateSubmit = std::make_unique<VulkanImmediateSubmit>(
+            *m_LogicalDevice,
+            *m_TransferCommandPool,
+            m_LogicalDevice->GetTransferQueue());
+        // ---
+
         m_FrameManager = std::make_unique<VulkanFrameManager>(*m_LogicalDevice, *m_GraphicsCommandPool);
-        m_ImmediateSubmit = std::make_unique<VulkanImmediateSubmit>(*m_LogicalDevice, *m_TransferCommandPool);
 
         // Descriptor set layouts
         // set = 0, binding = 0

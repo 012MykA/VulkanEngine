@@ -5,8 +5,6 @@
 
 #include <cassert>
 
-#include <random>
-
 namespace ve
 {
     Application *Application::s_Instance = nullptr;
@@ -27,7 +25,7 @@ namespace ve
 
         m_Renderer = std::make_unique<Renderer>(*m_Window);
 
-        m_Camera = std::make_unique<Camera>(*m_Window, CameraDesc{.moveSpeed = 20.0f});
+        m_Camera = std::make_unique<Camera>(*m_Window, CameraDesc{});
 
         // TODO: remove
         std::vector<Vertex> vertices = {
@@ -76,46 +74,52 @@ namespace ve
         cubeMesh->SetName("Cube");
         m_Renderer->UploadMesh(*cubeMesh);
 
+        // Materials
         auto defaultMaterial = std::make_shared<Material>();
         m_Renderer->BuildMaterial(*defaultMaterial);
 
-        int count = 100;
-        float spacing = 2.0f;
-        float halfGrid = ((float)count - 1.0f) * spacing * 0.5f;
+        auto neon = std::make_shared<Material>();
+        neon->SetName("Neon");
+        neon->SetAmbient({0.3f, 0.0f, 0.5f});
+        neon->SetDiffuse({0.9f, 0.1f, 1.0f});
+        neon->SetSpecular({1.0f, 1.0f, 1.0f});
+        neon->SetShininess(256.0f);
+        m_Renderer->BuildMaterial(*neon);
 
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+        auto emerald = std::make_shared<Material>();
+        emerald->SetName("Emerald");
+        emerald->SetAmbient({0.02f, 0.1f, 0.02f});
+        emerald->SetDiffuse({0.07f, 0.6f, 0.15f});
+        emerald->SetSpecular({0.9f, 1.0f, 0.9f});
+        emerald->SetShininess(128.0f);
+        m_Renderer->BuildMaterial(*emerald);
 
-        for (int i = 0; i < count; ++i)
-        {
-            for (int j = 0; j < count; ++j)
-            {
-                float xPos = (float)i * spacing - halfGrid;
-                float yPos = (float)j * spacing - halfGrid;
-                float zPos = -10.0f;
+        // Textures
+        m_Texture = m_Renderer->LoadTexture(
+            "assets/textures/texture.jpg",
+            TextureDesc{});
 
-                auto material = std::make_shared<Material>();
+        // Objects
+        m_Objects.push_back(RenderObject{
+            .mesh = cubeMesh,
+            .material = defaultMaterial,
+            .model = glm::translate(glm::mat4(1.0f), {0.0f, 0.0f, 0.0f}),
+        });
 
-                float r = dis(gen);
-                float g = dis(gen);
-                float b = dis(gen);
+        m_Objects.push_back(RenderObject{
+            .mesh = cubeMesh,
+            .material = neon,
+            .model = glm::translate(glm::mat4(1.0f), {1.0f, 1.0f, -2.0f}),
+        });
 
-                material->SetAmbient({r, g, b});
-                material->SetName(std::to_string(r) + " " + std::to_string(g) + " " + std::to_string(b));
-                m_Renderer->BuildMaterial(*material);
-
-                RenderObject obj{
-                    .mesh = cubeMesh,
-                    .material = material,
-                    .model = glm::translate(glm::mat4(1.0f), glm::vec3(xPos, yPos, zPos)),
-                };
-
-                m_Objects.push_back(obj);
-            }
-        }
+        m_Objects.push_back(RenderObject{
+            .mesh = cubeMesh,
+            .material = emerald,
+            .model = glm::translate(glm::mat4(1.0f), {-1.0f, 0.5f, -1.5f}),
+        });
 
         VE_CORE_INFO("Objects count: {}", m_Objects.size());
+        // ---
     }
 
     Application::~Application()

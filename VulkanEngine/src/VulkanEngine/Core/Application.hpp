@@ -69,6 +69,8 @@ namespace ve
         float m_LastFrameTime = 0.0f;
 
     private:
+        std::shared_ptr<Texture> m_Texture;
+
         struct RenderObject
         {
             std::shared_ptr<Mesh> mesh;

@@ -18,6 +18,7 @@
 #include "Camera.hpp"
 #include "Mesh.hpp"
 #include "Material.hpp"
+#include "Texture.hpp"
 
 #include <glm/glm.hpp>
 
@@ -61,12 +62,19 @@ namespace ve
         void HandleResize(uint32_t width, uint32_t height);
 
     public: // Upload data
+            // Mesh
         void UploadMesh(Mesh &mesh) const;
+
+        // Material
         void BuildMaterial(Material &material) const;
+
+        // Texture
+        std::shared_ptr<Texture> LoadTexture(const std::string &path, const TextureDesc &desc) const;
 
     public: // Getters
         const VulkanAllocator &GetAllocator() const { return *m_Allocator; }
-        const VulkanImmediateSubmit &GetImmediateSubmit() { return *m_ImmediateSubmit; }
+        const VulkanImmediateSubmit &GetGraphicsImmediateSubmit() { return *m_GraphicsImmediateSubmit; }
+        const VulkanImmediateSubmit &GetTransferImmediateSubmit() { return *m_TransferImmediateSubmit; }
 
     private:
         void Init(const Window &window);
@@ -85,7 +93,8 @@ namespace ve
         std::unique_ptr<VulkanCommandPool> m_GraphicsCommandPool;
         std::unique_ptr<VulkanCommandPool> m_TransferCommandPool;
         std::unique_ptr<VulkanFrameManager> m_FrameManager;
-        std::unique_ptr<VulkanImmediateSubmit> m_ImmediateSubmit;
+        std::unique_ptr<VulkanImmediateSubmit> m_GraphicsImmediateSubmit;
+        std::unique_ptr<VulkanImmediateSubmit> m_TransferImmediateSubmit;
 
         // Descriptors
         std::unique_ptr<VulkanDescriptorSetLayout> m_GlobalSetLayout;   // set = 0, binding = 0
