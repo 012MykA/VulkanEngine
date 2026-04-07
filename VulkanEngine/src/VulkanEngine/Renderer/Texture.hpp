@@ -35,7 +35,7 @@ namespace ve
 
         static std::shared_ptr<Texture> LoadFromFile(
             const std::string &path,
-            const TextureDesc &desc,
+            TextureDesc desc,
             const VulkanAllocator &allocator,
             const VulkanLogicalDevice &logicalDevice,
             const VulkanImmediateSubmit &upload);
@@ -64,31 +64,29 @@ namespace ve
         VulkanImage &GetImage() { return *m_Image; }
         const VulkanImage &GetImage() const { return *m_Image; }
 
-        VkDescriptorImageInfo GetDescriptorInfo() const;
+        VkDescriptorImageInfo GetDescriptorInfo() const { return m_Image->GetDescriptorInfo(); }
 
         uint32_t GetWidth() const { return m_Width; }
         uint32_t GetHeight() const { return m_Height; }
         uint32_t GetMipLevels() const { return m_MipLevels; }
-
         const std::string &GetPath() const { return m_Path; }
 
     private:
-        void UploadPixels(
-            const uint8_t *pixels,
+        void InitializeAndUpload(
+            const void *pixels,
             uint32_t width,
             uint32_t height,
-            uint32_t channels,
+            const TextureDesc &desc,
             const VulkanAllocator &allocator,
             const VulkanLogicalDevice &logicalDevice,
             const VulkanImmediateSubmit &upload);
 
-    private:
         static VkFormat ResolveVkFormat(TextureFormat format);
         static uint32_t CalcMipLevels(uint32_t w, uint32_t h);
+        static size_t GetPixelSize(TextureFormat format);
 
     private:
         std::unique_ptr<VulkanImage> m_Image;
-
         uint32_t m_Width = 0;
         uint32_t m_Height = 0;
         uint32_t m_MipLevels = 1;

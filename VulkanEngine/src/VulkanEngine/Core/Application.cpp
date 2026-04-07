@@ -75,51 +75,58 @@ namespace ve
         m_Renderer->UploadMesh(*cubeMesh);
 
         // Textures
-        m_Texture = m_Renderer->LoadTexture(
+        auto basicTexture = m_Renderer->LoadTexture(
             "assets/textures/texture.jpg",
-            TextureDesc{});
+            TextureDesc{
+                .generateMips = false,
+            });
+
+        auto mipmappedTexture = m_Renderer->LoadTexture(
+            "assets/textures/texture.jpg",
+            TextureDesc{
+                .generateMips = true,
+            });
 
         // Materials
         auto defaultMaterial = std::make_shared<Material>();
-        defaultMaterial->SetBaseColorTexture(m_Texture);
+        defaultMaterial->SetBaseColorTexture(basicTexture);
+        defaultMaterial->SetName("Default");
         m_Renderer->BuildMaterial(*defaultMaterial);
 
-        auto neon = std::make_shared<Material>();
-        neon->SetName("Neon");
-        neon->SetAmbient({0.3f, 0.0f, 0.5f});
-        neon->SetDiffuse({0.9f, 0.1f, 1.0f});
-        neon->SetSpecular({1.0f, 1.0f, 1.0f});
-        neon->SetShininess(256.0f);
-        m_Renderer->BuildMaterial(*neon);
-
-        auto emerald = std::make_shared<Material>();
-        emerald->SetName("Emerald");
-        emerald->SetAmbient({0.02f, 0.1f, 0.02f});
-        emerald->SetDiffuse({0.07f, 0.6f, 0.15f});
-        emerald->SetSpecular({0.9f, 1.0f, 0.9f});
-        emerald->SetShininess(128.0f);
-        m_Renderer->BuildMaterial(*emerald);
+        auto mipmappedMaterial = std::make_shared<Material>();
+        mipmappedMaterial->SetBaseColorTexture(mipmappedTexture);
+        mipmappedMaterial->SetName("Mipmapped");
+        m_Renderer->BuildMaterial(*mipmappedMaterial);
 
         // Objects
         m_Objects.push_back(RenderObject{
             .mesh = cubeMesh,
             .material = defaultMaterial,
-            .model = glm::translate(glm::mat4(1.0f), {0.0f, 0.0f, 0.0f}),
+            .model = glm::translate(glm::mat4(1.0f), {-1.0f, 0.0f, -1.0f}),
         });
 
         m_Objects.push_back(RenderObject{
             .mesh = cubeMesh,
-            .material = neon,
-            .model = glm::translate(glm::mat4(1.0f), {1.0f, 1.0f, -2.0f}),
+            .material = defaultMaterial,
+            .model = glm::translate(glm::mat4(1.0f), {-0.5f, 0.0f, -20.0f}),
+        });
+
+        // mipmapped
+        m_Objects.push_back(RenderObject{
+            .mesh = cubeMesh,
+            .material = mipmappedMaterial,
+            .model = glm::translate(glm::mat4(1.0f), {1.0f, 0.0f, -1.0f}),
         });
 
         m_Objects.push_back(RenderObject{
             .mesh = cubeMesh,
-            .material = emerald,
-            .model = glm::translate(glm::mat4(1.0f), {-1.0f, 0.5f, -1.5f}),
+            .material = mipmappedMaterial,
+            .model = glm::translate(glm::mat4(1.0f), {0.5f, 0.0f, -20.0f}),
         });
 
         VE_CORE_INFO("Objects count: {}", m_Objects.size());
+
+        m_Renderer->SetLight({-1.0f, -1.0f, -1.0f});
         // ---
     }
 
@@ -152,9 +159,9 @@ namespace ve
 
                 for (const auto &obj : m_Objects)
                 {
-                    glm::mat4 transform = glm::rotate(obj.model, glm::radians(rot), glm::vec3(0.0f, 1.0f, 0.0f));
+                    // glm::mat4 transform = glm::rotate(obj.model, glm::radians(rot), glm::vec3(0.0f, 1.0f, 0.0f));
 
-                    m_Renderer->Submit(*obj.mesh, *obj.material, transform);
+                    m_Renderer->Submit(*obj.mesh, *obj.material, obj.model);
                 }
 
                 rot += speed * ts;

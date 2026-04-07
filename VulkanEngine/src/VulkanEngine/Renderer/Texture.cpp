@@ -7,52 +7,41 @@
 #include <stb_image.h>
 
 #include <cmath>
+#include <algorithm>
 
 namespace ve
 {
     std::shared_ptr<Texture> Texture::LoadFromFile(
         const std::string &path,
-        const TextureDesc &desc,
+        TextureDesc desc,
         const VulkanAllocator &allocator,
         const VulkanLogicalDevice &logicalDevice,
         const VulkanImmediateSubmit &upload)
     {
-        bool isHDR = stbi_is_hdr(path.c_str());
+        int w, h, channels;
+        void *pixels = nullptr;
 
-        int w = 0, h = 0, channels = 0;
-
-        if (isHDR)
+        if (stbi_is_hdr(path.c_str()))
         {
-            float *pixels = stbi_loadf(path.c_str(), &w, &h, &channels, STBI_rgb_alpha);
-            if (!pixels)
-                throw std::runtime_error("Texture: failed to load HDR: " + path);
-
-            auto tex = std::make_shared<Texture>();
-            tex->m_Path = path;
-            tex->UploadPixels(
-                reinterpret_cast<const uint8_t *>(pixels),
-                static_cast<uint32_t>(w),
-                static_cast<uint32_t>(h),
-                4, allocator, logicalDevice, upload);
-
-            stbi_image_free(pixels);
-            VE_CORE_TRACE("Texture loaded (HDR): {} ({}x{})", path, w, h);
-            return tex;
+            pixels = stbi_loadf(path.c_str(), &w, &h, &channels, STBI_rgb_alpha);
+            desc.format = TextureFormat::RGBA16_SFLOAT;
+        }
+        else
+        {
+            pixels = stbi_load(path.c_str(), &w, &h, &channels, STBI_rgb_alpha);
         }
 
-        stbi_uc *pixels = stbi_load(path.c_str(), &w, &h, &channels, STBI_rgb_alpha);
         if (!pixels)
-            throw std::runtime_error("Texture: failed to load: " + path);
+        {
+            VE_CORE_ERROR("Failed to load texture: {0}", path);
+            return nullptr;
+        }
 
         auto tex = std::make_shared<Texture>();
         tex->m_Path = path;
-        tex->UploadPixels(pixels,
-                          static_cast<uint32_t>(w),
-                          static_cast<uint32_t>(h),
-                          4, allocator, logicalDevice, upload);
+        tex->InitializeAndUpload(pixels, w, h, desc, allocator, logicalDevice, upload);
 
         stbi_image_free(pixels);
-        VE_CORE_TRACE("Texture loaded: {} ({}x{})", path, w, h);
         return tex;
     }
 
@@ -64,19 +53,14 @@ namespace ve
         const VulkanLogicalDevice &device,
         const VulkanImmediateSubmit &upload)
     {
-        int w = 0, h = 0, channels = 0;
-        stbi_uc *pixels = stbi_load_from_memory(data, static_cast<int>(size),
-                                                &w, &h, &channels, STBI_rgb_alpha);
+        int w, h, channels;
+        stbi_uc *pixels = stbi_load_from_memory(data, (int)size, &w, &h, &channels, STBI_rgb_alpha);
 
         if (!pixels)
-            throw std::runtime_error("Texture: failed to load from memory");
+            return nullptr;
 
         auto tex = std::make_shared<Texture>();
-        tex->UploadPixels(
-            pixels,
-            static_cast<uint32_t>(w),
-            static_cast<uint32_t>(h),
-            4, allocator, device, upload);
+        tex->InitializeAndUpload(pixels, w, h, desc, allocator, device, upload);
 
         stbi_image_free(pixels);
         return tex;
@@ -98,10 +82,8 @@ namespace ve
             .width = width,
             .height = height,
             .mipLevels = tex->m_MipLevels,
-            .arrayLayers = 1,
             .format = ResolveVkFormat(desc.format),
-            .type = ImageType::Texture2D,
-        };
+            .type = ImageType::Texture2D};
 
         tex->m_Image = std::make_unique<VulkanImage>(allocator, device, imageDesc);
         tex->m_Image->CreateSampler();
@@ -116,47 +98,52 @@ namespace ve
     {
         uint8_t pixels[4] = {r, g, b, a};
         auto tex = std::make_shared<Texture>();
-        tex->UploadPixels(pixels, 1, 1, 4, allocator, device, upload);
+
+        TextureDesc desc{.format = TextureFormat::RGBA8_UNORM, .generateMips = false};
+        tex->InitializeAndUpload(pixels, 1, 1, desc, allocator, device, upload);
+
         return tex;
     }
 
-    VkDescriptorImageInfo Texture::GetDescriptorInfo() const
-    {
-        return m_Image->GetDescriptorInfo();
-    }
-
-    void Texture::UploadPixels(
-        const uint8_t *pixels,
-        uint32_t width, uint32_t height, uint32_t channels,
+    void Texture::InitializeAndUpload(
+        const void *pixels,
+        uint32_t width,
+        uint32_t height,
+        const TextureDesc &desc,
         const VulkanAllocator &allocator,
         const VulkanLogicalDevice &logicalDevice,
         const VulkanImmediateSubmit &upload)
     {
         m_Width = width;
         m_Height = height;
-        m_MipLevels = CalcMipLevels(width, height);
+        m_MipLevels = desc.generateMips ? CalcMipLevels(width, height) : 1;
 
-        const VkDeviceSize imageSize = static_cast<VkDeviceSize>(width) * height * channels;
+        size_t pixelSize = GetPixelSize(desc.format);
+        VkDeviceSize dataSize = static_cast<VkDeviceSize>(width) * height * pixelSize;
 
-        // Staging buffer
-        VulkanBuffer staging(allocator, MakeStagingBufferDesc(imageSize));
-        staging.Upload(pixels, imageSize);
+        VulkanBuffer staging(allocator, MakeStagingBufferDesc(dataSize));
+        staging.Upload(pixels, dataSize);
 
         ImageDesc imageDesc{
-            .width = width,
-            .height = height,
+            .width = m_Width,
+            .height = m_Height,
             .mipLevels = m_MipLevels,
-            .arrayLayers = 1,
-            .format = VK_FORMAT_R8G8B8A8_SRGB,
+            .format = ResolveVkFormat(desc.format),
             .type = ImageType::Texture2D,
         };
         m_Image = std::make_unique<VulkanImage>(allocator, logicalDevice, imageDesc);
 
-        upload.Submit([&](VkCommandBuffer cmd)
-                      {
+        // clang-format off
+        upload.Submit([&](VkCommandBuffer cmd) {
             m_Image->TransitionToTransferDst(cmd);
             m_Image->CopyFromBuffer(cmd, staging.GetVkHandle());
-            m_Image->GenerateMipmaps(cmd); });
+
+            if (m_MipLevels > 1)
+                m_Image->GenerateMipmaps(cmd);
+            else
+                m_Image->TransitionToShaderRead(cmd);
+        });
+        // clang-format on
 
         m_Image->CreateSampler();
     }
@@ -166,13 +153,29 @@ namespace ve
         // clang-format off
         switch (format)
         {
-        case TextureFormat::RGBA8_SRGB:     return VK_FORMAT_R8G8B8A8_SRGB;
-        case TextureFormat::RGBA8_UNORM:    return VK_FORMAT_R8G8B8A8_UNORM;
-        case TextureFormat::RGBA16_SFLOAT:  return VK_FORMAT_R16G16B16A16_SFLOAT;
-        case TextureFormat::RG8_UNORM:      return VK_FORMAT_R8G8B8A8_UNORM;
-        case TextureFormat::R8_UNORM:       return VK_FORMAT_R8G8B8A8_UNORM;
+        case TextureFormat::RGBA8_SRGB:         return VK_FORMAT_R8G8B8A8_SRGB;
+        case TextureFormat::RGBA8_UNORM:
+            return VK_FORMAT_R8G8B8A8_UNORM;
+        case TextureFormat::RGBA16_SFLOAT:      return VK_FORMAT_R16G16B16A16_SFLOAT;
+        case TextureFormat::RG8_UNORM:          return VK_FORMAT_R8G8_UNORM;
+        case TextureFormat::R8_UNORM:           return VK_FORMAT_R8_UNORM;
+        default:                                return VK_FORMAT_UNDEFINED;
+        }
+        // clang-format on
+    }
 
-        default:                            throw std::runtime_error("Texture: unknown format");
+    size_t Texture::GetPixelSize(TextureFormat format)
+    {
+        // clang-format off
+        switch (format)
+        {
+        case TextureFormat::RGBA16_SFLOAT:          return 8;
+        case TextureFormat::RGBA8_SRGB:             return 4;
+        case TextureFormat::RGBA8_UNORM:            return 4;        
+        case TextureFormat::RG8_UNORM:              return 2;
+        case TextureFormat::R8_UNORM:               return 1;
+
+        default:                                    return 4;
         }
         // clang-format on
     }
