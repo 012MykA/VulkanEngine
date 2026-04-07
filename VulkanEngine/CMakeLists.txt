@@ -75,6 +75,7 @@ target_include_directories(${PROJECT_NAME}
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/spdlog/include
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/glm
 )
 
 target_link_libraries(${PROJECT_NAME}
