@@ -4,7 +4,7 @@
 #include "VulkanEngine/Core/LayerStack.hpp"
 #include "VulkanEngine/Events/Event.hpp"
 #include "VulkanEngine/Events/ApplicationEvent.hpp"
-#include "VulkanEngine/Renderer/Renderer.hpp"
+#include "VulkanEngine/Renderer/PBR/RendererPBR.hpp"
 #include "VulkanEngine/Renderer/Camera.hpp"
 
 #include <string>
@@ -59,7 +59,7 @@ namespace ve
         ApplicationDesc m_Desc;
         std::unique_ptr<Window> m_Window;
 
-        std::unique_ptr<Renderer> m_Renderer;
+        std::unique_ptr<RendererPBR> m_Renderer;
         std::unique_ptr<Camera> m_Camera;
 
     private:
@@ -69,12 +69,6 @@ namespace ve
         float m_LastFrameTime = 0.0f;
 
     private:
-        struct RenderObject
-        {
-            std::shared_ptr<Mesh> mesh;
-            std::shared_ptr<Material> material;
-            glm::mat4 model = glm::mat4(1.0f);
-        };
         std::vector<RenderObject> m_Objects;
 
     private:

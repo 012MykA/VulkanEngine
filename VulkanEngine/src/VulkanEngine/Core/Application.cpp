@@ -23,7 +23,7 @@ namespace ve
         m_Window = Window::Create(m_Desc.windowDesc);
         m_Window->SetEventCallback(VE_BIND_EVENT_FN(OnEvent));
 
-        m_Renderer = std::make_unique<Renderer>(*m_Window);
+        m_Renderer = std::make_unique<RendererPBR>(*m_Window);
 
         m_Camera = std::make_unique<Camera>(*m_Window, CameraDesc{});
 
@@ -75,58 +75,58 @@ namespace ve
         m_Renderer->UploadMesh(*cubeMesh);
 
         // Textures
-        auto basicTexture = m_Renderer->LoadTexture(
-            "assets/textures/texture.jpg",
-            TextureDesc{
-                .generateMips = false,
-            });
+        // auto basicTexture = m_Renderer->LoadTexture(
+        //     "assets/textures/texture.jpg",
+        //     TextureDesc{
+        //         .generateMips = false,
+        //     });
 
-        auto mipmappedTexture = m_Renderer->LoadTexture(
-            "assets/textures/texture.jpg",
-            TextureDesc{
-                .generateMips = true,
-            });
+        // auto mipmappedTexture = m_Renderer->LoadTexture(
+        //     "assets/textures/texture.jpg",
+        //     TextureDesc{
+        //         .generateMips = true,
+        //     });
 
         // Materials
-        auto defaultMaterial = std::make_shared<Material>();
-        defaultMaterial->SetBaseColorTexture(basicTexture);
-        defaultMaterial->SetName("Default");
-        m_Renderer->BuildMaterial(*defaultMaterial);
+        // auto defaultMaterial = std::make_shared<Material>();
+        // defaultMaterial->SetBaseColorTexture(basicTexture);
+        // defaultMaterial->SetName("Default");
+        // m_Renderer->BuildMaterial(*defaultMaterial);
 
-        auto mipmappedMaterial = std::make_shared<Material>();
-        mipmappedMaterial->SetBaseColorTexture(mipmappedTexture);
-        mipmappedMaterial->SetName("Mipmapped");
-        m_Renderer->BuildMaterial(*mipmappedMaterial);
+        // auto mipmappedMaterial = std::make_shared<Material>();
+        // mipmappedMaterial->SetBaseColorTexture(mipmappedTexture);
+        // mipmappedMaterial->SetName("Mipmapped");
+        // m_Renderer->BuildMaterial(*mipmappedMaterial);
 
         // Objects
         m_Objects.push_back(RenderObject{
             .mesh = cubeMesh,
-            .material = defaultMaterial,
-            .model = glm::translate(glm::mat4(1.0f), {-1.0f, 0.0f, -1.0f}),
+            // .material = defaultMaterial,
+            .transform = glm::translate(glm::mat4(1.0f), {-1.0f, 0.0f, -1.0f}),
         });
 
         m_Objects.push_back(RenderObject{
             .mesh = cubeMesh,
-            .material = defaultMaterial,
-            .model = glm::translate(glm::mat4(1.0f), {-0.5f, 0.0f, -20.0f}),
+            // .material = defaultMaterial,
+            .transform = glm::translate(glm::mat4(1.0f), {-0.5f, 0.0f, -20.0f}),
         });
 
         // mipmapped
         m_Objects.push_back(RenderObject{
             .mesh = cubeMesh,
-            .material = mipmappedMaterial,
-            .model = glm::translate(glm::mat4(1.0f), {1.0f, 0.0f, -1.0f}),
+            // .material = mipmappedMaterial,
+            .transform = glm::translate(glm::mat4(1.0f), {1.0f, 0.0f, -1.0f}),
         });
 
         m_Objects.push_back(RenderObject{
             .mesh = cubeMesh,
-            .material = mipmappedMaterial,
-            .model = glm::translate(glm::mat4(1.0f), {0.5f, 0.0f, -20.0f}),
+            // .material = mipmappedMaterial,
+            .transform = glm::translate(glm::mat4(1.0f), {0.5f, 0.0f, -20.0f}),
         });
 
         VE_CORE_INFO("Objects count: {}", m_Objects.size());
 
-        m_Renderer->SetLight({-1.0f, -1.0f, -1.0f});
+        // m_Renderer->SetLight({-1.0f, -1.0f, -1.0f});
         // ---
     }
 
@@ -159,9 +159,9 @@ namespace ve
 
                 for (const auto &obj : m_Objects)
                 {
-                    // glm::mat4 transform = glm::rotate(obj.model, glm::radians(rot), glm::vec3(0.0f, 1.0f, 0.0f));
+                    // glm::mat4 transform = glm::rotate(obj.transform, glm::radians(rot), glm::vec3(0.0f, 1.0f, 0.0f));
 
-                    m_Renderer->Submit(*obj.mesh, *obj.material, obj.model);
+                    m_Renderer->Submit(obj);
                 }
 
                 rot += speed * ts;

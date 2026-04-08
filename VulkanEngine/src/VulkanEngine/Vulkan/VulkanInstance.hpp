@@ -28,7 +28,7 @@ namespace ve
 
     struct InstanceDesc
     {
-        const char *appName = "Vulkan App";
+        const char *appName = "VulkanApp";
         uint32_t appVersion = VK_MAKE_VERSION(1, 0, 0);
         const char *engineName = "VulkanEngine";
         uint32_t engineVersion = VK_MAKE_VERSION(1, 0, 0);
