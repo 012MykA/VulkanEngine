@@ -4,6 +4,8 @@
 #include "VulkanEngine/Core/Timer.hpp"
 #include "VulkanEngine/Vulkan/Debug/VulkanValidation.hpp"
 
+#include <cassert>
+
 namespace ve
 {
     RendererPBR::RendererPBR(const Window &window)
@@ -79,9 +81,18 @@ namespace ve
             *m_TransferCommandPool,
             m_LogicalDevice->GetTransferQueue());
 
+        // Default resources
+        m_DefaultWhiteTexture = Texture::CreateSolid(
+            255, 255, 255, 255,
+            *m_Allocator, *m_LogicalDevice, *m_GraphicsImmediateSubmit);
+
+        m_DefaultNormalMap = Texture::CreateSolid(
+            128, 128, 255, 255,
+            *m_Allocator, *m_LogicalDevice, *m_GraphicsImmediateSubmit);
+
         /**
          * set = 0,
-         *   binding = 0
+         * binding = 0
          */
         m_GlobalSetLayout = std::make_unique<VulkanDescriptorSetLayout>(
             VulkanDescriptorSetLayout::Builder(*m_LogicalDevice)
@@ -89,12 +100,17 @@ namespace ve
                             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
                 .Build());
 
+        m_MaterialSetLayout = std::make_unique<VulkanDescriptorSetLayout>(MaterialPBR::CreateLayout(*m_LogicalDevice));
+
+        const uint32_t globalSetsCount = VulkanFrameManager::k_MaxFramesInFlight + k_MaxMaterials;
+        const uint32_t materialSetsCount = k_MaxMaterials;
         m_DescriptorPool = std::make_unique<VulkanDescriptorPool>(
             *m_LogicalDevice,
             DescriptorPoolDesc{
                 .maxSets = VulkanFrameManager::k_MaxFramesInFlight + k_MaxMaterials,
                 .poolSizes = {
-                    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VulkanFrameManager::k_MaxFramesInFlight + k_MaxMaterials},
+                    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, globalSetsCount + materialSetsCount},
+                    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, materialSetsCount * 5}, // 5 textures per material
                 },
             });
 
@@ -124,6 +140,7 @@ namespace ve
         m_PipelineLayout = std::make_unique<VulkanPipelineLayout>(
             VulkanPipelineLayout::Builder(*m_LogicalDevice)
                 .AddDescriptorSetLayout(m_GlobalSetLayout->GetVkHandle())
+                .AddDescriptorSetLayout(m_MaterialSetLayout->GetVkHandle())
                 .AddPushConstantRange<PushConstants>(VK_SHADER_STAGE_VERTEX_BIT)
                 .Build());
 
@@ -313,13 +330,18 @@ namespace ve
         m_Pipeline->Bind(cmd);
 
         // Bind descriptors
-        VkDescriptorSet sets[] = {m_GlobalDescriptorSets[frameIndex]};
+        assert(object.material != nullptr && "object.material should be a valid pointer");
+        
+        VkDescriptorSet sets[] = {
+            m_GlobalDescriptorSets[frameIndex],
+            object.material->GetDescriptorSet(),
+        };
         vkCmdBindDescriptorSets(
             cmd,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             m_PipelineLayout->GetVkHandle(),
             0,
-            1, sets,
+            2, sets,
             0, nullptr);
 
         // Bind push constants
@@ -330,6 +352,7 @@ namespace ve
             VK_SHADER_STAGE_VERTEX_BIT,
             0, sizeof(PushConstants), &pc);
 
+        assert(object.mesh != nullptr && "object.mesh should be a valid pointer");
         object.mesh->Bind(cmd);
         vkCmdDrawIndexed(cmd, object.mesh->GetIndexCount(), 1, 0, 0, 0);
     }
@@ -353,6 +376,26 @@ namespace ve
     void RendererPBR::UploadMesh(Mesh &mesh) const
     {
         mesh.UploadToGPU(*m_Allocator, *m_TransferImmediateSubmit);
+    }
+
+    void RendererPBR::BuildMaterial(MaterialPBR &material) const
+    {
+        material.Build(
+            *m_Allocator,
+            *m_LogicalDevice,
+            *m_DescriptorPool,
+            *m_MaterialSetLayout,
+            *m_DefaultWhiteTexture,
+            *m_DefaultNormalMap);
+    }
+
+    std::shared_ptr<Texture> RendererPBR::LoadTexture(const std::string &path, const TextureDesc &desc)
+    {
+        return Texture::LoadFromFile(
+            path, desc,
+            *m_Allocator,
+            *m_LogicalDevice,
+            *m_GraphicsImmediateSubmit);
     }
 
     void RendererPBR::RecreateSwapchain()

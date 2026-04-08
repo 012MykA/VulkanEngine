@@ -75,52 +75,45 @@ namespace ve
         m_Renderer->UploadMesh(*cubeMesh);
 
         // Textures
-        // auto basicTexture = m_Renderer->LoadTexture(
-        //     "assets/textures/texture.jpg",
-        //     TextureDesc{
-        //         .generateMips = false,
-        //     });
-
-        // auto mipmappedTexture = m_Renderer->LoadTexture(
-        //     "assets/textures/texture.jpg",
-        //     TextureDesc{
-        //         .generateMips = true,
-        //     });
+        auto mipTex = m_Renderer->LoadTexture("assets/textures/texture.jpg", TextureDesc{.generateMips = true});
+        auto noMipTex = m_Renderer->LoadTexture("assets/textures/texture.jpg", TextureDesc{.generateMips = false});
 
         // Materials
-        // auto defaultMaterial = std::make_shared<Material>();
-        // defaultMaterial->SetBaseColorTexture(basicTexture);
-        // defaultMaterial->SetName("Default");
-        // m_Renderer->BuildMaterial(*defaultMaterial);
+        auto mipMaterial = std::make_shared<MaterialPBR>();
+        mipMaterial->SetName("Default");
+        mipMaterial->SetBaseColor({0.8f, 0.8f, 0.8f, 1.0f});
+        mipMaterial->SetBaseColorMap(mipTex);
+        m_Renderer->BuildMaterial(*mipMaterial);
 
-        // auto mipmappedMaterial = std::make_shared<Material>();
-        // mipmappedMaterial->SetBaseColorTexture(mipmappedTexture);
-        // mipmappedMaterial->SetName("Mipmapped");
-        // m_Renderer->BuildMaterial(*mipmappedMaterial);
+        auto noMipMaterial = std::make_shared<MaterialPBR>();
+        noMipMaterial->SetName("Default");
+        noMipMaterial->SetBaseColor({0.8f, 0.8f, 0.8f, 1.0f});
+        noMipMaterial->SetBaseColorMap(noMipTex);
+        m_Renderer->BuildMaterial(*noMipMaterial);
 
         // Objects
         m_Objects.push_back(RenderObject{
             .mesh = cubeMesh,
-            // .material = defaultMaterial,
+            .material = mipMaterial,
             .transform = glm::translate(glm::mat4(1.0f), {-1.0f, 0.0f, -1.0f}),
         });
 
         m_Objects.push_back(RenderObject{
             .mesh = cubeMesh,
-            // .material = defaultMaterial,
+            .material = mipMaterial,
             .transform = glm::translate(glm::mat4(1.0f), {-0.5f, 0.0f, -20.0f}),
         });
 
         // mipmapped
         m_Objects.push_back(RenderObject{
             .mesh = cubeMesh,
-            // .material = mipmappedMaterial,
+            .material = noMipMaterial,
             .transform = glm::translate(glm::mat4(1.0f), {1.0f, 0.0f, -1.0f}),
         });
 
         m_Objects.push_back(RenderObject{
             .mesh = cubeMesh,
-            // .material = mipmappedMaterial,
+            .material = noMipMaterial,
             .transform = glm::translate(glm::mat4(1.0f), {0.5f, 0.0f, -20.0f}),
         });
 

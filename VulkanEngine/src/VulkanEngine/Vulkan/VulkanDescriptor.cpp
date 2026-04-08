@@ -228,8 +228,11 @@ namespace ve
         VkDescriptorSet set,
         std::span<const VkDescriptorImageInfo> imageInfos)
     {
-        const size_t offset = m_ImageInfos.size();
-        m_ImageInfos.insert(m_ImageInfos.end(), imageInfos.begin(), imageInfos.end());
+        size_t startIdx = m_ImageInfos.size();
+        for (const auto &info : imageInfos)
+        {
+            m_ImageInfos.push_back(info);
+        }
 
         m_Writes.push_back(VkWriteDescriptorSet{
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
@@ -238,7 +241,7 @@ namespace ve
             .dstArrayElement = 0,
             .descriptorCount = static_cast<uint32_t>(imageInfos.size()),
             .descriptorType = type,
-            .pImageInfo = m_ImageInfos.data() + offset,
+            .pImageInfo = &m_ImageInfos[startIdx],
         });
         return *this;
     }

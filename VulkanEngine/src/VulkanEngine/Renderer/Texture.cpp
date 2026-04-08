@@ -36,6 +36,7 @@ namespace ve
             VE_CORE_ERROR("Failed to load texture: {0}", path);
             return nullptr;
         }
+        VE_CORE_TRACE("Loaded texture: '{}'", path);
 
         auto tex = std::make_shared<Texture>();
         tex->m_Path = path;

@@ -1,0 +1,92 @@
+#pragma once
+
+#include "VulkanEngine/Vulkan/VulkanDescriptor.hpp"
+#include "VulkanEngine/Vulkan/VulkanBuffer.hpp"
+#include "VulkanEngine/Renderer/Texture.hpp"
+
+#include <glm/glm.hpp>
+#include <vulkan/vulkan.h>
+
+#include <string>
+#include <memory>
+
+namespace ve
+{
+    class VulkanAllocator;
+    class VulkanLogicalDevice;
+
+    struct alignas(16) MaterialPBRData
+    {
+        // --- Factors ---
+        glm::vec4 baseColorFactor = glm::vec4(1.0f);
+        glm::vec3 emissiveFactor = glm::vec3(0.0f);
+        float metallicFactor = 1.0f;
+        float roughnessFactor = 1.0f;
+        float alphaCutoff = 0.5f;
+        float normalScale = 1.0f;
+        float occlusionStrength = 1.0f;
+
+        // --- Texture Indices ---
+        int baseColorTextureIdx = -1;
+        int metallicRoughnessTextureIdx = -1; // B=metallic, G=roughness
+        int normalTextureIdx = -1;
+        int occlusionTextureIdx = -1;
+        int emissiveTextureIdx = -1;
+
+        // --- Modes ---
+        int alphaMode = 0; // 0: OPAQUE, 1: MASK, 2: BLEND
+        float _padding[2] = {0.0f, 0.0f};
+    };
+
+    class MaterialPBR
+    {
+    public:
+        MaterialPBR() = default;
+        ~MaterialPBR() = default;
+
+        MaterialPBR(const MaterialPBR &) = delete;
+        MaterialPBR &operator=(const MaterialPBR &) = delete;
+
+    public:
+        void Build(const VulkanAllocator &allocator,
+                   const VulkanLogicalDevice &logicalDevice,
+                   const VulkanDescriptorPool &pool,
+                   const VulkanDescriptorSetLayout &layout,
+                   const Texture &defaultWhite,
+                   const Texture &defaultNormalMap);
+
+        void UpdateGPU();
+
+    public:
+        static VulkanDescriptorSetLayout CreateLayout(const VulkanLogicalDevice &device);
+        VkDescriptorSet GetDescriptorSet() const { return m_DescriptorSet; }
+
+        const MaterialPBRData &GetData() const { return m_Data; }
+
+        void SetName(const std::string &name);
+        void SetBaseColor(const glm::vec4 &color);
+        void SetEmissive(const glm::vec3 &color);
+        void SetMetallic(float v);
+        void SetRoughness(float v);
+
+        void SetBaseColorMap(std::shared_ptr<Texture> tex);
+        void SetMetallicRoughnessMap(std::shared_ptr<Texture> tex);
+        void SetNormalMap(std::shared_ptr<Texture> tex);
+        void SetOcclusionMap(std::shared_ptr<Texture> tex);
+        void SetEmissiveMap(std::shared_ptr<Texture> tex);
+
+    private:
+        std::string m_Name = "Unnamed";
+        MaterialPBRData m_Data{};
+
+        std::shared_ptr<Texture> m_BaseColorMap;
+        std::shared_ptr<Texture> m_MetallicRoughnessMap;
+        std::shared_ptr<Texture> m_NormalMap;
+        std::shared_ptr<Texture> m_OcclusionMap;
+        std::shared_ptr<Texture> m_EmissiveMap;
+
+        std::unique_ptr<VulkanBuffer> m_UBO;
+        VkDescriptorSet m_DescriptorSet = VK_NULL_HANDLE;
+    };
+
+} // namespace ve

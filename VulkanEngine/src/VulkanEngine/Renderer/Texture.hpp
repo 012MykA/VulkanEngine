@@ -24,7 +24,7 @@ namespace ve
     struct TextureDesc
     {
         TextureFormat format = TextureFormat::RGBA8_SRGB;
-        bool generateMips = false;
+        bool generateMips = true;
         bool isCubemap = false;
     };
 

@@ -6,6 +6,7 @@
 #include <span>
 #include <cstdint>
 #include <initializer_list>
+#include <deque>
 
 namespace ve
 {
@@ -117,8 +118,8 @@ namespace ve
     private:
         VkDevice m_Device = VK_NULL_HANDLE;
         std::vector<VkWriteDescriptorSet> m_Writes;
-        std::vector<VkDescriptorBufferInfo> m_BufferInfos;
-        std::vector<VkDescriptorImageInfo> m_ImageInfos;
+        std::deque<VkDescriptorBufferInfo> m_BufferInfos;
+        std::deque<VkDescriptorImageInfo> m_ImageInfos;
     };
 
 } // namespace ve

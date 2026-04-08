@@ -16,9 +16,8 @@
 #include "VulkanEngine/Vulkan/VulkanFrameManager.hpp"
 
 #include "VulkanEngine/Renderer/Mesh.hpp"
-#include "VulkanEngine/Renderer/Material.hpp"
+#include "VulkanEngine/Renderer/PBR/MaterialPBR.hpp"
 
-#define GLM_FORCE_ALIGNED
 #include <glm/glm.hpp>
 
 #include <memory>
@@ -28,21 +27,21 @@ namespace ve
     class Window;
     class Camera;
 
-    struct GlobalUBO
+    struct alignas(16) GlobalUBO
     {
-        alignas(16) glm::mat4 view = glm::mat4(1.0f);
-        alignas(16) glm::mat4 proj = glm::mat4(1.0f);
+        glm::mat4 view = glm::mat4(1.0f);
+        glm::mat4 proj = glm::mat4(1.0f);
     };
 
     struct PushConstants
     {
-        glm::mat4 model;
+        glm::mat4 model = glm::mat4(1.0f);
     };
 
     struct RenderObject
     {
         std::shared_ptr<Mesh> mesh;
-        std::shared_ptr<Material> material;
+        std::shared_ptr<MaterialPBR> material;
         glm::mat4 transform = glm::mat4(1.0f);
     };
 
@@ -71,6 +70,10 @@ namespace ve
     public:
         void UploadMesh(Mesh &mesh) const;
 
+        void BuildMaterial(MaterialPBR &material) const;
+
+        std::shared_ptr<Texture> LoadTexture(const std::string &path, const TextureDesc &desc);
+
     private:
         void RecreateSwapchain();
 
@@ -93,7 +96,13 @@ namespace ve
         std::unique_ptr<VulkanCommandPool> m_TransferCommandPool;
         std::unique_ptr<VulkanImmediateSubmit> m_TransferImmediateSubmit;
 
+        // Default resources
+        std::shared_ptr<Texture> m_DefaultWhiteTexture;
+        std::shared_ptr<Texture> m_DefaultNormalMap;
+
+        // Descriptors
         std::unique_ptr<VulkanDescriptorSetLayout> m_GlobalSetLayout;
+        std::unique_ptr<VulkanDescriptorSetLayout> m_MaterialSetLayout;
         std::unique_ptr<VulkanDescriptorPool> m_DescriptorPool;
 
         GlobalUBO m_GlobalData{};
