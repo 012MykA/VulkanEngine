@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <future>
 
+#include "VulkanEngine/Core/Timer.hpp"
+
 namespace ve
 {
     enum class MapType
@@ -46,7 +48,11 @@ namespace ve
         }
 
         auto mat = std::make_shared<MaterialPBR>();
-        mat->SetName(path);
+
+        std::string matName = std::filesystem::path(path).filename().string();
+        mat->SetName(matName);
+
+        Timer timer;
 
         // --- Setting loading tasks ---
         std::vector<TextureTask> tasks;
@@ -133,6 +139,8 @@ namespace ve
             else if (name.contains("ao") || name.contains("occlusion")) mat->SetOcclusionMap(tex);
             // clang-format on
         }
+
+        VE_CORE_INFO("PBR Material '{}' loaded ({} ms)", matName, timer.ElapsedMilliseconds());
 
         return mat;
     }
