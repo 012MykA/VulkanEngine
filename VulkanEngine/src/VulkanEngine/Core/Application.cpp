@@ -78,28 +78,45 @@ namespace ve
         auto texture = m_Renderer->LoadTexture("assets/textures/texture.jpg", TextureDesc{});
 
         // Materials
+        auto victorianBrick = MaterialPBR::Load(
+            "assets/pbr_materials/victorian-brick",
+            m_Renderer->GetAllocator(),
+            m_Renderer->GetLogicalDevice(),
+            m_Renderer->GetGraphicsImmediateSubmit());
+        m_Renderer->BuildMaterial(*victorianBrick);
 
-        auto defaultMaterial = MaterialPBR::Load(
+        auto lightGold = MaterialPBR::Load(
             "assets/pbr_materials/light-gold",
             m_Renderer->GetAllocator(),
             m_Renderer->GetLogicalDevice(),
             m_Renderer->GetGraphicsImmediateSubmit());
-        m_Renderer->BuildMaterial(*defaultMaterial);
+        m_Renderer->BuildMaterial(*lightGold);
+
+        auto sloppyMortarStoneWall = MaterialPBR::Load(
+            "assets/pbr_materials/sloppy-mortar-stone-wall",
+            m_Renderer->GetAllocator(),
+            m_Renderer->GetLogicalDevice(),
+            m_Renderer->GetGraphicsImmediateSubmit());
+        m_Renderer->BuildMaterial(*sloppyMortarStoneWall);
 
         // Objects
         m_Objects.push_back(RenderObject{
             .mesh = cubeMesh,
-            .material = defaultMaterial,
-            .transform = glm::translate(glm::mat4(1.0f), {-1.0f, 0.0f, -1.0f}),
+            .material = victorianBrick,
+            .transform = glm::translate(glm::mat4(1.0f), {-2.0f, 0.0f, -1.0f}),
         });
 
         m_Objects.push_back(RenderObject{
             .mesh = cubeMesh,
-            .material = defaultMaterial,
-            .transform = glm::translate(glm::mat4(1.0f), {-0.5f, 0.0f, -20.0f}),
+            .material = lightGold,
+            .transform = glm::translate(glm::mat4(1.0f), {0.0f, 0.0f, -1.0f}),
         });
 
-        VE_CORE_INFO("Objects count: {}", m_Objects.size());
+        m_Objects.push_back(RenderObject{
+            .mesh = cubeMesh,
+            .material = sloppyMortarStoneWall,
+            .transform = glm::translate(glm::mat4(1.0f), {2.0f, 0.0f, -1.0f}),
+        });
         // ---
     }
 

@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <future>
 
-
 namespace ve
 {
     enum class MapType
@@ -152,6 +151,8 @@ namespace ve
                             const Texture &defaultWhite,
                             const Texture &defaultNormalMap)
     {
+        assert(m_DescriptorSet == VK_NULL_HANDLE && "Descriptor Set is already initialized. Use MaterialPBR::UpdateGPU to update data");
+
         m_UBO = std::make_unique<VulkanBuffer>(allocator, MakeUniformBufferDesc(sizeof(MaterialPBRData)));
         m_UBO->Upload(&m_Data, sizeof(MaterialPBRData));
 
