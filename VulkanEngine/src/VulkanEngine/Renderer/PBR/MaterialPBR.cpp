@@ -6,9 +6,27 @@
 #include <array>
 #include <filesystem>
 #include <algorithm>
+#include <future>
 
 namespace ve
 {
+    enum class MapType
+    {
+        BaseColor,
+        Emissive,
+        Roughness,
+        Metallic,
+        Normal,
+        Occlusion,
+        Unknown
+    };
+
+    struct TextureTask
+    {
+        std::string type;
+        std::future<std::shared_ptr<Texture>> futureTexture;
+    };
+
     std::shared_ptr<MaterialPBR> MaterialPBR::Load(const std::string &path,
                                                    const VulkanAllocator &allocator,
                                                    const VulkanLogicalDevice &logicalDevice,
@@ -30,99 +48,90 @@ namespace ve
         auto mat = std::make_shared<MaterialPBR>();
         mat->SetName(path);
 
+        // --- Setting loading tasks ---
+        std::vector<TextureTask> tasks;
+
         for (const auto &entry : std::filesystem::directory_iterator(path))
         {
             if (!entry.is_regular_file())
                 continue;
 
-            std::string filename = entry.path().filename().string();
             std::string filepath = entry.path().string();
+            std::string filename = entry.path().filename().string();
+            std::transform(filename.begin(), filename.end(), filename.begin(), ::tolower);
 
-            std::string lowerName = filename;
-            std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
+            MapType type = MapType::Unknown;
+            TextureFormat format = TextureFormat::RGBA8_UNORM;
 
-            if (lowerName.contains("albedo") || lowerName.contains("basecolor"))
+            if (filename.contains("albedo") || filename.contains("basecolor"))
             {
-                auto tex = Texture::LoadFromFile(
-                    filepath,
-                    TextureDesc{
-                        .format = TextureFormat::RGBA8_SRGB,
-                        .generateMips = generateMips,
-                    },
-                    allocator,
-                    logicalDevice,
-                    upload);
-
-                mat->SetBaseColorMap(tex);
+                type = MapType::BaseColor;
+                format = TextureFormat::RGBA8_SRGB;
             }
-            else if (lowerName.contains("emissive"))
+            else if (filename.contains("emissive"))
             {
-                auto tex = Texture::LoadFromFile(
-                    filepath,
-                    TextureDesc{
-                        .format = TextureFormat::RGBA8_SRGB,
-                        .generateMips = generateMips,
-                    },
-                    allocator,
-                    logicalDevice,
-                    upload);
-
-                mat->SetEmissiveMap(tex);
+                type = MapType::Emissive;
+                format = TextureFormat::RGBA8_SRGB;
             }
-            else if (lowerName.contains("roughness"))
+            else if (filename.contains("normal"))
             {
-                auto tex = Texture::LoadFromFile(
-                    filepath,
-                    TextureDesc{
-                        .format = TextureFormat::RGBA8_UNORM,
-                        .generateMips = generateMips,
-                    },
-                    allocator,
-                    logicalDevice,
-                    upload);
-
-                mat->SetRoughnessMap(tex);
+                type = MapType::Normal;
+                format = TextureFormat::RGBA8_UNORM;
             }
-            else if (lowerName.contains("metallic"))
+            else if (filename.contains("metallic"))
             {
-                auto tex = Texture::LoadFromFile(
-                    filepath,
-                    TextureDesc{
-                        .format = TextureFormat::RGBA8_UNORM,
-                        .generateMips = generateMips,
-                    },
-                    allocator,
-                    logicalDevice,
-                    upload);
-
-                mat->SetMetallicMap(tex);
+                type = MapType::Metallic;
+                format = TextureFormat::RGBA8_UNORM;
             }
-            else if (lowerName.contains("normal"))
+            else if (filename.contains("roughness"))
             {
-                auto tex = Texture::LoadFromFile(
-                    filepath,
-                    TextureDesc{
-                        .format = TextureFormat::RGBA8_UNORM,
-                        .generateMips = generateMips,
-                    },
-                    allocator,
-                    logicalDevice,
-                    upload);
-
-                mat->SetNormalMap(tex);
+                type = MapType::Roughness;
+                format = TextureFormat::RGBA8_UNORM;
             }
-            else if (lowerName.contains("ao") || lowerName.contains("ambient") || lowerName.contains("occlusion"))
+            else if (filename.contains("ao") || filename.contains("occlusion"))
             {
-                auto tex = Texture::LoadFromFile(
-                    filepath,
-                    TextureDesc{
-                        .format = TextureFormat::RGBA8_UNORM},
-                    allocator,
-                    logicalDevice,
-                    upload);
-
-                mat->SetOcclusionMap(tex);
+                type = MapType::Occlusion;
+                format = TextureFormat::RGBA8_UNORM;
             }
+
+            if (type == MapType::Unknown)
+                continue;
+
+            // clang-format off
+            tasks.push_back(TextureTask{
+                .type = filename,
+                .futureTexture = std::async(std::launch::async,
+                    [=, &allocator, &logicalDevice, &upload]()
+                    {
+                        return Texture::LoadFromFile(
+                            filepath,
+                            TextureDesc{
+                                .format = format,
+                                .generateMips = generateMips,
+                            },
+                            allocator, logicalDevice, upload);
+                    }
+                ),
+            });
+            // clang-format on
+        }
+
+        // Collection results
+        for (auto &task : tasks)
+        {
+            auto tex = task.futureTexture.get();
+            if (!tex)
+                continue;
+
+            // clang-format off
+            std::string name = task.type;
+            if (name.contains("albedo") || name.contains("basecolor"))  mat->SetBaseColorMap(tex);
+            else if (name.contains("emissive"))                         mat->SetEmissiveMap(tex);
+            else if (name.contains("normal"))                           mat->SetNormalMap(tex);
+            else if (name.contains("metallic"))                         mat->SetMetallicMap(tex);
+            else if (name.contains("roughness"))                        mat->SetRoughnessMap(tex);
+            else if (name.contains("ao") || name.contains("occlusion")) mat->SetOcclusionMap(tex);
+            // clang-format on
         }
 
         return mat;
