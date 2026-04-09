@@ -21,19 +21,21 @@ layout(set = 1, binding = 0) uniform MaterialPBRData {
 
     // --- Texture Indices ---
     int baseColorTextureIdx;
-    int metallicRoughnessTextureIdx;
+    int emissiveTextureIdx;
+    int metallicTextureIdx;
+    int roughnessTextureIdx;
     int normalTextureIdx;
     int occlusionTextureIdx;
-    int emissiveTextureIdx;
     
     int alphaMode;
 } u_Material;
 
 layout(set = 1, binding = 1) uniform sampler2D baseColorMap;
-layout(set = 1, binding = 2) uniform sampler2D metallicRoughnessMap;
-layout(set = 1, binding = 3) uniform sampler2D normalMap;
-layout(set = 1, binding = 4) uniform sampler2D occlusionMap;
-layout(set = 1, binding = 5) uniform sampler2D emissiveMap;
+layout(set = 1, binding = 2) uniform sampler2D emissiveMap;
+layout(set = 1, binding = 3) uniform sampler2D metallicMap;
+layout(set = 1, binding = 4) uniform sampler2D roughnessMap;
+layout(set = 1, binding = 5) uniform sampler2D normalMap;
+layout(set = 1, binding = 6) uniform sampler2D occlusionMap;
 
 layout(location = 0) out vec4 outColor;
 
@@ -42,6 +44,16 @@ void main()
     vec4 baseColor = u_Material.baseColorFactor;
     if (u_Material.baseColorTextureIdx != -1) {
         baseColor *= texture(baseColorMap, inTexCoord);
+    }
+
+    float metallic = u_Material.metallicFactor;
+    if (u_Material.metallicTextureIdx != -1) {
+        metallic *= texture(metallicMap, inTexCoord).r;
+    }
+
+    float roughness = u_Material.roughnessFactor;
+    if (u_Material.roughnessTextureIdx != -1) {
+        roughness *= texture(roughnessMap, inTexCoord).g;
     }
     
     outColor = baseColor;

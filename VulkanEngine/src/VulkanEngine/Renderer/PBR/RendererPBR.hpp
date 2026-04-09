@@ -74,6 +74,13 @@ namespace ve
 
         std::shared_ptr<Texture> LoadTexture(const std::string &path, const TextureDesc &desc);
 
+    public:
+        const VulkanLogicalDevice &GetLogicalDevice() const { return *m_LogicalDevice; }
+        const VulkanAllocator &GetAllocator() const { return *m_Allocator; }
+        const VulkanImmediateSubmit &GetGraphicsImmediateSubmit() { return *m_GraphicsImmediateSubmit; }
+        const VulkanImmediateSubmit &GetTransferImmediateSubmit() { return *m_TransferImmediateSubmit; }
+        const VulkanDescriptorPool &GetDescriptorPool() const { return *m_DescriptorPool; }
+
     private:
         void RecreateSwapchain();
 

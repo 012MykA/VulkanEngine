@@ -14,6 +14,7 @@ namespace ve
 {
     class VulkanAllocator;
     class VulkanLogicalDevice;
+    class VulkanImmediateSubmit;
 
     struct alignas(16) MaterialPBRData
     {
@@ -28,14 +29,15 @@ namespace ve
 
         // --- Texture Indices ---
         int baseColorTextureIdx = -1;
-        int metallicRoughnessTextureIdx = -1; // B=metallic, G=roughness
+        int emissiveTextureIdx = -1;
+        int metallicTextureIdx = -1; // B=metallic, G=roughness
+        int roughnessTextureIdx = -1;
         int normalTextureIdx = -1;
         int occlusionTextureIdx = -1;
-        int emissiveTextureIdx = -1;
 
         // --- Modes ---
         int alphaMode = 0; // 0: OPAQUE, 1: MASK, 2: BLEND
-        float _padding[2] = {0.0f, 0.0f};
+        float _padding[1];
     };
 
     class MaterialPBR
@@ -46,6 +48,12 @@ namespace ve
 
         MaterialPBR(const MaterialPBR &) = delete;
         MaterialPBR &operator=(const MaterialPBR &) = delete;
+
+        static std::shared_ptr<MaterialPBR> Load(const std::string &path,
+                                                 const VulkanAllocator &allocator,
+                                                 const VulkanLogicalDevice &logicalDevice,
+                                                 const VulkanImmediateSubmit &upload,
+                                                 bool generateMips = true);
 
     public:
         void Build(const VulkanAllocator &allocator,
@@ -62,6 +70,7 @@ namespace ve
         VkDescriptorSet GetDescriptorSet() const { return m_DescriptorSet; }
 
         const MaterialPBRData &GetData() const { return m_Data; }
+        bool IsBuilt() const { return m_DescriptorSet != VK_NULL_HANDLE; }
 
         void SetName(const std::string &name);
         void SetBaseColor(const glm::vec4 &color);
@@ -70,20 +79,22 @@ namespace ve
         void SetRoughness(float v);
 
         void SetBaseColorMap(std::shared_ptr<Texture> tex);
-        void SetMetallicRoughnessMap(std::shared_ptr<Texture> tex);
+        void SetEmissiveMap(std::shared_ptr<Texture> tex);
+        void SetMetallicMap(std::shared_ptr<Texture> tex);
+        void SetRoughnessMap(std::shared_ptr<Texture> tex);
         void SetNormalMap(std::shared_ptr<Texture> tex);
         void SetOcclusionMap(std::shared_ptr<Texture> tex);
-        void SetEmissiveMap(std::shared_ptr<Texture> tex);
 
     private:
         std::string m_Name = "Unnamed";
         MaterialPBRData m_Data{};
 
         std::shared_ptr<Texture> m_BaseColorMap;
-        std::shared_ptr<Texture> m_MetallicRoughnessMap;
+        std::shared_ptr<Texture> m_EmissiveMap;
+        std::shared_ptr<Texture> m_MetallicMap;
+        std::shared_ptr<Texture> m_RoughnessMap;
         std::shared_ptr<Texture> m_NormalMap;
         std::shared_ptr<Texture> m_OcclusionMap;
-        std::shared_ptr<Texture> m_EmissiveMap;
 
         std::unique_ptr<VulkanBuffer> m_UBO;
         VkDescriptorSet m_DescriptorSet = VK_NULL_HANDLE;

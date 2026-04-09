@@ -110,7 +110,7 @@ namespace ve
                 .maxSets = VulkanFrameManager::k_MaxFramesInFlight + k_MaxMaterials,
                 .poolSizes = {
                     {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, globalSetsCount + materialSetsCount},
-                    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, materialSetsCount * 5}, // 5 textures per material
+                    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, materialSetsCount * 6}, // 6 textures per material
                 },
             });
 
@@ -331,7 +331,7 @@ namespace ve
 
         // Bind descriptors
         assert(object.material != nullptr && "object.material should be a valid pointer");
-        
+
         VkDescriptorSet sets[] = {
             m_GlobalDescriptorSets[frameIndex],
             object.material->GetDescriptorSet(),

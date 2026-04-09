@@ -75,51 +75,31 @@ namespace ve
         m_Renderer->UploadMesh(*cubeMesh);
 
         // Textures
-        auto mipTex = m_Renderer->LoadTexture("assets/textures/texture.jpg", TextureDesc{.generateMips = true});
-        auto noMipTex = m_Renderer->LoadTexture("assets/textures/texture.jpg", TextureDesc{.generateMips = false});
+        auto texture = m_Renderer->LoadTexture("assets/textures/texture.jpg", TextureDesc{});
 
         // Materials
-        auto mipMaterial = std::make_shared<MaterialPBR>();
-        mipMaterial->SetName("Default");
-        mipMaterial->SetBaseColor({0.8f, 0.8f, 0.8f, 1.0f});
-        mipMaterial->SetBaseColorMap(mipTex);
-        m_Renderer->BuildMaterial(*mipMaterial);
 
-        auto noMipMaterial = std::make_shared<MaterialPBR>();
-        noMipMaterial->SetName("Default");
-        noMipMaterial->SetBaseColor({0.8f, 0.8f, 0.8f, 1.0f});
-        noMipMaterial->SetBaseColorMap(noMipTex);
-        m_Renderer->BuildMaterial(*noMipMaterial);
+        auto defaultMaterial = MaterialPBR::Load(
+            "assets/pbr_materials/light-gold",
+            m_Renderer->GetAllocator(),
+            m_Renderer->GetLogicalDevice(),
+            m_Renderer->GetGraphicsImmediateSubmit());
+        m_Renderer->BuildMaterial(*defaultMaterial);
 
         // Objects
         m_Objects.push_back(RenderObject{
             .mesh = cubeMesh,
-            .material = mipMaterial,
+            .material = defaultMaterial,
             .transform = glm::translate(glm::mat4(1.0f), {-1.0f, 0.0f, -1.0f}),
         });
 
         m_Objects.push_back(RenderObject{
             .mesh = cubeMesh,
-            .material = mipMaterial,
+            .material = defaultMaterial,
             .transform = glm::translate(glm::mat4(1.0f), {-0.5f, 0.0f, -20.0f}),
         });
 
-        // mipmapped
-        m_Objects.push_back(RenderObject{
-            .mesh = cubeMesh,
-            .material = noMipMaterial,
-            .transform = glm::translate(glm::mat4(1.0f), {1.0f, 0.0f, -1.0f}),
-        });
-
-        m_Objects.push_back(RenderObject{
-            .mesh = cubeMesh,
-            .material = noMipMaterial,
-            .transform = glm::translate(glm::mat4(1.0f), {0.5f, 0.0f, -20.0f}),
-        });
-
         VE_CORE_INFO("Objects count: {}", m_Objects.size());
-
-        // m_Renderer->SetLight({-1.0f, -1.0f, -1.0f});
         // ---
     }
 
