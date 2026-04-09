@@ -1,6 +1,7 @@
 #include "MaterialPBR.hpp"
 #include "VulkanEngine/Vulkan/VulkanAllocator.hpp"
 #include "VulkanEngine/Vulkan/VulkanLogicalDevice.hpp"
+#include "VulkanEngine/Core/Timer.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 
 #include <array>
@@ -8,7 +9,6 @@
 #include <algorithm>
 #include <future>
 
-#include "VulkanEngine/Core/Timer.hpp"
 
 namespace ve
 {
@@ -122,7 +122,7 @@ namespace ve
             // clang-format on
         }
 
-        // Collection results
+        // Collecting results
         for (auto &task : tasks)
         {
             auto tex = task.futureTexture.get();
@@ -179,8 +179,6 @@ namespace ve
             .WriteImage(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_DescriptorSet, normalMapInfo)
             .WriteImage(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_DescriptorSet, occlusionMapInfo)
             .Flush();
-
-        VE_CORE_TRACE("PBR Material '{}' built", m_Name);
     }
 
     void MaterialPBR::UpdateGPU()

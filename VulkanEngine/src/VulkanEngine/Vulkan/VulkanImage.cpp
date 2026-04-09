@@ -378,8 +378,6 @@ namespace ve
             2, finalBarriers);
 
         m_CurrentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-        VE_CORE_TRACE("Generated {} mipLevels for VulkanImage", m_MipLevels);
     }
 
     VkDescriptorImageInfo VulkanImage::GetDescriptorInfo() const
