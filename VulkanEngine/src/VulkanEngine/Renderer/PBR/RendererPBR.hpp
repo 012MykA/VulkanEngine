@@ -27,11 +27,19 @@ namespace ve
     class Window;
     class Camera;
 
+    struct PointLight
+    {
+        glm::vec4 position;
+        glm::vec4 color;
+    };
+
     struct GlobalUBO
     {
         alignas(16) glm::mat4 view;
         alignas(16) glm::mat4 proj;
         alignas(16) glm::vec4 cameraPos;
+
+        PointLight light;
     };
 
     struct PushConstants
@@ -63,6 +71,8 @@ namespace ve
         void EndFrame();
 
         void Submit(const RenderObject &object);
+
+        void SetLight(const glm::vec3 &position, const glm::vec3 &color, float intensity = 1.0f);
 
     public:
         void WaitIdle() const;

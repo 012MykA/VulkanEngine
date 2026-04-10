@@ -357,6 +357,12 @@ namespace ve
         vkCmdDrawIndexed(cmd, object.mesh->GetIndexCount(), 1, 0, 0, 0);
     }
 
+    void RendererPBR::SetLight(const glm::vec3 &position, const glm::vec3 &color, float intensity)
+    {
+        m_GlobalData.light.position = glm::vec4(position, 0.0f);
+        m_GlobalData.light.color = glm::vec4(color, intensity);
+    }
+
     void RendererPBR::WaitIdle() const
     {
         if (m_LogicalDevice)
