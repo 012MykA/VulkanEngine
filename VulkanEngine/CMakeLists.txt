@@ -34,11 +34,13 @@ add_subdirectory(vendor/spdlog)
 add_subdirectory(vendor/glfw)
 add_subdirectory(vendor/vma)
 add_subdirectory(vendor/glm)
+add_subdirectory(vendor/tinygltf)
 
 # Sources
 file(GLOB_RECURSE ENGINE_CORE_SOURCES src/VulkanEngine/*.cpp)
 file(GLOB_RECURSE PLATFORM_GLFW_SOURCES src/Platform/Glfw/*.cpp)
 set(STB_IMAGE_SOURCES vendor/stb/src/stb_image.c)
+set(STB_IMAGE_SOURCES vendor/tinygltf/tiny_gltf.cc)
 
 set(ALL_SOURCES
     ${ENGINE_CORE_SOURCES}
@@ -76,6 +78,7 @@ target_include_directories(${PROJECT_NAME}
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/spdlog/include
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb/include
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/glm
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tinygltf
 )
 
 target_link_libraries(${PROJECT_NAME}

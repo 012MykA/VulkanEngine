@@ -36,6 +36,8 @@ namespace ve
         Mesh(Mesh &&) noexcept = default;
         Mesh &operator=(Mesh &&) noexcept = default;
 
+        static std::shared_ptr<Mesh> Load(const std::string &path);
+
     public:
         void UploadToGPU(const VulkanAllocator &allocator, const VulkanImmediateSubmit &upload);
         void FreeCPUData();

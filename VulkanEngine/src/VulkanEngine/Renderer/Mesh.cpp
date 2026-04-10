@@ -2,8 +2,11 @@
 #include "VulkanEngine/Vulkan/VulkanImmediateSubmit.hpp"
 #include "VulkanEngine/Vulkan/VulkanLogicalDevice.hpp"
 #include "VulkanEngine/Core/Log.hpp"
+#include "VulkanEngine/Core/Timer.hpp"
 
+#include <tiny_gltf.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <cassert>
 
@@ -97,6 +100,124 @@ namespace ve
                 sub.bounds.Expand(m_Vertices[vi].position);
             }
         }
+    }
+
+    std::shared_ptr<Mesh> Mesh::Load(const std::string &path)
+    {
+        Timer timer;
+        
+        tinygltf::Model model;
+        tinygltf::TinyGLTF loader;
+        std::string err;
+        std::string warn;
+
+        bool ret = false;
+        if (path.substr(path.find_last_of(".") + 1) == "glb")
+        {
+            ret = loader.LoadBinaryFromFile(&model, &err, &warn, path);
+        }
+        else
+        {
+            ret = loader.LoadASCIIFromFile(&model, &err, &warn, path);
+        }
+
+        if (!warn.empty())
+            VE_CORE_WARN("GLTF Warning: {}", warn);
+        if (!err.empty())
+            VE_CORE_ERROR("GLTF Error: {}", err);
+        if (!ret)
+            return nullptr;
+
+        auto mesh = std::make_shared<Mesh>();
+        mesh->SetName(std::filesystem::path(path).filename().string());
+
+        std::vector<Vertex> allVertices;
+        std::vector<uint32_t> allIndices;
+
+        for (const auto &gltfMesh : model.meshes)
+        {
+            for (const auto &primitive : gltfMesh.primitives)
+            {
+                SubMesh sub;
+                sub.vertexOffset = static_cast<uint32_t>(allVertices.size());
+                sub.indexOffset = static_cast<uint32_t>(allIndices.size());
+                sub.materialIndex = primitive.material;
+
+                const tinygltf::Accessor &indexAccessor = model.accessors[primitive.indices];
+                const tinygltf::BufferView &indexBufferView = model.bufferViews[indexAccessor.bufferView];
+                const tinygltf::Buffer &indexBuffer = model.buffers[indexBufferView.buffer];
+
+                sub.indexCount = static_cast<uint32_t>(indexAccessor.count);
+                const unsigned char *indexData = &indexBuffer.data[indexBufferView.byteOffset + indexAccessor.byteOffset];
+
+                for (size_t i = 0; i < indexAccessor.count; ++i)
+                {
+                    if (indexAccessor.componentType == TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT)
+                    {
+                        allIndices.push_back(((uint32_t *)indexData)[i]);
+                    }
+                    else if (indexAccessor.componentType == TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT)
+                    {
+                        allIndices.push_back(((uint16_t *)indexData)[i]);
+                    }
+                }
+
+                const float *posPtr = nullptr;
+                const float *normPtr = nullptr;
+                const float *uvPtr = nullptr;
+                const float *tangentPtr = nullptr;
+                size_t vertexCount = 0;
+
+                if (primitive.attributes.count("POSITION"))
+                {
+                    const tinygltf::Accessor &acc = model.accessors[primitive.attributes.at("POSITION")];
+                    const tinygltf::BufferView &bv = model.bufferViews[acc.bufferView];
+                    posPtr = reinterpret_cast<const float *>(&(model.buffers[bv.buffer].data[acc.byteOffset + bv.byteOffset]));
+                    vertexCount = acc.count;
+                }
+
+                if (primitive.attributes.count("NORMAL"))
+                {
+                    const tinygltf::Accessor &acc = model.accessors[primitive.attributes.at("NORMAL")];
+                    const tinygltf::BufferView &bv = model.bufferViews[acc.bufferView];
+                    normPtr = reinterpret_cast<const float *>(&(model.buffers[bv.buffer].data[acc.byteOffset + bv.byteOffset]));
+                }
+
+                if (primitive.attributes.count("TEXCOORD_0"))
+                {
+                    const tinygltf::Accessor &acc = model.accessors[primitive.attributes.at("TEXCOORD_0")];
+                    const tinygltf::BufferView &bv = model.bufferViews[acc.bufferView];
+                    uvPtr = reinterpret_cast<const float *>(&(model.buffers[bv.buffer].data[acc.byteOffset + bv.byteOffset]));
+                }
+
+                if (primitive.attributes.count("TANGENT"))
+                {
+                    const tinygltf::Accessor &acc = model.accessors[primitive.attributes.at("TANGENT")];
+                    const tinygltf::BufferView &bv = model.bufferViews[acc.bufferView];
+                    tangentPtr = reinterpret_cast<const float *>(&(model.buffers[bv.buffer].data[acc.byteOffset + bv.byteOffset]));
+                }
+
+                for (size_t v = 0; v < vertexCount; ++v)
+                {
+                    Vertex vert{};
+                    vert.position = glm::make_vec3(&posPtr[v * 3]);
+                    vert.normal = normPtr ? glm::make_vec3(&normPtr[v * 3]) : glm::vec3(0.0f);
+                    vert.uv = uvPtr ? glm::make_vec2(&uvPtr[v * 2]) : glm::vec2(0.0f);
+                    vert.tangent = tangentPtr ? glm::make_vec4(&tangentPtr[v * 4]) : glm::vec4(0.0f);
+                    allVertices.push_back(vert);
+                }
+
+                mesh->AddSubMesh(sub);
+            }
+        }
+
+        VE_CORE_INFO("Mesh '{}' loaded ({} ms)", mesh->m_Name, timer.ElapsedMilliseconds());
+
+        mesh->SetVertices(std::move(allVertices));
+        mesh->SetIndices(std::move(allIndices));
+        mesh->ComputeBounds();
+
+        return mesh;
     }
 
     void Mesh::UploadToGPU(const VulkanAllocator &allocator, const VulkanImmediateSubmit &upload)
