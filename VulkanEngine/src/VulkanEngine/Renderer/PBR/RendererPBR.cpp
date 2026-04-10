@@ -210,7 +210,7 @@ namespace ve
         // Updating global UBO
         m_GlobalData.view = camera.GetViewMatrix();
         m_GlobalData.proj = camera.GetProjectionMatrix();
-
+        m_GlobalData.cameraPos = glm::vec4(camera.GetPosition(), 0.0f);
         m_GlobalUBOs[frameIndex]->Upload(&m_GlobalData, sizeof(GlobalUBO));
         // ---
 

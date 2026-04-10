@@ -41,6 +41,8 @@ namespace ve
         const glm::mat4 &GetViewMatrix() const { return m_ViewMatrix; }
         const glm::mat4 &GetProjectionMatrix() const { return m_ProjectionMatrix; }
 
+        const glm::vec3 &GetPosition() const { return m_Desc.position; }
+
     private:
         void UpdateProjection();
         void UpdateView();

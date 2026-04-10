@@ -27,22 +27,23 @@ namespace ve
     class Window;
     class Camera;
 
-    struct alignas(16) GlobalUBO
+    struct GlobalUBO
     {
-        glm::mat4 view = glm::mat4(1.0f);
-        glm::mat4 proj = glm::mat4(1.0f);
+        alignas(16) glm::mat4 view;
+        alignas(16) glm::mat4 proj;
+        alignas(16) glm::vec4 cameraPos;
     };
 
     struct PushConstants
     {
-        glm::mat4 model = glm::mat4(1.0f);
+        glm::mat4 model;
     };
 
     struct RenderObject
     {
         std::shared_ptr<Mesh> mesh;
         std::shared_ptr<MaterialPBR> material;
-        glm::mat4 transform = glm::mat4(1.0f);
+        glm::mat4 transform;
     };
 
     class RendererPBR

@@ -7,6 +7,7 @@ layout(location = 2) in vec2 inTexCoord;
 layout(set = 0, binding = 0) uniform GlobalUBO {
     mat4 view;
     mat4 proj;
+    vec4 cameraPos;
 } u_Global;
 
 layout(set = 1, binding = 0) uniform MaterialPBRData {
