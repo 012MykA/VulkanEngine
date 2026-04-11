@@ -62,23 +62,25 @@ namespace ve
         // Objects
         m_Objects.push_back(RenderObject{
             .mesh = sphereMesh,
-            .material = victorianBrick,
-            .transform = glm::translate(glm::mat4(1.0f), {-3.0f, 0.0f, -1.0f}),
+            .material = lightGold,
+            .transform = glm::translate(glm::mat4(1.0f), {-3.0f, 0.0f, 0.0f}),
         });
 
         m_Objects.push_back(RenderObject{
-            .mesh = sphereMesh,
-            .material = lightGold,
-            .transform = glm::translate(glm::mat4(1.0f), {0.0f, 0.0f, -1.0f}),
+            .mesh = cubeMesh,
+            .material = victorianBrick,
+            .transform = glm::translate(glm::mat4(1.0f), {0.0f, 0.0f, 0.0f}),
         });
 
         m_Objects.push_back(RenderObject{
             .mesh = cubeMesh,
             .material = sloppyMortarStoneWall,
-            .transform = glm::translate(glm::mat4(1.0f), {3.0f, 0.0f, -1.0f}),
+            .transform = glm::translate(glm::mat4(1.0f), {3.0f, 0.0f, 0.0f}),
         });
 
-        m_Renderer->SetLight({1.2f, 1.2f, 1.2f}, {1.0f, 1.0f, 1.0f}, 1.0f);
+        glm::vec3 lightPos = {-1.5f, 1.5f, 1.5f};
+
+        m_Renderer->SetLight(lightPos, glm::vec3(1.0f), 1.0f);
         // ---
     }
 

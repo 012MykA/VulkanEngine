@@ -58,7 +58,6 @@ void main() {
     // Albedo
     vec4 albedoRGBA = u_Material.baseColorFactor;
     if(u_Material.baseColorTextureIdx != -1) {
-        vec4 sampledColor = texture(baseColorMap, inTexCoord);
         albedoRGBA *= texture(baseColorMap, inTexCoord);
     }
     vec3 albedo = albedoRGBA.rgb;
@@ -89,7 +88,24 @@ void main() {
     }
 
     // --- Shading ---
-    vec3 N = normalize(inNormal);
+    vec3 N;
+    if(u_Material.normalTextureIdx != -1) {
+        vec3 tangent = normalize(inTangent.xyz);
+        vec3 normal = normalize(inNormal);
+        vec3 bitangent = normalize(cross(normal, tangent) * inTangent.w);
+
+        mat3 TBN = mat3(tangent, bitangent, normal);
+
+        vec3 localNormal = texture(normalMap, inTexCoord).rgb * 2.0 - 1.0;
+
+        localNormal.xy *= u_Material.normalScale;
+        localNormal = normalize(localNormal);
+
+        N = normalize(TBN * localNormal);
+    } else {
+        N = normalize(inNormal);
+    }
+
     vec3 V = normalize(u_Global.cameraPos.rgb - inWorldPos);
 
     vec3 F0 = vec3(0.04);
@@ -104,7 +120,8 @@ void main() {
         vec3 H = normalize(V + L);
         float distance = length(u_Global.light.position.rgb - inWorldPos);
         float attenuation = 1.0 / (distance * distance);
-        vec3 radiance = u_Global.light.color.rgb * attenuation;
+        float intensity = u_Global.light.color.a;
+        vec3 radiance = u_Global.light.color.rgb * intensity * attenuation;
 
         // cook-torrance brdf
         float NDF = DistributionGGX(N, H, roughness);
