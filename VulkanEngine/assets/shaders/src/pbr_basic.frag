@@ -21,6 +21,10 @@ layout(set = 0, binding = 0) uniform GlobalUBO {
     int lightCount;
 } u_Global;
 
+layout(set = 0, binding = 1) uniform samplerCube u_IrradianceMap;
+layout(set = 0, binding = 2) uniform samplerCube u_PrefilteredMap;
+layout(set = 0, binding = 3) uniform sampler2D u_BrdfLUT;
+
 layout(set = 1, binding = 0) uniform MaterialPBRData {
     // --- Factors ---
     vec4 baseColorFactor;
@@ -57,6 +61,26 @@ float DistributionGGX(vec3 N, vec3 H, float roughness);
 float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
 vec3 fresnelSchlick(float cosTheta, vec3 F0);
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness);
+
+// ACES Tone Mapping
+vec3 aces(vec3 x) {
+  const float a = 2.51;
+  const float b = 0.03;
+  const float c = 2.43;
+  const float d = 0.59;
+  const float e = 0.14;
+  return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+}
+
+float aces(float x) {
+  const float a = 2.51;
+  const float b = 0.03;
+  const float c = 2.43;
+  const float d = 0.59;
+  const float e = 0.14;
+  return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+}
 
 void main() {
     // Albedo
@@ -94,7 +118,7 @@ void main() {
     // Constants
     const vec3 DIELECTRIC_F0 = vec3(0.04);
 
-    const float AMBIENT_INTENSITY = 0.03;
+    const float AMBIENT_INTENSITY = 0.001;
 
     const float GAMMA = 2.2;
 
@@ -120,6 +144,7 @@ void main() {
     }
 
     vec3 V = normalize(u_Global.cameraPos.rgb - inWorldPos);
+    vec3 R = reflect(-V, -N);
 
     vec3 F0 = DIELECTRIC_F0;
     F0 = mix(F0, albedo, metallic);
@@ -155,13 +180,33 @@ void main() {
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
 
-    vec3 ambient = vec3(AMBIENT_INTENSITY) * albedo * occlusion;
-    vec3 color = ambient + Lo;
+    // --- IBL ---
+    float NdotV = max(dot(N, V), 0.0);
+    vec3 F = fresnelSchlickRoughness(NdotV, F0, roughness);
 
-    color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0 / GAMMA));
+    vec3 kS = F;
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metallic;    
 
-    outColor = vec4(color, 1.0);
+    // Diffuse IBL (Irradiance)
+    vec3 irradiance = texture(u_IrradianceMap, N).rgb;
+    vec3 diffuse = irradiance * albedo;
+
+    // Specular IBL (Prefiltered)
+    float lod = roughness * float(textureQueryLevels(u_PrefilteredMap) - 1);
+    vec3 prefilteredColor = textureLod(u_PrefilteredMap, R, lod).rgb;
+    vec2 brdf = texture(u_BrdfLUT, vec2(NdotV, roughness)).rg;
+    vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
+
+    // Ambient
+    vec3 ambient = (kD * diffuse + specular) * occlusion;
+
+    // Final color
+    vec3 color = ambient + Lo + emissive;
+
+    color = aces(color);
+
+    outColor = vec4(color, albedoRGBA.a);
 }
 
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
@@ -198,4 +243,8 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }

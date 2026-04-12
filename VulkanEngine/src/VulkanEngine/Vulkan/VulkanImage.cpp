@@ -411,6 +411,8 @@ namespace ve
 
     VkDescriptorImageInfo VulkanImage::GetDescriptorInfo() const
     {
+        assert(m_Sampler != VK_NULL_HANDLE && m_ImageView != VK_NULL_HANDLE);
+        
         VkDescriptorImageInfo info{
             .sampler = m_Sampler,
             .imageView = m_ImageView,

@@ -86,6 +86,7 @@ namespace ve
 
     public: // Getters
         VkBuffer GetVkHandle() const { return m_Buffer; }
+        Allocation GetAllocation() const { return m_Allocation; }
         VkDeviceSize GetSize() const { return m_Desc.size; }
         void *GetMappedPtr() const { return m_Allocation.mappedPtr; }
         bool IsMapped() const { return m_Allocation.mappedPtr != nullptr; }

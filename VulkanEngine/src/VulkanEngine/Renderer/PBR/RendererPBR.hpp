@@ -43,7 +43,9 @@ namespace ve
 
         alignas(16) PointLight lights[MAX_LIGHTS];
         int lightCount = 0;
-        float _padding[3];
+
+        float iblIntensity = 1.0f;
+        float _padding[2];
     };
 
     struct PushConstants
@@ -61,7 +63,7 @@ namespace ve
     class RendererPBR
     {
     public:
-        static constexpr uint32_t k_MaxMaterials = 4;
+        static constexpr uint32_t k_MaxMaterials = 3;
 
     public:
         explicit RendererPBR(const Window &window);
@@ -127,24 +129,33 @@ namespace ve
         std::shared_ptr<Texture> m_DefaultNormalMap;
 
         // Descriptors
-        std::unique_ptr<VulkanDescriptorSetLayout> m_GlobalSetLayout;
-        std::unique_ptr<VulkanDescriptorSetLayout> m_MaterialSetLayout;
         std::unique_ptr<VulkanDescriptorPool> m_DescriptorPool;
 
-        GlobalUBO m_GlobalData{};
-        std::vector<std::unique_ptr<VulkanBuffer>> m_GlobalUBOs;
+        // Global
+        std::unique_ptr<VulkanDescriptorSetLayout> m_GlobalSetLayout;
+        std::unique_ptr<VulkanDescriptorSetLayout> m_MaterialSetLayout;        
+        
         std::vector<VkDescriptorSet> m_GlobalDescriptorSets;
+        std::vector<std::unique_ptr<VulkanBuffer>> m_GlobalUBOs;
+
+        GlobalUBO m_GlobalData{};
+        std::shared_ptr<Texture> m_EnvironmentMap;
+        std::shared_ptr<Texture> m_IrradianceMap;
+        std::shared_ptr<Texture> m_PrefilteredMap;
+        std::shared_ptr<Texture> m_BrdfLUT;
 
         std::unique_ptr<VulkanPipelineLayout> m_PipelineLayout;
         std::unique_ptr<VulkanGraphicsPipeline> m_Pipeline;
 
         // Skybox
         std::unique_ptr<VulkanDescriptorSetLayout> m_SkyboxSetLayout;
+
+        VkDescriptorSet m_SkyboxDescriptorSet;
+        
         std::unique_ptr<VulkanPipelineLayout> m_SkyboxPipelineLayout;
         std::unique_ptr<VulkanGraphicsPipeline> m_SkyboxPipeline;
-        std::shared_ptr<Texture> m_EnvironmentMap;
-        VkDescriptorSet m_SkyboxDescriptorSet;
         std::shared_ptr<Mesh> m_SkyboxMesh;
+
 
         std::unique_ptr<VulkanFrameManager> m_FrameManager;
         uint32_t m_CurrentImageIndex = 0;

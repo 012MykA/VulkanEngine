@@ -3,6 +3,7 @@
 #include "VulkanEngine/Renderer/Camera.hpp"
 #include "VulkanEngine/Core/Timer.hpp"
 #include "VulkanEngine/Vulkan/Debug/VulkanValidation.hpp"
+#include "VulkanEngine/Renderer/PBR/IBLBaker.hpp"
 
 #include <cassert>
 
@@ -90,32 +91,59 @@ namespace ve
             128, 128, 255, 255,
             *m_Allocator, *m_LogicalDevice, *m_GraphicsImmediateSubmit);
 
-        /**
-         * set = 0,
-         * binding = 0
-         */
+        // Descriptors
+        constexpr uint32_t framesInFlight = VulkanFrameManager::k_MaxFramesInFlight;
+        constexpr uint32_t maxMats = k_MaxMaterials;
+
+        // Sets: global × frames + skybox + materials
+        constexpr uint32_t maxSets = framesInFlight + 1 + maxMats;
+
+        // UBOs: global UBO × frames + material UBO × mats
+        constexpr uint32_t uboCount = framesInFlight + maxMats;
+
+        // Samplers: IBL(3) × frames + skybox(1) + material textures(6) × mats
+        constexpr uint32_t samplerCount = (3 * framesInFlight) + 1 + (6 * maxMats);
+
+        m_DescriptorPool = std::make_unique<VulkanDescriptorPool>(
+            *m_LogicalDevice,
+            DescriptorPoolDesc{
+                .maxSets = maxSets,
+                .poolSizes = {
+                    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uboCount},
+                    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, samplerCount},
+                },
+            });
+
+        // Global
         m_GlobalSetLayout = std::make_unique<VulkanDescriptorSetLayout>(
             VulkanDescriptorSetLayout::Builder(*m_LogicalDevice)
-                .AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
+                .AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
+                .AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+                .AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+                .AddBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
                 .Build());
 
         m_MaterialSetLayout = std::make_unique<VulkanDescriptorSetLayout>(MaterialPBR::CreateLayout(*m_LogicalDevice));
 
-        const uint32_t globalSetsCount = VulkanFrameManager::k_MaxFramesInFlight + k_MaxMaterials;
-        const uint32_t materialSetsCount = k_MaxMaterials;
-        m_DescriptorPool = std::make_unique<VulkanDescriptorPool>(
-            *m_LogicalDevice,
-            DescriptorPoolDesc{
-                .maxSets = VulkanFrameManager::k_MaxFramesInFlight + k_MaxMaterials,
-                .poolSizes = {
-                    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, globalSetsCount + materialSetsCount},
-                    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, materialSetsCount * 6}, // 6 textures per material
-                },
-            });
-
         m_GlobalUBOs.resize(VulkanFrameManager::k_MaxFramesInFlight);
         m_GlobalDescriptorSets.resize(VulkanFrameManager::k_MaxFramesInFlight);
+
+        m_EnvironmentMap = Texture::LoadCubemapFromEquirect(
+            "../VulkanEngine/assets/textures/modern_evening_street_4k.hdr",
+            2048,
+            *m_Allocator,
+            *m_LogicalDevice,
+            *m_GraphicsImmediateSubmit);
+
+        auto iblResult = IBLBaker::Bake(
+            *m_EnvironmentMap,
+            *m_Allocator,
+            *m_LogicalDevice,
+            *m_GraphicsImmediateSubmit);
+
+        m_IrradianceMap = iblResult.irradianceMap;
+        m_PrefilteredMap = iblResult.prefilteredMap;
+        m_BrdfLUT = iblResult.brdfLUT;
 
         for (uint32_t i = 0; i < VulkanFrameManager::k_MaxFramesInFlight; i++)
         {
@@ -129,11 +157,15 @@ namespace ve
                 .range = sizeof(GlobalUBO),
             };
 
+            VkDescriptorImageInfo irradianceInfo = m_IrradianceMap->GetDescriptorInfo();
+            VkDescriptorImageInfo prefilteredInfo = m_PrefilteredMap->GetDescriptorInfo();
+            VkDescriptorImageInfo brdfInfo = m_BrdfLUT->GetDescriptorInfo();
+
             VulkanDescriptorWriter(m_LogicalDevice->GetVkHandle())
-                .WriteBuffer(0,
-                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                             m_GlobalDescriptorSets[i],
-                             bufferInfo)
+                .WriteBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_GlobalDescriptorSets[i], bufferInfo)
+                .WriteImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_GlobalDescriptorSets[i], irradianceInfo)
+                .WriteImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_GlobalDescriptorSets[i], prefilteredInfo)
+                .WriteImage(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_GlobalDescriptorSets[i], brdfInfo)
                 .Flush();
         }
 
@@ -181,13 +213,6 @@ namespace ve
                 .Build());
 
         m_SkyboxDescriptorSet = m_DescriptorPool->Allocate(m_SkyboxSetLayout->GetVkHandle());
-
-        m_EnvironmentMap = Texture::LoadCubemapFromEquirect(
-            "../VulkanEngine/assets/textures/modern_evening_street_4k.hdr",
-            1024,
-            *m_Allocator,
-            *m_LogicalDevice,
-            *m_GraphicsImmediateSubmit);
 
         VkDescriptorImageInfo envImageInfo = m_EnvironmentMap->GetDescriptorInfo();
         VulkanDescriptorWriter(m_LogicalDevice->GetVkHandle())

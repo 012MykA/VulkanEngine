@@ -94,7 +94,7 @@ namespace ve
         static uint32_t CalcMipLevels(uint32_t w, uint32_t h);
         static size_t GetPixelSize(TextureFormat format);
 
-    private:
+    protected:
         std::unique_ptr<VulkanImage> m_Image;
         uint32_t m_Width = 0;
         uint32_t m_Height = 0;

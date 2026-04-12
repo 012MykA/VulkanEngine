@@ -78,13 +78,13 @@ void ExampleLayer::SetupObjects()
     });
 
     m_Objects.push_back(ve::RenderObject{
-        .mesh = cubeMesh,
+        .mesh = sphereMesh,
         .material = victorianBrick,
         .transform = glm::translate(glm::mat4(1.0f), {0.0f, 0.0f, 0.0f}),
     });
 
     m_Objects.push_back(ve::RenderObject{
-        .mesh = cubeMesh,
+        .mesh = sphereMesh,
         .material = sloppyMortarStoneWall,
         .transform = glm::translate(glm::mat4(1.0f), {3.0f, 0.0f, 0.0f}),
     });
