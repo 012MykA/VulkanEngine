@@ -2,6 +2,7 @@
 #include "VulkanEngine/Vulkan/VulkanLogicalDevice.hpp"
 #include "VulkanEngine/Vulkan/VulkanImmediateSubmit.hpp"
 #include "VulkanEngine/Vulkan/VulkanBuffer.hpp"
+#include "VulkanEngine/Core/Timer.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 
 #include <stb_image.h>
@@ -10,6 +11,7 @@
 
 #include <cmath>
 #include <algorithm>
+#include <future>
 
 namespace ve
 {
@@ -55,101 +57,128 @@ namespace ve
         const VulkanLogicalDevice &logicalDevice,
         const VulkanImmediateSubmit &upload)
     {
-        // clang-format off
-        const glm::vec3 k_FaceDirs[6] = {
-            { 1,  0,  0}, {-1,  0,  0},
-            { 0,  1,  0}, { 0, -1,  0},
-            { 0,  0,  1}, { 0,  0, -1},
-        };
-        const glm::vec3 k_FaceUps[6] = {
-            { 0, -1,  0}, { 0, -1,  0},
-            { 0,  0,  1}, { 0,  0, -1},
-            { 0, -1,  0}, { 0, -1,  0},
-        };
-        // clang-format on
+        Timer timer;
 
-        int w, h, ch;
-        float *src = stbi_loadf(path.c_str(), &w, &h, &ch, STBI_rgb_alpha);
+        // --- Loading an HDR panorama ---
+        int srcW, srcH, ch;
+        float *src = stbi_loadf(path.c_str(), &srcW, &srcH, &ch, STBI_rgb_alpha);
         if (!src)
         {
             VE_CORE_ERROR("LoadCubemapFromEquirect: failed to load '{}'", path);
             return nullptr;
         }
 
+        // Axis table for 6 faces: +X -X +Y -Y +Z -Z
+        // dir — viewing direction from the cube's center to the face
+        // right — horizontal axis of the face (u increases to the right)
+        // up — vertical axis of the face (v increases up)
+        struct FaceAxes
+        {
+            glm::vec3 dir;
+            glm::vec3 right;
+            glm::vec3 up;
+        };
+        constexpr std::array<FaceAxes, 6> k_Faces{{
+            {{1, 0, 0}, {0, 0, -1}, {0, -1, 0}},  // +X
+            {{-1, 0, 0}, {0, 0, 1}, {0, -1, 0}},  // -X
+            {{0, 1, 0}, {1, 0, 0}, {0, 0, 1}},    // +Y
+            {{0, -1, 0}, {1, 0, 0}, {0, 0, -1}},  // -Y
+            {{0, 0, 1}, {1, 0, 0}, {0, -1, 0}},   // +Z
+            {{0, 0, -1}, {-1, 0, 0}, {0, -1, 0}}, // -Z
+        }};
+
         const uint32_t N = faceSize;
-        std::vector<float> cubeData(6 * N * N * 4);
+        const uint32_t pixelsPerFace = N * N;
+        std::vector<float> cubeData(6 * pixelsPerFace * 4);
+
+        std::vector<std::future<void>> jobs;
+        jobs.reserve(6);
 
         for (uint32_t face = 0; face < 6; face++)
         {
-            glm::vec3 dir = k_FaceDirs[face];
-            glm::vec3 up = k_FaceUps[face];
-            glm::vec3 right = glm::normalize(glm::cross(dir, up));
-            up = glm::normalize(glm::cross(right, dir));
+            // clang-format off
+            jobs.push_back(std::async(std::launch::async, [&, face]() {
+                const FaceAxes &ax = k_Faces[face];
+                float *facePtr = cubeData.data() + face * pixelsPerFace * 4;
 
-            float *facePtr = cubeData.data() + face * N * N * 4;
+                const float invN = 1.0f / static_cast<float>(N);
+                const float invW = 1.0f / static_cast<float>(srcW - 1);
+                const float invH = 1.0f / static_cast<float>(srcH - 1);
+                const float inv2Pi = 1.0f / (2.0f * glm::pi<float>());
+                const float invPi  = 1.0f / glm::pi<float>();
 
-            for (uint32_t y = 0; y < N; y++)
-            {
-                for (uint32_t x = 0; x < N; x++)
+                for (uint32_t y = 0; y < N; y++)
                 {
-                    // UV от -1 до 1
-                    float u = (2.0f * (x + 0.5f) / N) - 1.0f;
-                    float v = (2.0f * (y + 0.5f) / N) - 1.0f;
+                    // u/v from -1 to 1, pixel center
+                    const float v = (2.0f * (y + 0.5f) * invN) - 1.0f;
 
-                    glm::vec3 sample = glm::normalize(dir + u * right + v * up);
-
-                    // Spherical mapping
-                    float phi = std::atan2(sample.z, sample.x);
-                    float theta = std::asin(glm::clamp(sample.y, -1.0f, 1.0f));
-
-                    float su = (phi / (2.0f * glm::pi<float>())) + 0.5f;
-                    float sv = (theta / glm::pi<float>()) + 0.5f;
-
-                    su = glm::clamp(su, 0.0f, 1.0f);
-                    sv = glm::clamp(sv, 0.0f, 1.0f);
-
-                    float px = su * (w - 1);
-                    float py = sv * (h - 1);
-
-                    int x0 = (int)px, y0 = (int)py;
-                    int x1 = std::min(x0 + 1, w - 1);
-                    int y1 = std::min(y0 + 1, h - 1);
-
-                    float fx = px - x0, fy = py - y0;
-
-                    auto sample4 = [&](int sx, int sy) -> glm::vec4
+                    for (uint32_t x = 0; x < N; x++)
                     {
-                        const float *p = src + (sy * w + sx) * 4;
-                        return {p[0], p[1], p[2], p[3]};
-                    };
+                        const float u = (2.0f * (x + 0.5f) * invN) - 1.0f;
 
-                    glm::vec4 col =
-                        sample4(x0, y0) * (1 - fx) * (1 - fy) +
-                        sample4(x1, y0) * fx * (1 - fy) +
-                        sample4(x0, y1) * (1 - fx) * fy +
-                        sample4(x1, y1) * fx * fy;
+                        const glm::vec3 dir = glm::normalize(
+                            ax.dir + u * ax.right + v * ax.up);
 
-                    float *dst = facePtr + (y * N + x) * 4;
-                    dst[0] = col.r;
-                    dst[1] = col.g;
-                    dst[2] = col.b;
-                    dst[3] = col.a;
+                        // Spherical -> equirectangular UV
+                        // phi = [-pi, pi], theta = [-pi/2, pi/2]
+                        const float phi   = std::atan2(dir.z, dir.x);
+                        const float theta = std::asin(glm::clamp(dir.y, -1.0f, 1.0f));
+
+                        const float su = (phi * inv2Pi) + 0.5f;
+                        const float sv = (theta * invPi) + 0.5f;
+
+                        // Bilinear sample
+                        const float px = glm::clamp(su, 0.0f, 1.0f) * (srcW - 1);
+                        const float py = glm::clamp(sv, 0.0f, 1.0f) * (srcH - 1);
+
+                        const int x0 = static_cast<int>(px);
+                        const int y0 = static_cast<int>(py);
+                        const int x1 = std::min(x0 + 1, srcW - 1);
+                        const int y1 = std::min(y0 + 1, srcH - 1);
+
+                        const float fx = px - static_cast<float>(x0);
+                        const float fy = py - static_cast<float>(y0);
+                        const float wx = 1.0f - fx;
+                        const float wy = 1.0f - fy;
+
+                        const float *s00 = src + (y0 * srcW + x0) * 4;
+                        const float *s10 = src + (y0 * srcW + x1) * 4;
+                        const float *s01 = src + (y1 * srcW + x0) * 4;
+                        const float *s11 = src + (y1 * srcW + x1) * 4;
+
+                        float *dst = facePtr + (y * N + x) * 4;
+                        for (int c = 0; c < 4; c++)
+                        {
+                            dst[c] = s00[c] * wx * wy
+                                   + s10[c] * fx * wy
+                                   + s01[c] * wx * fy
+                                   + s11[c] * fx * fy;
+                        }
+                    }
                 }
-            }
+            }));
+            // clang-format on
         }
+
+        for (auto &j : jobs)
+            j.get();
         stbi_image_free(src);
 
+        // GPU Upload
         auto tex = std::make_shared<Texture>();
         tex->m_Width = N;
         tex->m_Height = N;
         tex->m_MipLevels = 1;
         tex->m_Path = path;
 
-        VkDeviceSize faceBytes = N * N * 4 * sizeof(float);
-        VkDeviceSize totalBytes = 6 * faceBytes;
+        const VkDeviceSize faceBytes = static_cast<VkDeviceSize>(pixelsPerFace) * 4 * sizeof(float);
+        const VkDeviceSize totalBytes = 6 * faceBytes;
 
         VulkanBuffer staging(allocator, MakeStagingBufferDesc(totalBytes));
         staging.Upload(cubeData.data(), totalBytes);
+
+        cubeData.clear();
+        cubeData.shrink_to_fit();
 
         ImageDesc imageDesc{
             .width = N,
@@ -161,39 +190,20 @@ namespace ve
         };
         tex->m_Image = std::make_unique<VulkanImage>(allocator, logicalDevice, imageDesc);
 
-        upload.Submit([&](VkCommandBuffer cmd)
-                      {
-        tex->m_Image->TransitionToTransferDst(cmd);
-
-        for (uint32_t face = 0; face < 6; face++)
-        {
-            VkBufferImageCopy region{
-                .bufferOffset      = face * faceBytes,
-                .bufferRowLength   = 0,
-                .bufferImageHeight = 0,
-                .imageSubresource{
-                    .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
-                    .mipLevel       = 0,
-                    .baseArrayLayer = face,
-                    .layerCount     = 1,
-                },
-                .imageOffset = {0, 0, 0},
-                .imageExtent = {N, N, 1},
-            };
-            vkCmdCopyBufferToImage(
-                cmd,
-                staging.GetVkHandle(),
-                tex->m_Image->GetVkHandle(),
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                1, &region);
-        }
-
-        tex->m_Image->TransitionToShaderRead(cmd); });
+        // clang-format off
+        upload.Submit([&](VkCommandBuffer cmd) {
+            tex->m_Image->TransitionToTransferDst(cmd);
+            tex->m_Image->CopyFromBufferAllLayers(cmd, staging.GetVkHandle(), faceBytes);
+            tex->m_Image->TransitionToShaderRead(cmd);
+        });
+        // clang-format on
 
         tex->m_Image->CreateSampler(SamplerDesc{
             .addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
         });
 
+        std::string filename = std::filesystem::path(path).filename().string();
+        VE_CORE_INFO("Cubemap '{}' loaded ({} ms)", filename, timer.ElapsedMilliseconds());
         return tex;
     }
 

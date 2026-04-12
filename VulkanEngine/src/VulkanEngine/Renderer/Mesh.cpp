@@ -105,14 +105,14 @@ namespace ve
     std::shared_ptr<Mesh> Mesh::Load(const std::string &path)
     {
         Timer timer;
-        
+
         tinygltf::Model model;
         tinygltf::TinyGLTF loader;
         std::string err;
         std::string warn;
 
         bool ret = false;
-        if (path.substr(path.find_last_of(".") + 1) == "glb")
+        if (path.ends_with(".glb"))
         {
             ret = loader.LoadBinaryFromFile(&model, &err, &warn, path);
         }
@@ -129,7 +129,9 @@ namespace ve
             return nullptr;
 
         auto mesh = std::make_shared<Mesh>();
-        mesh->SetName(std::filesystem::path(path).filename().string());
+
+        std::string filename = std::filesystem::path(path).filename().string();
+        mesh->SetName(filename);
 
         std::vector<Vertex> allVertices;
         std::vector<uint32_t> allIndices;
@@ -211,11 +213,13 @@ namespace ve
             }
         }
 
-        VE_CORE_INFO("Mesh '{}' loaded ({} ms)", mesh->m_Name, timer.ElapsedMilliseconds());
-
         mesh->SetVertices(std::move(allVertices));
         mesh->SetIndices(std::move(allIndices));
         mesh->ComputeBounds();
+
+        VE_CORE_INFO("Mesh '{}, loaded ({} ms)", mesh->m_Name, timer.ElapsedMilliseconds());
+        VE_CORE_INFO("  Vertices: {}", mesh->m_Vertices.size());
+        VE_CORE_INFO("  Indices: {}", mesh->m_Indices.size());
 
         return mesh;
     }
@@ -249,8 +253,6 @@ namespace ve
             stagingIB.CopyTo(cmd, *m_IndexBuffer);
         });
         // clang-format on
-
-        VE_CORE_TRACE("Mesh '{}' uploaded: {} vertices, {} indices", m_Name, m_Vertices.size(), m_Indices.size());
     }
 
     void Mesh::FreeCPUData()

@@ -9,7 +9,6 @@ namespace ve
     VulkanShader::VulkanShader(const VulkanLogicalDevice &device, const std::string &spvPath)
         : VulkanShader(device, LoadSpv(spvPath))
     {
-        VE_CORE_TRACE("Shader loaded: {}", spvPath);
     }
 
     VulkanShader::VulkanShader(const VulkanLogicalDevice &device, std::span<const uint32_t> spvCode)
@@ -282,8 +281,6 @@ namespace ve
 
         VkResult result = vkCreateGraphicsPipelines(m_Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);
         CHECK_VK_RESULT(result);
-
-        VE_CORE_TRACE("GraphicsPipeline created");
     }
 
     VulkanGraphicsPipeline::~VulkanGraphicsPipeline()

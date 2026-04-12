@@ -91,6 +91,9 @@ namespace ve
         void CopyFromBuffer(VkCommandBuffer cmd, VkBuffer srcBuffer,
                             uint32_t mipLevel = 0, uint32_t layer = 0) const;
 
+        void CopyFromBufferAllLayers(VkCommandBuffer cmd, VkBuffer srcBuffer,
+                                     VkDeviceSize faceByteSize) const;
+
         // Must be in TRANSFER_DST before generating mips
         // After it becomes SHADER_READ_ONLY_OPTIMAl
         void GenerateMipmaps(VkCommandBuffer cmd);

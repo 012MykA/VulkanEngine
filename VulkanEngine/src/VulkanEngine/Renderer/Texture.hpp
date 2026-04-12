@@ -40,11 +40,13 @@ namespace ve
             const VulkanLogicalDevice &logicalDevice,
             const VulkanImmediateSubmit &upload);
 
+        // Converts an equirectangular HDR panorama to a TextureCube on the CPU (face-by-face)
+        // faceSize is the size of a single face (512, 1024, 2048)
         static std::shared_ptr<Texture> LoadCubemapFromEquirect(
             const std::string &path,
             uint32_t faceSize,
             const VulkanAllocator &allocator,
-            const VulkanLogicalDevice &logicalDevice,
+            const VulkanLogicalDevice &device,
             const VulkanImmediateSubmit &upload);
 
         static std::shared_ptr<Texture> LoadFromMemory(

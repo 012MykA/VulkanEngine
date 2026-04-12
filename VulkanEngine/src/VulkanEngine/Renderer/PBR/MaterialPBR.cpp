@@ -24,7 +24,7 @@ namespace ve
 
     struct TextureTask
     {
-        std::string type;
+        MapType type;
         std::future<std::shared_ptr<Texture>> futureTexture;
     };
 
@@ -104,7 +104,7 @@ namespace ve
 
             // clang-format off
             tasks.push_back(TextureTask{
-                .type = filename,
+                .type = type,
                 .futureTexture = std::async(std::launch::async,
                     [=, &allocator, &logicalDevice, &upload]()
                     {
@@ -129,13 +129,15 @@ namespace ve
                 continue;
 
             // clang-format off
-            std::string name = task.type;
-            if (name.contains("albedo") || name.contains("basecolor"))  mat->SetBaseColorMap(tex);
-            else if (name.contains("emissive"))                         mat->SetEmissiveMap(tex);
-            else if (name.contains("normal"))                           mat->SetNormalMap(tex);
-            else if (name.contains("metallic"))                         mat->SetMetallicMap(tex);
-            else if (name.contains("roughness"))                        mat->SetRoughnessMap(tex);
-            else if (name.contains("ao") || name.contains("occlusion")) mat->SetOcclusionMap(tex);
+            switch (task.type)
+            {
+            case MapType::BaseColor:    mat->SetBaseColorMap(tex);  break;
+            case MapType::Emissive:     mat->SetEmissiveMap(tex);   break;
+            case MapType::Metallic:     mat->SetMetallicMap(tex);   break;
+            case MapType::Roughness:    mat->SetRoughnessMap(tex);  break;
+            case MapType::Normal:       mat->SetNormalMap(tex);     break;
+            case MapType::Occlusion:    mat->SetOcclusionMap(tex);  break;
+            }
             // clang-format on
         }
 

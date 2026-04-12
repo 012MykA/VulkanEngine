@@ -267,6 +267,35 @@ namespace ve
             1, &region);
     }
 
+    void VulkanImage::CopyFromBufferAllLayers(VkCommandBuffer cmd, VkBuffer srcBuffer,
+                                              VkDeviceSize faceByteSize) const
+    {
+        std::vector<VkBufferImageCopy> regions;
+        regions.reserve(m_ArrayLayers);
+
+        for (uint32_t layer = 0; layer < m_ArrayLayers; layer++)
+        {
+            regions.push_back(VkBufferImageCopy{
+                .bufferOffset = layer * faceByteSize,
+                .bufferRowLength = 0,
+                .bufferImageHeight = 0,
+                .imageSubresource{
+                    .aspectMask = m_Aspect,
+                    .mipLevel = 0,
+                    .baseArrayLayer = layer,
+                    .layerCount = 1,
+                },
+                .imageOffset = {0, 0, 0},
+                .imageExtent = {m_Width, m_Height, 1},
+            });
+        }
+
+        vkCmdCopyBufferToImage(
+            cmd, srcBuffer, m_Image,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            static_cast<uint32_t>(regions.size()), regions.data());
+    }
+
     void VulkanImage::GenerateMipmaps(VkCommandBuffer cmd)
     {
         if (m_MipLevels <= 1)
