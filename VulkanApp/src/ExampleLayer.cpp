@@ -63,12 +63,12 @@ void ExampleLayer::SetupObjects()
         m_Renderer->GetGraphicsImmediateSubmit());
     m_Renderer->BuildMaterial(*lightGold);
 
-    auto sloppyMortarStoneWall = ve::MaterialPBR::Load(
-        "assets/pbr_materials/sloppy-mortar-stone-wall",
+    auto carbonFiber = ve::MaterialPBR::Load(
+        "assets/pbr_materials/carbon-fiber",
         m_Renderer->GetAllocator(),
         m_Renderer->GetLogicalDevice(),
         m_Renderer->GetGraphicsImmediateSubmit());
-    m_Renderer->BuildMaterial(*sloppyMortarStoneWall);
+    m_Renderer->BuildMaterial(*carbonFiber);
 
     // Objects
     m_Objects.push_back(ve::RenderObject{
@@ -85,13 +85,13 @@ void ExampleLayer::SetupObjects()
 
     m_Objects.push_back(ve::RenderObject{
         .mesh = sphereMesh,
-        .material = sloppyMortarStoneWall,
+        .material = carbonFiber,
         .transform = glm::translate(glm::mat4(1.0f), {3.0f, 0.0f, 0.0f}),
     });
 
     // Lights
-    m_Renderer->AddLight({-1.5f, 1.5f, 1.5f}, glm::vec3(1.0f), 1.0f);
-    m_Renderer->AddLight({1.5f, 1.5f, -1.5f}, glm::vec3(1.0f), 1.0f);
+    // m_Renderer->AddLight({-1.5f, 1.5f, 1.5f}, glm::vec3(1.0f), 1.0f);
+    // m_Renderer->AddLight({1.5f, 1.5f, -1.5f}, glm::vec3(1.0f), 1.0f);
 }
 
 bool ExampleLayer::OnWindowResize(ve::WindowResizeEvent &e)

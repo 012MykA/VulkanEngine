@@ -2,6 +2,8 @@
 
 A simple engine written in C++/Vulkan.
 
+![PBR Rendering](Resources/PBR-Rendering.png)
+
 ## Getting Started with test app
 
 ### Download the [Vulkan SDK](https://vulkan.lunarg.com/sdk/home)
