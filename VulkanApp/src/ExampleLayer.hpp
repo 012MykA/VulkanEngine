@@ -3,7 +3,21 @@
 class ExampleLayer : public ve::Layer
 {
 public:
-    ExampleLayer() : ve::Layer("ExampleLayer")
-    {
-    }
+    ExampleLayer();
+    ~ExampleLayer() override;
+
+    virtual void OnAttach() override;
+    virtual void OnUpdate(ve::Timestep ts) override;
+    virtual void OnEvent(ve::Event &e) override;
+
+private:
+    void SetupObjects();
+
+    bool OnWindowResize(ve::WindowResizeEvent &e);
+
+private:
+    std::unique_ptr<ve::RendererPBR> m_Renderer;
+    std::unique_ptr<ve::Camera> m_Camera;
+
+    std::vector<ve::RenderObject> m_Objects;
 };

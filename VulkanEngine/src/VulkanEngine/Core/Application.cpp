@@ -22,70 +22,6 @@ namespace ve
 
         m_Window = Window::Create(m_Desc.windowDesc);
         m_Window->SetEventCallback(VE_BIND_EVENT_FN(OnEvent));
-
-        m_Renderer = std::make_unique<RendererPBR>(*m_Window);
-
-        m_Camera = std::make_unique<Camera>(*m_Window, CameraDesc{});
-
-        // TODO: remove
-        auto cubeMesh = Mesh::Load("assets/models/Cube.glb");
-        m_Renderer->UploadMesh(*cubeMesh);
-
-        auto sphereMesh = Mesh::Load("assets/models/Sphere.glb");
-        m_Renderer->UploadMesh(*sphereMesh);
-
-        // Textures
-        auto texture = m_Renderer->LoadTexture("assets/textures/texture.jpg", TextureDesc{});
-
-        // Materials
-        auto victorianBrick = MaterialPBR::Load(
-            "assets/pbr_materials/victorian-brick",
-            m_Renderer->GetAllocator(),
-            m_Renderer->GetLogicalDevice(),
-            m_Renderer->GetGraphicsImmediateSubmit());
-        m_Renderer->BuildMaterial(*victorianBrick);
-
-        auto lightGold = MaterialPBR::Load(
-            "assets/pbr_materials/light-gold",
-            m_Renderer->GetAllocator(),
-            m_Renderer->GetLogicalDevice(),
-            m_Renderer->GetGraphicsImmediateSubmit());
-        m_Renderer->BuildMaterial(*lightGold);
-
-        auto sloppyMortarStoneWall = MaterialPBR::Load(
-            "assets/pbr_materials/sloppy-mortar-stone-wall",
-            m_Renderer->GetAllocator(),
-            m_Renderer->GetLogicalDevice(),
-            m_Renderer->GetGraphicsImmediateSubmit());
-        m_Renderer->BuildMaterial(*sloppyMortarStoneWall);
-
-        // Objects
-        m_Objects.push_back(RenderObject{
-            .mesh = sphereMesh,
-            .material = lightGold,
-            .transform = glm::translate(glm::mat4(1.0f), {-3.0f, 0.0f, 0.0f}),
-        });
-
-        m_Objects.push_back(RenderObject{
-            .mesh = cubeMesh,
-            .material = victorianBrick,
-            .transform = glm::translate(glm::mat4(1.0f), {0.0f, 0.0f, 0.0f}),
-        });
-
-        m_Objects.push_back(RenderObject{
-            .mesh = cubeMesh,
-            .material = sloppyMortarStoneWall,
-            .transform = glm::translate(glm::mat4(1.0f), {3.0f, 0.0f, 0.0f}),
-        });
-
-        m_Renderer->AddLight({-1.5f, 1.5f, 1.5f}, glm::vec3(1.0f), 1.0f);
-        m_Renderer->AddLight({1.5f, 1.5f, -1.5f}, glm::vec3(1.0f), 1.0f);
-        // ---
-    }
-
-    Application::~Application()
-    {
-        m_Renderer->WaitIdle();
     }
 
     void Application::Run()
@@ -102,24 +38,6 @@ namespace ve
                 {
                     layer->OnUpdate(ts);
                 }
-
-                m_Camera->OnUpdate(ts);
-
-                m_Renderer->BeginFrame(*m_Camera);
-
-                static float rot = 0.0f;
-                float speed = 50.0f;
-
-                for (const auto &obj : m_Objects)
-                {
-                    // glm::mat4 transform = glm::rotate(obj.transform, glm::radians(rot), glm::vec3(0.0f, 1.0f, 0.0f));
-
-                    m_Renderer->Submit(obj);
-                }
-
-                rot += speed * ts;
-
-                m_Renderer->EndFrame();
             }
 
             m_Window->OnUpdate();
@@ -136,8 +54,6 @@ namespace ve
         EventDispatcher dp(e);
         dp.Dispatch<WindowCloseEvent>(VE_BIND_EVENT_FN(OnWindowClose));
         dp.Dispatch<WindowResizeEvent>(VE_BIND_EVENT_FN(OnWindowResize));
-
-        m_Camera->OnEvent(e);
 
         for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); it++)
         {
@@ -171,9 +87,6 @@ namespace ve
             return false;
         }
         m_Minimized = false;
-
-        m_Camera->OnResize(static_cast<float>(e.GetWidth()), static_cast<float>(e.GetHeight()));
-        m_Renderer->HandleResize(e.GetWidth(), e.GetHeight());
 
         return false;
     }

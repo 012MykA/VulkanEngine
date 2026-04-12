@@ -11,6 +11,18 @@
 #include "VulkanEngine/Events/MouseEvent.hpp"
 // ---
 
+// Renderer
+#include "VulkanEngine/Renderer/Vertex.hpp"
+#include "VulkanEngine/Renderer/AABB.hpp"
+#include "VulkanEngine/Renderer/Mesh.hpp"
+
+#include "VulkanEngine/Renderer/Texture.hpp"
+#include "VulkanEngine/Renderer/PBR/MaterialPBR.hpp"
+
+#include "VulkanEngine/Renderer/Camera.hpp"
+#include "VulkanEngine/Renderer/PBR/RendererPBR.hpp"
+// ---
+
 // Input
 #include "VulkanEngine/Core/KeyCodes.hpp"
 #include "VulkanEngine/Core/MouseCodes.hpp"

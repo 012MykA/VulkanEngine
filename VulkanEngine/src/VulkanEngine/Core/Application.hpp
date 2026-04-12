@@ -4,8 +4,6 @@
 #include "VulkanEngine/Core/LayerStack.hpp"
 #include "VulkanEngine/Events/Event.hpp"
 #include "VulkanEngine/Events/ApplicationEvent.hpp"
-#include "VulkanEngine/Renderer/PBR/RendererPBR.hpp"
-#include "VulkanEngine/Renderer/Camera.hpp"
 
 #include <string>
 #include <cassert>
@@ -37,7 +35,7 @@ namespace ve
     {
     public:
         Application(const ApplicationDesc &desc);
-        virtual ~Application();
+        virtual ~Application() = default;
 
     public:
         void Run();
@@ -59,17 +57,11 @@ namespace ve
         ApplicationDesc m_Desc;
         std::unique_ptr<Window> m_Window;
 
-        std::unique_ptr<RendererPBR> m_Renderer;
-        std::unique_ptr<Camera> m_Camera;
-
     private:
         bool m_Running = true;
         bool m_Minimized = false;
         LayerStack m_LayerStack;
         float m_LastFrameTime = 0.0f;
-
-    private:
-        std::vector<RenderObject> m_Objects;
 
     private:
         static Application *s_Instance;
