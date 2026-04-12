@@ -61,7 +61,7 @@ namespace ve
     class RendererPBR
     {
     public:
-        static constexpr uint32_t k_MaxMaterials = 3;
+        static constexpr uint32_t k_MaxMaterials = 4;
 
     public:
         explicit RendererPBR(const Window &window);
@@ -101,6 +101,8 @@ namespace ve
     private:
         void RecreateSwapchain();
 
+        void DrawSkybox(VkCommandBuffer cmd, uint32_t frameIndex);
+
     private:
         // Vulkan Core
         std::unique_ptr<VulkanInstance> m_Instance;
@@ -135,6 +137,14 @@ namespace ve
 
         std::unique_ptr<VulkanPipelineLayout> m_PipelineLayout;
         std::unique_ptr<VulkanGraphicsPipeline> m_Pipeline;
+
+        // Skybox
+        std::unique_ptr<VulkanDescriptorSetLayout> m_SkyboxSetLayout;
+        std::unique_ptr<VulkanPipelineLayout> m_SkyboxPipelineLayout;
+        std::unique_ptr<VulkanGraphicsPipeline> m_SkyboxPipeline;
+        std::shared_ptr<Texture> m_EnvironmentMap;
+        VkDescriptorSet m_SkyboxDescriptorSet;
+        std::shared_ptr<Mesh> m_SkyboxMesh;
 
         std::unique_ptr<VulkanFrameManager> m_FrameManager;
         uint32_t m_CurrentImageIndex = 0;

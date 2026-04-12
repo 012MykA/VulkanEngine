@@ -20,11 +20,12 @@ namespace ve
     {
         int w, h, channels;
         void *pixels = nullptr;
+        bool isHDR = stbi_is_hdr(path.c_str());
 
-        if (stbi_is_hdr(path.c_str()))
+        if (isHDR)
         {
             pixels = stbi_loadf(path.c_str(), &w, &h, &channels, STBI_rgb_alpha);
-            desc.format = TextureFormat::RGBA16_SFLOAT;
+            desc.format = TextureFormat::RGBA32_SFLOAT;
         }
         else
         {
@@ -36,11 +37,10 @@ namespace ve
             VE_CORE_ERROR("Failed to load texture: {0}", path);
             return nullptr;
         }
-        VE_CORE_TRACE("Loaded texture: '{}'", path);
 
         auto tex = std::make_shared<Texture>();
         tex->m_Path = path;
-        tex->InitializeAndUpload(pixels, w, h, desc, allocator, logicalDevice, upload);
+        tex->InitializeAndUpload(pixels, (uint32_t)w, (uint32_t)h, desc, allocator, logicalDevice, upload);
 
         stbi_image_free(pixels);
         return tex;
@@ -49,19 +49,29 @@ namespace ve
     std::shared_ptr<Texture> Texture::LoadFromMemory(
         const uint8_t *data,
         size_t size,
-        const TextureDesc &desc,
+        TextureDesc &desc,
         const VulkanAllocator &allocator,
         const VulkanLogicalDevice &device,
         const VulkanImmediateSubmit &upload)
     {
         int w, h, channels;
-        stbi_uc *pixels = stbi_load_from_memory(data, (int)size, &w, &h, &channels, STBI_rgb_alpha);
+        void *pixels = nullptr;
+
+        if (stbi_is_hdr_from_memory(data, (int)size))
+        {
+            pixels = stbi_loadf_from_memory(data, (int)size, &w, &h, &channels, STBI_rgb_alpha);
+            desc.format = TextureFormat::RGBA32_SFLOAT;
+        }
+        else
+        {
+            pixels = stbi_load_from_memory(data, (int)size, &w, &h, &channels, STBI_rgb_alpha);
+        }
 
         if (!pixels)
             return nullptr;
 
         auto tex = std::make_shared<Texture>();
-        tex->InitializeAndUpload(pixels, w, h, desc, allocator, device, upload);
+        tex->InitializeAndUpload(pixels, (uint32_t)w, (uint32_t)h, desc, allocator, device, upload);
 
         stbi_image_free(pixels);
         return tex;
@@ -155,8 +165,8 @@ namespace ve
         switch (format)
         {
         case TextureFormat::RGBA8_SRGB:         return VK_FORMAT_R8G8B8A8_SRGB;
-        case TextureFormat::RGBA8_UNORM:
-            return VK_FORMAT_R8G8B8A8_UNORM;
+        case TextureFormat::RGBA8_UNORM:        return VK_FORMAT_R8G8B8A8_UNORM;
+        case TextureFormat::RGBA32_SFLOAT:      return VK_FORMAT_R32G32B32A32_SFLOAT;
         case TextureFormat::RGBA16_SFLOAT:      return VK_FORMAT_R16G16B16A16_SFLOAT;
         case TextureFormat::RG8_UNORM:          return VK_FORMAT_R8G8_UNORM;
         case TextureFormat::R8_UNORM:           return VK_FORMAT_R8_UNORM;
@@ -170,6 +180,7 @@ namespace ve
         // clang-format off
         switch (format)
         {
+        case TextureFormat::RGBA32_SFLOAT:          return 16;
         case TextureFormat::RGBA16_SFLOAT:          return 8;
         case TextureFormat::RGBA8_SRGB:             return 4;
         case TextureFormat::RGBA8_UNORM:            return 4;        

@@ -17,6 +17,7 @@ namespace ve
         RGBA8_SRGB,
         RGBA8_UNORM,
         RGBA16_SFLOAT,
+        RGBA32_SFLOAT,
         RG8_UNORM,
         R8_UNORM,
     };
@@ -25,7 +26,6 @@ namespace ve
     {
         TextureFormat format = TextureFormat::RGBA8_SRGB;
         bool generateMips = true;
-        bool isCubemap = false;
     };
 
     class Texture
@@ -43,7 +43,7 @@ namespace ve
         static std::shared_ptr<Texture> LoadFromMemory(
             const uint8_t *data,
             size_t size,
-            const TextureDesc &desc,
+            TextureDesc &desc,
             const VulkanAllocator &allocator,
             const VulkanLogicalDevice &device,
             const VulkanImmediateSubmit &upload);

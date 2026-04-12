@@ -144,14 +144,14 @@ namespace ve
                 .AddPushConstantRange<PushConstants>(VK_SHADER_STAGE_VERTEX_BIT)
                 .Build());
 
-        VulkanShader vertexShader(*m_LogicalDevice, "../VulkanEngine/assets/shaders/pbr_basic.vert.spv");
-        VulkanShader fragmentShader(*m_LogicalDevice, "../VulkanEngine/assets/shaders/pbr_basic.frag.spv");
+        VulkanShader pbrVertexShader(*m_LogicalDevice, "../VulkanEngine/assets/shaders/pbr_basic.vert.spv");
+        VulkanShader pbrFragmentShader(*m_LogicalDevice, "../VulkanEngine/assets/shaders/pbr_basic.frag.spv");
 
         m_Pipeline = std::make_unique<VulkanGraphicsPipeline>(
             *m_LogicalDevice,
             GraphicsPipelineDesc{
-                .vertexShader = vertexShader.GetVkHandle(),
-                .fragmentShader = fragmentShader.GetVkHandle(),
+                .vertexShader = pbrVertexShader.GetVkHandle(),
+                .fragmentShader = pbrFragmentShader.GetVkHandle(),
 
                 .vertexInput{
                     .bindings = {
@@ -173,6 +173,67 @@ namespace ve
                 .renderPass = m_RenderPass->GetVkHandle(),
                 .layout = m_PipelineLayout->GetVkHandle(),
             });
+
+        // Skybox
+        m_SkyboxSetLayout = std::make_unique<VulkanDescriptorSetLayout>(
+            VulkanDescriptorSetLayout::Builder(*m_LogicalDevice)
+                .AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+                .Build());
+
+        m_SkyboxDescriptorSet = m_DescriptorPool->Allocate(m_SkyboxSetLayout->GetVkHandle());
+
+        m_EnvironmentMap = LoadTexture(
+            "../VulkanEngine/assets/textures/skybox.hdr",
+            TextureDesc{
+                .format = TextureFormat::RGBA32_SFLOAT,
+                .generateMips = false,
+            });
+
+        VkDescriptorImageInfo envImageInfo = m_EnvironmentMap->GetDescriptorInfo();
+        VulkanDescriptorWriter(m_LogicalDevice->GetVkHandle())
+            .WriteImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_SkyboxDescriptorSet, envImageInfo)
+            .Flush();
+
+        m_SkyboxPipelineLayout = std::make_unique<VulkanPipelineLayout>(
+            VulkanPipelineLayout::Builder(*m_LogicalDevice)
+                .AddDescriptorSetLayout(m_GlobalSetLayout->GetVkHandle())
+                .AddDescriptorSetLayout(m_SkyboxSetLayout->GetVkHandle())
+                .Build());
+
+        VulkanShader skyboxVertexShader(*m_LogicalDevice, "../VulkanEngine/assets/shaders/skybox.vert.spv");
+        VulkanShader skyboxFragmentShader(*m_LogicalDevice, "../VulkanEngine/assets/shaders/skybox.frag.spv");
+
+        m_SkyboxPipeline = std::make_unique<VulkanGraphicsPipeline>(
+            *m_LogicalDevice,
+            GraphicsPipelineDesc{
+                .vertexShader = skyboxVertexShader.GetVkHandle(),
+                .fragmentShader = skyboxFragmentShader.GetVkHandle(),
+
+                .vertexInput{
+                    .bindings = {
+                        VkVertexInputBindingDescription{
+                            .binding = 0,
+                            .stride = sizeof(Vertex),
+                            .inputRate = VK_VERTEX_INPUT_RATE_VERTEX},
+                    },
+                    .attributes = {
+                        {.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, position)},
+                    },
+                },
+
+                .cullMode = VK_CULL_MODE_NONE,
+
+                .depthTest = true,
+                .depthWrite = false,
+                .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL,
+
+                .colorBlendAttachment = MakeOpaqueBlend(),
+                .renderPass = m_RenderPass->GetVkHandle(),
+                .layout = m_SkyboxPipelineLayout->GetVkHandle(),
+            });
+
+        m_SkyboxMesh = Mesh::Load("../VulkanEngine/assets/models/Cube.glb");
+        UploadMesh(*m_SkyboxMesh);
 
         m_FrameManager = std::make_unique<VulkanFrameManager>(*m_LogicalDevice, *m_GraphicsCommandPool);
     }
@@ -262,6 +323,8 @@ namespace ve
             .extent = extent,
         };
         vkCmdSetScissor(cmd, 0, 1, &scissor);
+
+        DrawSkybox(cmd, frameIndex);
     }
 
     void RendererPBR::EndFrame()
@@ -424,6 +487,26 @@ namespace ve
         m_Framebuffers->Recreate(*m_Swapchain, *m_RenderPass, *m_DepthBuffer);
 
         VE_CORE_TRACE("Swapchain recreated: {}x{} ({} ms)", m_ResizeWidth, m_ResizeHeight, timer.ElapsedMilliseconds());
+    }
+
+    void RendererPBR::DrawSkybox(VkCommandBuffer cmd, uint32_t frameIndex)
+    {
+        m_SkyboxPipeline->Bind(cmd);
+
+        VkDescriptorSet sets[] = {
+            m_GlobalDescriptorSets[frameIndex],
+            m_SkyboxDescriptorSet,
+        };
+
+        vkCmdBindDescriptorSets(
+            cmd,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            m_SkyboxPipelineLayout->GetVkHandle(),
+            0, 2, sets,
+            0, nullptr);
+
+        m_SkyboxMesh->Bind(cmd);
+        vkCmdDrawIndexed(cmd, m_SkyboxMesh->GetIndexCount(), 1, 0, 0, 0);
     }
 
 } // namespace ve
