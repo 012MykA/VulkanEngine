@@ -4,6 +4,8 @@ A simple engine written in C++/Vulkan.
 
 ## Getting Started with test app
 
+### Download the [Vulkan SDK](https://vulkan.lunarg.com/sdk/home)
+
 ### Clone the repository
 ```bash
 git clone --recursive https://github.com/012MykA/VulkanEngine.git
