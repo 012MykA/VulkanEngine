@@ -5,6 +5,8 @@
 #include "VulkanEngine/Core/Log.hpp"
 
 #include <stb_image.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
 
 #include <cmath>
 #include <algorithm>
@@ -43,6 +45,155 @@ namespace ve
         tex->InitializeAndUpload(pixels, (uint32_t)w, (uint32_t)h, desc, allocator, logicalDevice, upload);
 
         stbi_image_free(pixels);
+        return tex;
+    }
+
+    std::shared_ptr<Texture> Texture::LoadCubemapFromEquirect(
+        const std::string &path,
+        uint32_t faceSize,
+        const VulkanAllocator &allocator,
+        const VulkanLogicalDevice &logicalDevice,
+        const VulkanImmediateSubmit &upload)
+    {
+        // clang-format off
+        const glm::vec3 k_FaceDirs[6] = {
+            { 1,  0,  0}, {-1,  0,  0},
+            { 0,  1,  0}, { 0, -1,  0},
+            { 0,  0,  1}, { 0,  0, -1},
+        };
+        const glm::vec3 k_FaceUps[6] = {
+            { 0, -1,  0}, { 0, -1,  0},
+            { 0,  0,  1}, { 0,  0, -1},
+            { 0, -1,  0}, { 0, -1,  0},
+        };
+        // clang-format on
+
+        int w, h, ch;
+        float *src = stbi_loadf(path.c_str(), &w, &h, &ch, STBI_rgb_alpha);
+        if (!src)
+        {
+            VE_CORE_ERROR("LoadCubemapFromEquirect: failed to load '{}'", path);
+            return nullptr;
+        }
+
+        const uint32_t N = faceSize;
+        std::vector<float> cubeData(6 * N * N * 4);
+
+        for (uint32_t face = 0; face < 6; face++)
+        {
+            glm::vec3 dir = k_FaceDirs[face];
+            glm::vec3 up = k_FaceUps[face];
+            glm::vec3 right = glm::normalize(glm::cross(dir, up));
+            up = glm::normalize(glm::cross(right, dir));
+
+            float *facePtr = cubeData.data() + face * N * N * 4;
+
+            for (uint32_t y = 0; y < N; y++)
+            {
+                for (uint32_t x = 0; x < N; x++)
+                {
+                    // UV от -1 до 1
+                    float u = (2.0f * (x + 0.5f) / N) - 1.0f;
+                    float v = (2.0f * (y + 0.5f) / N) - 1.0f;
+
+                    glm::vec3 sample = glm::normalize(dir + u * right + v * up);
+
+                    // Spherical mapping
+                    float phi = std::atan2(sample.z, sample.x);
+                    float theta = std::asin(glm::clamp(sample.y, -1.0f, 1.0f));
+
+                    float su = (phi / (2.0f * glm::pi<float>())) + 0.5f;
+                    float sv = (theta / glm::pi<float>()) + 0.5f;
+
+                    su = glm::clamp(su, 0.0f, 1.0f);
+                    sv = glm::clamp(sv, 0.0f, 1.0f);
+
+                    float px = su * (w - 1);
+                    float py = sv * (h - 1);
+
+                    int x0 = (int)px, y0 = (int)py;
+                    int x1 = std::min(x0 + 1, w - 1);
+                    int y1 = std::min(y0 + 1, h - 1);
+
+                    float fx = px - x0, fy = py - y0;
+
+                    auto sample4 = [&](int sx, int sy) -> glm::vec4
+                    {
+                        const float *p = src + (sy * w + sx) * 4;
+                        return {p[0], p[1], p[2], p[3]};
+                    };
+
+                    glm::vec4 col =
+                        sample4(x0, y0) * (1 - fx) * (1 - fy) +
+                        sample4(x1, y0) * fx * (1 - fy) +
+                        sample4(x0, y1) * (1 - fx) * fy +
+                        sample4(x1, y1) * fx * fy;
+
+                    float *dst = facePtr + (y * N + x) * 4;
+                    dst[0] = col.r;
+                    dst[1] = col.g;
+                    dst[2] = col.b;
+                    dst[3] = col.a;
+                }
+            }
+        }
+        stbi_image_free(src);
+
+        auto tex = std::make_shared<Texture>();
+        tex->m_Width = N;
+        tex->m_Height = N;
+        tex->m_MipLevels = 1;
+        tex->m_Path = path;
+
+        VkDeviceSize faceBytes = N * N * 4 * sizeof(float);
+        VkDeviceSize totalBytes = 6 * faceBytes;
+
+        VulkanBuffer staging(allocator, MakeStagingBufferDesc(totalBytes));
+        staging.Upload(cubeData.data(), totalBytes);
+
+        ImageDesc imageDesc{
+            .width = N,
+            .height = N,
+            .mipLevels = 1,
+            .arrayLayers = 6,
+            .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+            .type = ImageType::TextureCube,
+        };
+        tex->m_Image = std::make_unique<VulkanImage>(allocator, logicalDevice, imageDesc);
+
+        upload.Submit([&](VkCommandBuffer cmd)
+                      {
+        tex->m_Image->TransitionToTransferDst(cmd);
+
+        for (uint32_t face = 0; face < 6; face++)
+        {
+            VkBufferImageCopy region{
+                .bufferOffset      = face * faceBytes,
+                .bufferRowLength   = 0,
+                .bufferImageHeight = 0,
+                .imageSubresource{
+                    .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+                    .mipLevel       = 0,
+                    .baseArrayLayer = face,
+                    .layerCount     = 1,
+                },
+                .imageOffset = {0, 0, 0},
+                .imageExtent = {N, N, 1},
+            };
+            vkCmdCopyBufferToImage(
+                cmd,
+                staging.GetVkHandle(),
+                tex->m_Image->GetVkHandle(),
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1, &region);
+        }
+
+        tex->m_Image->TransitionToShaderRead(cmd); });
+
+        tex->m_Image->CreateSampler(SamplerDesc{
+            .addressMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        });
+
         return tex;
     }
 

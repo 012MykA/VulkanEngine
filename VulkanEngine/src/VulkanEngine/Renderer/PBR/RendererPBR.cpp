@@ -182,12 +182,12 @@ namespace ve
 
         m_SkyboxDescriptorSet = m_DescriptorPool->Allocate(m_SkyboxSetLayout->GetVkHandle());
 
-        m_EnvironmentMap = LoadTexture(
-            "../VulkanEngine/assets/textures/skybox.hdr",
-            TextureDesc{
-                .format = TextureFormat::RGBA32_SFLOAT,
-                .generateMips = false,
-            });
+        m_EnvironmentMap = Texture::LoadCubemapFromEquirect(
+            "../VulkanEngine/assets/textures/modern_evening_street_4k.hdr",
+            1024,
+            *m_Allocator,
+            *m_LogicalDevice,
+            *m_GraphicsImmediateSubmit);
 
         VkDescriptorImageInfo envImageInfo = m_EnvironmentMap->GetDescriptorInfo();
         VulkanDescriptorWriter(m_LogicalDevice->GetVkHandle())

@@ -40,6 +40,13 @@ namespace ve
             const VulkanLogicalDevice &logicalDevice,
             const VulkanImmediateSubmit &upload);
 
+        static std::shared_ptr<Texture> LoadCubemapFromEquirect(
+            const std::string &path,
+            uint32_t faceSize,
+            const VulkanAllocator &allocator,
+            const VulkanLogicalDevice &logicalDevice,
+            const VulkanImmediateSubmit &upload);
+
         static std::shared_ptr<Texture> LoadFromMemory(
             const uint8_t *data,
             size_t size,
