@@ -78,9 +78,8 @@ namespace ve
             .transform = glm::translate(glm::mat4(1.0f), {3.0f, 0.0f, 0.0f}),
         });
 
-        glm::vec3 lightPos = {-1.5f, 1.5f, 1.5f};
-
-        m_Renderer->SetLight(lightPos, glm::vec3(1.0f), 1.0f);
+        m_Renderer->AddLight({-1.5f, 1.5f, 1.5f}, glm::vec3(1.0f), 1.0f);
+        m_Renderer->AddLight({1.5f, 1.5f, -1.5f}, glm::vec3(1.0f), 1.0f);
         // ---
     }
 

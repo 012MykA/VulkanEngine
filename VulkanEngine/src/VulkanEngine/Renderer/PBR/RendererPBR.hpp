@@ -22,6 +22,8 @@
 
 #include <memory>
 
+#define MAX_LIGHTS 10
+
 namespace ve
 {
     class Window;
@@ -29,8 +31,8 @@ namespace ve
 
     struct PointLight
     {
-        glm::vec4 position;
-        glm::vec4 color;
+        alignas(16) glm::vec4 position;
+        alignas(16) glm::vec4 color;
     };
 
     struct GlobalUBO
@@ -39,7 +41,9 @@ namespace ve
         alignas(16) glm::mat4 proj;
         alignas(16) glm::vec4 cameraPos;
 
-        PointLight light;
+        alignas(16) PointLight lights[MAX_LIGHTS];
+        int lightCount = 0;
+        float _padding[3];
     };
 
     struct PushConstants
@@ -72,8 +76,6 @@ namespace ve
 
         void Submit(const RenderObject &object);
 
-        void SetLight(const glm::vec3 &position, const glm::vec3 &color, float intensity = 1.0f);
-
     public:
         void WaitIdle() const;
         void HandleResize(uint32_t width, uint32_t height);
@@ -84,6 +86,10 @@ namespace ve
         void BuildMaterial(MaterialPBR &material) const;
 
         std::shared_ptr<Texture> LoadTexture(const std::string &path, const TextureDesc &desc);
+
+    public:
+        void AddLight(const glm::vec3 &position, const glm::vec3 &color, float intensity = 1.0f);
+        void ClearLights();
 
     public:
         const VulkanLogicalDevice &GetLogicalDevice() const { return *m_LogicalDevice; }

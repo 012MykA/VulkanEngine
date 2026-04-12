@@ -357,10 +357,19 @@ namespace ve
         vkCmdDrawIndexed(cmd, object.mesh->GetIndexCount(), 1, 0, 0, 0);
     }
 
-    void RendererPBR::SetLight(const glm::vec3 &position, const glm::vec3 &color, float intensity)
+    void RendererPBR::AddLight(const glm::vec3 &position, const glm::vec3 &color, float intensity)
     {
-        m_GlobalData.light.position = glm::vec4(position, 0.0f);
-        m_GlobalData.light.color = glm::vec4(color, intensity);
+        auto &light = m_GlobalData.lights[m_GlobalData.lightCount];
+
+        light.position = glm::vec4(position, 0.0f);
+        light.color = glm::vec4(color, intensity);
+
+        m_GlobalData.lightCount++;
+    }
+
+    void RendererPBR::ClearLights()
+    {
+        m_GlobalData.lightCount = 0;
     }
 
     void RendererPBR::WaitIdle() const

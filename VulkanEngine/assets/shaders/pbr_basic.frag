@@ -5,6 +5,8 @@ layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec4 inTangent;
 layout(location = 3) in vec2 inTexCoord;
 
+#define MAX_LIGHTS 10
+
 struct PointLight {
     vec4 position;
     vec4 color;
@@ -14,7 +16,9 @@ layout(set = 0, binding = 0) uniform GlobalUBO {
     mat4 view;
     mat4 proj;
     vec4 cameraPos;
-    PointLight light;
+
+    PointLight lights[MAX_LIGHTS];
+    int lightCount;
 } u_Global;
 
 layout(set = 1, binding = 0) uniform MaterialPBRData {
@@ -87,6 +91,15 @@ void main() {
         occlusion = 1.0 + u_Material.occlusionStrength * (aoSample - 1.0);
     }
 
+    // Constants
+    const vec3 DIELECTRIC_F0 = vec3(0.04);
+
+    const float AMBIENT_INTENSITY = 0.03;
+
+    const float GAMMA = 2.2;
+
+    const float EPSILON = 0.0001;
+
     // --- Shading ---
     vec3 N;
     if(u_Material.normalTextureIdx != -1) {
@@ -108,20 +121,21 @@ void main() {
 
     vec3 V = normalize(u_Global.cameraPos.rgb - inWorldPos);
 
-    vec3 F0 = vec3(0.04);
+    vec3 F0 = DIELECTRIC_F0;
     F0 = mix(F0, albedo, metallic);
 
     // reflectance equation
     vec3 Lo = vec3(0.0);
 
-    for(int i = 0; i < 1; ++i) { // 1 Light source
+    int lightCount = min(u_Global.lightCount, MAX_LIGHTS);
+    for(int i = 0; i < lightCount; ++i) {
         // calculate per-light radiance
-        vec3 L = normalize(u_Global.light.position.rgb - inWorldPos);
+        vec3 L = normalize(u_Global.lights[i].position.rgb - inWorldPos);
         vec3 H = normalize(V + L);
-        float distance = length(u_Global.light.position.rgb - inWorldPos);
+        float distance = length(u_Global.lights[i].position.rgb - inWorldPos);
         float attenuation = 1.0 / (distance * distance);
-        float intensity = u_Global.light.color.a;
-        vec3 radiance = u_Global.light.color.rgb * intensity * attenuation;
+        float intensity = u_Global.lights[i].color.a;
+        vec3 radiance = u_Global.lights[i].color.rgb * intensity * attenuation;
 
         // cook-torrance brdf
         float NDF = DistributionGGX(N, H, roughness);
@@ -133,7 +147,7 @@ void main() {
         kD *= 1.0 - metallic;
 
         vec3 numerator = NDF * G * F;
-        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + EPSILON;
         vec3 specular = numerator / denominator;  
 
         // add to outgoing radiance Lo
@@ -141,11 +155,11 @@ void main() {
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
 
-    vec3 ambient = vec3(0.03) * albedo * occlusion;
+    vec3 ambient = vec3(AMBIENT_INTENSITY) * albedo * occlusion;
     vec3 color = ambient + Lo;
 
     color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0 / 2.2));
+    color = pow(color, vec3(1.0 / GAMMA));
 
     outColor = vec4(color, 1.0);
 }
