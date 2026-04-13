@@ -80,7 +80,6 @@ namespace ve
         uint32_t GetMipLevels() const { return m_MipLevels; }
         const std::string &GetPath() const { return m_Path; }
 
-    private:
         void InitializeAndUpload(
             const void *pixels,
             uint32_t width,
@@ -90,6 +89,7 @@ namespace ve
             const VulkanLogicalDevice &logicalDevice,
             const VulkanImmediateSubmit &upload);
 
+    private:
         static VkFormat ResolveVkFormat(TextureFormat format);
         static uint32_t CalcMipLevels(uint32_t w, uint32_t h);
         static size_t GetPixelSize(TextureFormat format);

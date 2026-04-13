@@ -4,8 +4,11 @@
 #include "VulkanEngine/Core/Timer.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 
+#include <stb_image.h>
+
 #include <array>
 #include <filesystem>
+#include <stdexcept>
 #include <algorithm>
 #include <future>
 
@@ -22,10 +25,18 @@ namespace ve
         Unknown
     };
 
-    struct TextureTask
+    // Holds CPU pixel data decoded by a worker thread
+    // GPU upload happens on the main thread
+    struct DecodedImage
     {
-        MapType type;
-        std::future<std::shared_ptr<Texture>> futureTexture;
+        MapType type = MapType::Unknown;
+        std::string filepath;
+        TextureFormat format;
+        bool generateMips = true;
+
+        void *pixels = nullptr; // allocated by stb_image and freed after upload
+        int width = 0;
+        int height = 0;
     };
 
     std::shared_ptr<MaterialPBR> MaterialPBR::Load(const std::string &path,
@@ -34,27 +45,26 @@ namespace ve
                                                    const VulkanImmediateSubmit &upload,
                                                    bool generateMips)
     {
+        Timer timer;
+
         if (!std::filesystem::exists(path))
-        {
-            VE_CORE_ERROR("failed to load PBR material: path '{}' does not exists", path);
-            return nullptr;
-        }
+            throw std::runtime_error("failed to load PBR material: path '{}' " + path + " does not exists");
 
         if (!std::filesystem::is_directory(path))
-        {
-            VE_CORE_ERROR("failed to load PBR material: '{}' should be a folder", path);
-            return nullptr;
-        }
+            throw std::runtime_error("failed to load PBR material: '{}' " + path + " should be a folder");
 
         auto mat = std::make_shared<MaterialPBR>();
 
         std::string matName = std::filesystem::path(path).filename().string();
         mat->SetName(matName);
 
-        Timer timer;
+        struct DecodeTask
+        {
+            MapType type;
+            std::future<DecodedImage> future;
+        };
 
-        // --- Setting loading tasks ---
-        std::vector<TextureTask> tasks;
+        std::vector<DecodeTask> tasks;
 
         for (const auto &entry : std::filesystem::directory_iterator(path))
         {
@@ -98,38 +108,76 @@ namespace ve
                 type = MapType::Occlusion;
                 format = TextureFormat::RGBA8_UNORM;
             }
+            else
+            {
+                type = MapType::Unknown;
+            }
 
             if (type == MapType::Unknown)
                 continue;
 
             // clang-format off
-            tasks.push_back(TextureTask{
+            tasks.push_back(DecodeTask{
                 .type = type,
-                .futureTexture = std::async(std::launch::async,
-                    [=, &allocator, &logicalDevice, &upload]()
+                .future = std::async(std::launch::async,
+                    [filepath, format, generateMips]() -> DecodedImage
                     {
-                        return Texture::LoadFromFile(
-                            filepath,
-                            TextureDesc{
-                                .format = format,
-                                .generateMips = generateMips,
-                            },
-                            allocator, logicalDevice, upload);
-                    }
-                ),
+                        DecodedImage img;
+                        img.filepath = filepath;
+                        img.format = format;
+                        img.generateMips = generateMips;
+                        img.type = MapType::Unknown;
+
+                        int ch;
+                        if (stbi_is_hdr(filepath.c_str()))
+                        {
+                            img.pixels = stbi_loadf(filepath.c_str(), &img.width, &img.height, &ch, STBI_rgb_alpha);
+                            img.format = TextureFormat::RGBA32_SFLOAT;
+                        }
+                        else
+                        {
+                            img.pixels = stbi_load(filepath.c_str(), &img.width, &img.height, &ch, STBI_rgb_alpha);
+                        }
+
+                        if (img.pixels)
+                            img.type = format == TextureFormat::RGBA8_SRGB
+                                           ? img.type
+                                           : img.type;
+                        return img;
+                    }),
             });
+            
+            tasks.back().type = type;
             // clang-format on
         }
 
         // Collecting results
         for (auto &task : tasks)
         {
-            auto tex = task.futureTexture.get();
+
+            DecodedImage img = task.future.get();
+
+            if (!img.pixels)
+            {
+                VE_CORE_ERROR("MaterialPBR: failed to decode '{}'", img.filepath);
+                continue;
+            }
+
+            img.type = task.type;
+
+            auto tex = std::make_shared<Texture>();
+            TextureDesc desc{.format = img.format, .generateMips = img.generateMips};
+            tex->InitializeAndUpload(img.pixels,
+                                     static_cast<uint32_t>(img.width),
+                                     static_cast<uint32_t>(img.height),
+                                     desc, allocator, logicalDevice, upload);
+            stbi_image_free(img.pixels);
+
             if (!tex)
                 continue;
 
             // clang-format off
-            switch (task.type)
+            switch (img.type)
             {
             case MapType::BaseColor:    mat->SetBaseColorMap(tex);  break;
             case MapType::Emissive:     mat->SetEmissiveMap(tex);   break;
@@ -137,6 +185,7 @@ namespace ve
             case MapType::Roughness:    mat->SetRoughnessMap(tex);  break;
             case MapType::Normal:       mat->SetNormalMap(tex);     break;
             case MapType::Occlusion:    mat->SetOcclusionMap(tex);  break;
+            default: break;
             }
             // clang-format on
         }

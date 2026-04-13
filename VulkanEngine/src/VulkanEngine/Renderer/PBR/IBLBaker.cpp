@@ -394,7 +394,7 @@ namespace ve
         const VulkanImmediateSubmit &submit)
     {
         constexpr uint32_t kBaseSize = 128;
-        constexpr uint32_t kMipLevels = 10;
+        constexpr uint32_t kMipLevels = 5;
         constexpr uint32_t kSamples = 1024;
 
         struct MipData
