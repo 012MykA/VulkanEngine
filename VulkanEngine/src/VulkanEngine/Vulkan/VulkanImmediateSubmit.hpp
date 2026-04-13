@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.h>
 
 #include <functional>
+#include <mutex>
 
 namespace ve
 {
@@ -31,6 +32,8 @@ namespace ve
         VkQueue m_Queue = VK_NULL_HANDLE;
         VkCommandBuffer m_CmdBuffer = VK_NULL_HANDLE;
         VkFence m_Fence = VK_NULL_HANDLE;
+
+        mutable std::mutex m_Mutex;
     };
 
 } // namespace ve

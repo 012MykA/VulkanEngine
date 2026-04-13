@@ -39,6 +39,8 @@ namespace ve
 
     void VulkanImmediateSubmit::Submit(const RecordFn &fn) const
     {
+        std::lock_guard<std::mutex> lock(m_Mutex);
+        
         // Reset
         vkResetFences(m_Device, 1, &m_Fence);
         vkResetCommandBuffer(m_CmdBuffer, 0);
