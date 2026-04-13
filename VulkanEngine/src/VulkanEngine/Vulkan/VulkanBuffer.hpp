@@ -21,7 +21,8 @@ namespace ve
         Index = VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
         Uniform = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         Storage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-        Staging = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        Staging = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,  // CPU -> GPU (upload)
+        Readback = VK_BUFFER_USAGE_TRANSFER_DST_BIT, // GPU -> CPU (readback)
         IndirectDraw = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
     };
 
@@ -112,6 +113,21 @@ namespace ve
             .type = BufferType::Staging,
             .extraUsage = 0,
             .allocation = AllocationDesc{.cpuOnly = true},
+        };
+    }
+
+    // Readback buffer: GPU writes, CPU reads (TRANSFER_DST)
+    // Uses persistent map so the caller can memcpy without an explicit Map/Unmap.
+    inline BufferDesc MakeReadbackBufferDesc(VkDeviceSize size)
+    {
+        return BufferDesc{
+            .size = size,
+            .type = BufferType::Readback,
+            .extraUsage = 0,
+            .allocation = AllocationDesc{
+                .cpuOnly = true,       // HOST_ACCESS_SEQUENTIAL_WRITE keeps it in host-visible memory
+                .persistentMap = true, // always mapped; call GetMappedPtr() after the submit
+            },
         };
     }
 

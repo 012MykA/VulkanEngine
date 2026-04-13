@@ -182,7 +182,7 @@ namespace ve
         const VkDeviceSize faceBytes = static_cast<VkDeviceSize>(faceSize) * faceSize * 4 * sizeof(float);
         const VkDeviceSize totalBytes = layers * faceBytes;
 
-        VulkanBuffer staging(allocator, MakeStagingBufferDesc(totalBytes));
+        VulkanBuffer readback(allocator, MakeReadbackBufferDesc(totalBytes));
 
         submit.Submit([&](VkCommandBuffer cmd)
                       {
@@ -214,7 +214,7 @@ namespace ve
                 };
                 vkCmdCopyImageToBuffer(cmd,
                     img.GetVkHandle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                    staging.GetVkHandle(), 1, &region);
+                    readback.GetVkHandle(), 1, &region);
             }
 
             VkImageMemoryBarrier toRead{
@@ -233,10 +233,9 @@ namespace ve
                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                 0, 0, nullptr, 0, nullptr, 1, &toRead); });
 
+        allocator.InvalidateAllocation(readback.GetAllocation());
         std::vector<float> data(totalBytes / sizeof(float));
-        void *mapped = allocator.MapMemory(staging.GetAllocation());
-        std::memcpy(data.data(), mapped, totalBytes);
-        allocator.UnmapMemory(staging.GetAllocation());
+        std::memcpy(data.data(), readback.GetMappedPtr(), totalBytes);
 
         return data;
     }
