@@ -16,6 +16,8 @@ void ExampleLayer::OnAttach()
     m_Renderer = std::make_unique<ve::RendererPBR>(window);
     m_Camera = std::make_unique<ve::Camera>(window, ve::CameraDesc{});
 
+    m_Scene = std::make_unique<ve::Scene>();
+
     SetupObjects();
 }
 
@@ -26,7 +28,13 @@ void ExampleLayer::OnUpdate(ve::Timestep ts)
     m_Renderer->BeginFrame(*m_Camera);
     for (const auto &obj : m_Objects)
     {
-        m_Renderer->Submit(obj);
+        ve::RenderObject renderObj{
+            .transform = obj.GetComponent<ve::TransformComponent>().GetTransform(),
+            .mesh = obj.GetComponent<ve::MeshComponent>().mesh,
+            .material = obj.GetComponent<ve::MaterialPBRComponent>().material,
+        };
+
+        m_Renderer->Submit(renderObj);
     }
     m_Renderer->EndFrame();
 }
@@ -71,27 +79,33 @@ void ExampleLayer::SetupObjects()
     m_Renderer->BuildMaterial(*carbonFiber);
 
     // Objects
-    m_Objects.push_back(ve::RenderObject{
-        .mesh = sphereMesh,
-        .material = lightGold,
-        .transform = glm::translate(glm::mat4(1.0f), {-3.0f, 0.0f, 0.0f}),
-    });
+    {
+        auto entity = m_Scene->CreateEntity();
+        entity.AddComponent<ve::TransformComponent>().SetPosition({-3.0f, 0.0f, 0.0f});
+        entity.AddComponent<ve::MeshComponent>(sphereMesh);
+        entity.AddComponent<ve::MaterialPBRComponent>(lightGold);
+        m_Objects.push_back(entity);
+    }
 
-    m_Objects.push_back(ve::RenderObject{
-        .mesh = sphereMesh,
-        .material = victorianBrick,
-        .transform = glm::translate(glm::mat4(1.0f), {0.0f, 0.0f, 0.0f}),
-    });
+    {
+        auto entity = m_Scene->CreateEntity();
+        entity.AddComponent<ve::TransformComponent>().SetPosition({0.0f, 0.0f, 0.0f});
+        entity.AddComponent<ve::MeshComponent>(sphereMesh);
+        entity.AddComponent<ve::MaterialPBRComponent>(victorianBrick);
+        m_Objects.push_back(entity);
+    }
 
-    m_Objects.push_back(ve::RenderObject{
-        .mesh = sphereMesh,
-        .material = carbonFiber,
-        .transform = glm::translate(glm::mat4(1.0f), {3.0f, 0.0f, 0.0f}),
-    });
+    {
+        auto entity = m_Scene->CreateEntity();
+        entity.AddComponent<ve::TransformComponent>().SetPosition({3.0f, 0.0f, 0.0f});
+        entity.AddComponent<ve::MeshComponent>(sphereMesh);
+        entity.AddComponent<ve::MaterialPBRComponent>(carbonFiber);
+        m_Objects.push_back(entity);
+    }
 
     // Lights
-    // m_Renderer->AddLight({-1.5f, 1.5f, 1.5f}, glm::vec3(1.0f), 1.0f);
-    // m_Renderer->AddLight({1.5f, 1.5f, -1.5f}, glm::vec3(1.0f), 1.0f);
+    m_Renderer->AddLight({-1.5f, 1.5f, 1.5f}, glm::vec3(1.0f), 1.0f);
+    m_Renderer->AddLight({1.5f, 1.5f, -1.5f}, glm::vec3(0.9f, 0.6f, 0.3f), 2.0f);
 }
 
 bool ExampleLayer::OnWindowResize(ve::WindowResizeEvent &e)

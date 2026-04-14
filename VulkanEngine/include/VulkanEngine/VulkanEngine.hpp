@@ -23,6 +23,12 @@
 #include "VulkanEngine/Renderer/PBR/RendererPBR.hpp"
 // ---
 
+// ECS
+#include "VulkanEngine/ECS/Entity.hpp"
+#include "VulkanEngine/ECS/Components.hpp"
+#include "VulkanEngine/ECS/Scene.hpp"
+// ---
+
 // Input
 #include "VulkanEngine/Core/KeyCodes.hpp"
 #include "VulkanEngine/Core/MouseCodes.hpp"

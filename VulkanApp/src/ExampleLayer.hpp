@@ -18,6 +18,7 @@ private:
 private:
     std::unique_ptr<ve::RendererPBR> m_Renderer;
     std::unique_ptr<ve::Camera> m_Camera;
+    std::unique_ptr<ve::Scene> m_Scene;
 
-    std::vector<ve::RenderObject> m_Objects;
+    std::vector<ve::Entity> m_Objects;
 };

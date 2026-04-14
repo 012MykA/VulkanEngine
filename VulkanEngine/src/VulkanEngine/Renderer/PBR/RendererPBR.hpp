@@ -55,9 +55,9 @@ namespace ve
 
     struct RenderObject
     {
+        glm::mat4 transform;
         std::shared_ptr<Mesh> mesh;
         std::shared_ptr<MaterialPBR> material;
-        glm::mat4 transform;
     };
 
     class RendererPBR

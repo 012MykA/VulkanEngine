@@ -30,11 +30,12 @@ endif()
 # Vendor
 find_package(Vulkan REQUIRED)
 
-add_subdirectory(vendor/spdlog)
-add_subdirectory(vendor/glfw)
-add_subdirectory(vendor/vma)
-add_subdirectory(vendor/glm)
-add_subdirectory(vendor/tinygltf)
+add_subdirectory(vendor/spdlog/)
+add_subdirectory(vendor/glfw/)
+add_subdirectory(vendor/vma/)
+add_subdirectory(vendor/glm/)
+add_subdirectory(vendor/tinygltf/)
+add_subdirectory(vendor/entt/)
 
 # Sources
 file(GLOB_RECURSE ENGINE_CORE_SOURCES src/VulkanEngine/*.cpp)
@@ -73,12 +74,13 @@ endif()
 # Linking
 target_include_directories(${PROJECT_NAME}
     PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/spdlog/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/glm
-    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tinygltf
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/spdlog/include/
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb/include/
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/glm/
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tinygltf/
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/entt/single_include/
 )
 
 target_link_libraries(${PROJECT_NAME}
