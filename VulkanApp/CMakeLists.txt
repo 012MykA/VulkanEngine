@@ -4,12 +4,17 @@ project(VulkanApp)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(SANDBOX_RESOURCES "")
+if (WIN32)
+    set(SANDBOX_RESOURCES "assets/icons/icon.rc")
+endif()
+
 file(GLOB_RECURSE SANDBOX_SOURCES
     src/*.cpp
     src/*.hpp
 )
 
-add_executable(${PROJECT_NAME} ${SANDBOX_SOURCES})
+add_executable(${PROJECT_NAME} ${SANDBOX_SOURCES} ${SANDBOX_RESOURCES})
 
 if(VE_DIST_MODE)
     set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
