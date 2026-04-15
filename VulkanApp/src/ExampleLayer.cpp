@@ -25,8 +25,13 @@ void ExampleLayer::OnUpdate(ve::Timestep ts)
 {
     m_Camera->OnUpdate(ts);
 
+    const glm::mat4 vp = m_Camera->GetProjectionMatrix() * m_Camera->GetViewMatrix();
+    ve::CullingResult culling = ve::CullingSystem::Cull(vp, *m_Scene);
+
+    VE_TRACE("Visible: {}/{}", culling.totalTested - culling.totalCulled, culling.totalTested);
+
     m_Renderer->BeginFrame(*m_Camera);
-    for (const auto &obj : m_Objects)
+    for (const auto &obj : culling.visibleEntities)
     {
         ve::RenderObject renderObj{
             .transform = obj.GetComponent<ve::TransformComponent>().GetTransform(),
@@ -84,7 +89,6 @@ void ExampleLayer::SetupObjects()
         entity.AddComponent<ve::TransformComponent>().SetPosition({-3.0f, 0.0f, 0.0f});
         entity.AddComponent<ve::MeshComponent>(sphereMesh);
         entity.AddComponent<ve::MaterialPBRComponent>(lightGold);
-        m_Objects.push_back(entity);
     }
 
     {
@@ -92,7 +96,6 @@ void ExampleLayer::SetupObjects()
         entity.AddComponent<ve::TransformComponent>().SetPosition({0.0f, 0.0f, 0.0f});
         entity.AddComponent<ve::MeshComponent>(sphereMesh);
         entity.AddComponent<ve::MaterialPBRComponent>(victorianBrick);
-        m_Objects.push_back(entity);
     }
 
     {
@@ -100,12 +103,11 @@ void ExampleLayer::SetupObjects()
         entity.AddComponent<ve::TransformComponent>().SetPosition({3.0f, 0.0f, 0.0f});
         entity.AddComponent<ve::MeshComponent>(sphereMesh);
         entity.AddComponent<ve::MaterialPBRComponent>(carbonFiber);
-        m_Objects.push_back(entity);
     }
 
     // Lights
     m_Renderer->AddLight({-1.5f, 1.5f, 1.5f}, glm::vec3(1.0f), 1.0f);
-    m_Renderer->AddLight({1.5f, 1.5f, -1.5f}, glm::vec3(0.9f, 0.6f, 0.3f), 2.0f);
+    m_Renderer->AddLight({1.5f, 1.5f, -1.5f}, glm::vec3(0.9f, 0.2f, 0.8f), 2.0f);
 }
 
 bool ExampleLayer::OnWindowResize(ve::WindowResizeEvent &e)

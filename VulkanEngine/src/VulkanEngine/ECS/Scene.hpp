@@ -7,6 +7,7 @@ namespace ve
     class Scene
     {
         friend class Entity;
+        friend class CullingSystem;
 
     public:
         Scene() = default;

@@ -27,6 +27,7 @@
 #include "VulkanEngine/ECS/Entity.hpp"
 #include "VulkanEngine/ECS/Components.hpp"
 #include "VulkanEngine/ECS/Scene.hpp"
+#include "VulkanEngine/ECS/CullingSystem.hpp"
 // ---
 
 // Input
