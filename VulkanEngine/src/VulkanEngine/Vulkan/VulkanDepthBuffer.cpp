@@ -16,7 +16,9 @@ namespace ve
           m_Format(FindDepthFormat(physicalDevice.GetVkHandle()))
     {
         Create(allocator, width, height);
-        VE_CORE_TRACE("VulkanDepthBuffer created  ({}x{}, format={})", width, height, string_VkFormat(m_Format));
+        VE_CORE_TRACE("DepthBuffer created:");
+        VE_CORE_TRACE("  Extent: {}x{}", width, height);
+        VE_CORE_TRACE("  Format: {}", string_VkFormat(m_Format));
     }
 
     VulkanDepthBuffer::~VulkanDepthBuffer() = default;

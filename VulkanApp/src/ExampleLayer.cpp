@@ -28,7 +28,12 @@ void ExampleLayer::OnUpdate(ve::Timestep ts)
     const glm::mat4 vp = m_Camera->GetProjectionMatrix() * m_Camera->GetViewMatrix();
     ve::CullingResult culling = ve::CullingSystem::Cull(vp, *m_Scene);
 
-    VE_TRACE("Visible: {}/{}", culling.totalTested - culling.totalCulled, culling.totalTested);
+    static ve::CullingResult previousCulling{};
+    if (previousCulling.totalTested != culling.totalTested || previousCulling.totalCulled != culling.totalCulled)
+    {
+        VE_TRACE("Visible: {}/{}", culling.totalTested - culling.totalCulled, culling.totalTested);
+        previousCulling = culling;
+    }
 
     m_Renderer->BeginFrame(*m_Camera);
     for (const auto &obj : culling.visibleEntities)

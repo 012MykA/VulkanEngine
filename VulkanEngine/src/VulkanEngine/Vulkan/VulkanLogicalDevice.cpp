@@ -67,7 +67,10 @@ namespace ve
         VkResult result = vkCreateDevice(physicalDevice.GetVkHandle(), &createInfo, nullptr, &m_Device);
         CHECK_VK_RESULT(result);
 
-        VE_CORE_TRACE("Logical device created");
+        VE_CORE_TRACE("VulkanLogicalDevice created");
+        VE_CORE_TRACE("  Extensions ({}):", extensions.size());
+        for (const char *ext : extensions)
+            VE_CORE_TRACE("    {}", ext);
     }
 
     void VulkanLogicalDevice::RetrieveQueues(const QueueFamilyIndices &indices)
