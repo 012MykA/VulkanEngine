@@ -2,8 +2,8 @@
 
 #include "Backends/Vulkan/VulkanBuffer.hpp"
 #include "Backends/Vulkan/VulkanAllocator.hpp"
-#include "Vertex.hpp"
-#include "AABB.hpp"
+#include "VulkanEngine/Renderer/Primitives/Vertex.hpp"
+#include "VulkanEngine/Renderer/Primitives/AABB.hpp"
 
 #include <cstdint>
 #include <string>

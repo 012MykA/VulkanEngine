@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VulkanEngine/Renderer/Frustum.hpp"
+#include "VulkanEngine/Renderer/Primitives/Frustum.hpp"
 #include "VulkanEngine/ECS/Scene.hpp"
 #include "VulkanEngine/ECS/Entity.hpp"
 

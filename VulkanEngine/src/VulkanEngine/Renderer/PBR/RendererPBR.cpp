@@ -1,6 +1,6 @@
 #include "RendererPBR.hpp"
 #include "VulkanEngine/Core/Window.hpp"
-#include "VulkanEngine/Renderer/Camera.hpp"
+#include "VulkanEngine/Renderer/Camera/Camera.hpp"
 #include "VulkanEngine/Core/Timer.hpp"
 #include "Backends/Vulkan/Debug/VulkanValidation.hpp"
 #include "VulkanEngine/Renderer/PBR/IBLBaker.hpp"
