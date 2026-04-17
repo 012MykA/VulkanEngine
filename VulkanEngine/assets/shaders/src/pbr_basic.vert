@@ -11,9 +11,11 @@ struct PointLight {
 };
 
 layout(set = 0, binding = 0) uniform GlobalUBO {
+    mat4 viewProj;
     mat4 view;
     mat4 proj;
     vec4 cameraPos;
+
     PointLight light;
 } u_Global;
 
@@ -34,6 +36,6 @@ void main() {
     outNormal = normalize(normalMatrix * inNormal);
     outTangent = vec4(normalize(normalMatrix * inTangent.xyz), inTangent.w);
     outTexCoord = inTexCoord;
-    
-    gl_Position = u_Global.proj * u_Global.view * worldPos;
+
+    gl_Position = u_Global.viewProj * worldPos;
 }
