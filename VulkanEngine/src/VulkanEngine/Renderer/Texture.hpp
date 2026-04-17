@@ -1,7 +1,7 @@
 #pragma once
 
-#include "VulkanEngine/Vulkan/VulkanImage.hpp"
-#include "VulkanEngine/Vulkan/VulkanAllocator.hpp"
+#include "Backends/Vulkan/VulkanImage.hpp"
+#include "Backends/Vulkan/VulkanAllocator.hpp"
 
 #include <string>
 #include <memory>

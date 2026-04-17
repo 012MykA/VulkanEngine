@@ -3,7 +3,7 @@
 #include "VulkanEngine/Events/ApplicationEvent.hpp"
 #include "VulkanEngine/Events/KeyEvent.hpp"
 #include "VulkanEngine/Events/MouseEvent.hpp"
-#include "VulkanEngine/Vulkan/Debug/VulkanValidation.hpp"
+#include "Backends/Vulkan/Debug/VulkanValidation.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "VulkanEngine/Vulkan/VulkanBuffer.hpp"
-#include "VulkanEngine/Vulkan/VulkanAllocator.hpp"
+#include "Backends/Vulkan/VulkanBuffer.hpp"
+#include "Backends/Vulkan/VulkanAllocator.hpp"
 #include "Vertex.hpp"
 #include "AABB.hpp"
 

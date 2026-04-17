@@ -2,7 +2,7 @@
 #include "VulkanEngine/Core/Window.hpp"
 #include "VulkanEngine/Renderer/Camera.hpp"
 #include "VulkanEngine/Core/Timer.hpp"
-#include "VulkanEngine/Vulkan/Debug/VulkanValidation.hpp"
+#include "Backends/Vulkan/Debug/VulkanValidation.hpp"
 #include "VulkanEngine/Renderer/PBR/IBLBaker.hpp"
 
 #include <cassert>

@@ -1,7 +1,7 @@
 #include "Texture.hpp"
-#include "VulkanEngine/Vulkan/VulkanLogicalDevice.hpp"
-#include "VulkanEngine/Vulkan/VulkanImmediateSubmit.hpp"
-#include "VulkanEngine/Vulkan/VulkanBuffer.hpp"
+#include "Backends/Vulkan/VulkanLogicalDevice.hpp"
+#include "Backends/Vulkan/VulkanImmediateSubmit.hpp"
+#include "Backends/Vulkan/VulkanBuffer.hpp"
 #include "VulkanEngine/Core/Timer.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "VulkanEngine/Vulkan/VulkanDescriptor.hpp"
-#include "VulkanEngine/Vulkan/VulkanBuffer.hpp"
+#include "Backends/Vulkan/VulkanDescriptor.hpp"
+#include "Backends/Vulkan/VulkanBuffer.hpp"
 #include "VulkanEngine/Renderer/Texture.hpp"
 
 #include <glm/glm.hpp>

@@ -39,20 +39,17 @@ add_subdirectory(vendor/entt/)
 
 # Sources
 file(GLOB_RECURSE ENGINE_CORE_SOURCES src/VulkanEngine/*.cpp)
-file(GLOB_RECURSE PLATFORM_GLFW_SOURCES src/Platform/Glfw/*.cpp)
-set(STB_IMAGE_SOURCES vendor/stb/src/stb_image.c)
-set(STB_IMAGE_SOURCES vendor/tinygltf/tiny_gltf.cc)
+file(GLOB_RECURSE BACKENDS_SOURCES src/Backends/*.cpp)
 
 set(ALL_SOURCES
     ${ENGINE_CORE_SOURCES}
-    ${PLATFORM_GLFW_SOURCES}
-    ${STB_IMAGE_SOURCES}
+    ${BACKENDS_SOURCES}
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb/src/stb_image.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tinygltf/tiny_gltf.cc
 )
 
 # Engine static lib
-add_library(${PROJECT_NAME} STATIC
-    ${ALL_SOURCES}
-)
+add_library(${PROJECT_NAME} STATIC ${ALL_SOURCES})
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC
     ${VE_PLATFORM_DEF}

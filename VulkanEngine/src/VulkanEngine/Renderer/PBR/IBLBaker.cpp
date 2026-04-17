@@ -1,9 +1,9 @@
 #include "IBLBaker.hpp"
 
-#include "VulkanEngine/Vulkan/VulkanAllocator.hpp"
-#include "VulkanEngine/Vulkan/VulkanLogicalDevice.hpp"
-#include "VulkanEngine/Vulkan/VulkanImmediateSubmit.hpp"
-#include "VulkanEngine/Vulkan/VulkanBuffer.hpp"
+#include "Backends/Vulkan/VulkanAllocator.hpp"
+#include "Backends/Vulkan/VulkanLogicalDevice.hpp"
+#include "Backends/Vulkan/VulkanImmediateSubmit.hpp"
+#include "Backends/Vulkan/VulkanBuffer.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 #include "VulkanEngine/Core/Timer.hpp"
 

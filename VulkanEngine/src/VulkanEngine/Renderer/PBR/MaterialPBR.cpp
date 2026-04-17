@@ -1,6 +1,6 @@
 #include "MaterialPBR.hpp"
-#include "VulkanEngine/Vulkan/VulkanAllocator.hpp"
-#include "VulkanEngine/Vulkan/VulkanLogicalDevice.hpp"
+#include "Backends/Vulkan/VulkanAllocator.hpp"
+#include "Backends/Vulkan/VulkanLogicalDevice.hpp"
 #include "VulkanEngine/Core/Timer.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 
