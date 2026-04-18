@@ -2,6 +2,8 @@
 
 #include "VulkanEngine/Core/Layer.hpp"
 
+#include <cstdint>
+
 namespace ve
 {
     class LayerStack
