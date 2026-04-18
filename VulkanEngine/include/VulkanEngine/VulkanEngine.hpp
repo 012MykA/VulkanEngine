@@ -1,6 +1,6 @@
 #pragma once
 
-// Application
+// --- Application ----------------------------------
 #include "VulkanEngine/Core/Application.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 #include "VulkanEngine/Core/Layer.hpp"
@@ -9,9 +9,9 @@
 #include "VulkanEngine/Events/ApplicationEvent.hpp"
 #include "VulkanEngine/Events/KeyEvent.hpp"
 #include "VulkanEngine/Events/MouseEvent.hpp"
-// ---
+// --------------------------------------------------
 
-// Renderer
+// --- Renderer -------------------------------------
 #include "VulkanEngine/Renderer/Primitives/Vertex.hpp"
 #include "VulkanEngine/Renderer/Primitives/AABB.hpp"
 
@@ -20,26 +20,27 @@
 #include "VulkanEngine/Renderer/PBR/MaterialPBR.hpp"
 
 #include "VulkanEngine/Renderer/Camera/Camera.hpp"
+#include "VulkanEngine/Renderer/Camera/FPSCamera.hpp"
 
 #include "VulkanEngine/Renderer/PBR/RendererPBR.hpp"
-// ---
+// --------------------------------------------------
 
-// ECS
+// --- ECS ------------------------------------------
 #include "VulkanEngine/ECS/Entity.hpp"
 #include "VulkanEngine/ECS/Components.hpp"
 #include "VulkanEngine/ECS/Scene.hpp"
 #include "VulkanEngine/ECS/CullingSystem.hpp"
-// ---
+// --------------------------------------------------
 
-// Input
+// --- Input ----------------------------------------
 #include "VulkanEngine/Core/KeyCodes.hpp"
 #include "VulkanEngine/Core/MouseCodes.hpp"
-// ---
+// --------------------------------------------------
 
-// Utils
+// --- Utils ----------------------------------------
 #include "VulkanEngine/Core/Timer.hpp"
-// ---
+// --------------------------------------------------
 
-// Layers
+// --- Layers ---------------------------------------
 #include "VulkanEngine/Layers/FPSLayer.hpp"
-// ---
+// --------------------------------------------------

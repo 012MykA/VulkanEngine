@@ -14,7 +14,8 @@ void ExampleLayer::OnAttach()
     auto &window = ve::Application::Get().GetWindow();
 
     m_Renderer = std::make_unique<ve::RendererPBR>(window);
-    m_Camera = std::make_unique<ve::Camera>(window, ve::CameraDesc{});
+    m_Camera = std::make_unique<ve::FPSCamera>(ve::FPSCameraDesc{}, window);
+    m_Camera->SetPosition({0.0f, 0.0f, 5.0f});
 
     m_Scene = std::make_unique<ve::Scene>();
 
@@ -25,7 +26,7 @@ void ExampleLayer::OnUpdate(ve::Timestep ts)
 {
     m_Camera->OnUpdate(ts);
 
-    const glm::mat4 vp = m_Camera->GetProjectionMatrix() * m_Camera->GetViewMatrix();
+    const glm::mat4 vp = m_Camera->GetViewProjection();
     ve::CullingResult culling = ve::CullingSystem::Cull(vp, *m_Scene);
 
     static ve::CullingResult previousCulling{};
@@ -117,8 +118,7 @@ void ExampleLayer::SetupObjects()
 
 bool ExampleLayer::OnWindowResize(ve::WindowResizeEvent &e)
 {
-    m_Camera->OnResize(static_cast<float>(e.GetWidth()), static_cast<float>(e.GetHeight()));
-
+    m_Camera->SetViewportSize(e.GetWidth(), e.GetHeight());
     m_Renderer->HandleResize(e.GetWidth(), e.GetHeight());
 
     return false;

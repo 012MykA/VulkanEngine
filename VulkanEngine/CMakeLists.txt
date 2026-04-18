@@ -44,7 +44,7 @@ file(GLOB_RECURSE BACKENDS_SOURCES src/Backends/*.cpp)
 set(ALL_SOURCES
     ${ENGINE_CORE_SOURCES}
     ${BACKENDS_SOURCES}
-    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb/src/stb_image.c
+    # ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb/src/stb_image.c // implementation is in tinygltf.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tinygltf/tiny_gltf.cc
 )
 
