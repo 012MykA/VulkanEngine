@@ -5,7 +5,6 @@
 #endif
 #ifdef __GNUC__
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnullability-extension"
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #endif
 

@@ -4,6 +4,8 @@
 
 namespace ve
 {
+    class Entity;
+    
     class Scene
     {
         friend class Entity;
@@ -17,7 +19,6 @@ namespace ve
         Entity CreateEntity(const std::string &tag = "Unnamed");
         void DestroyEntity(Entity entity);
 
-    public:
     private:
         entt::registry m_Registry;
     };
