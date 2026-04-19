@@ -27,6 +27,10 @@ namespace ve
         float normalScale = 1.0f;
         float occlusionStrength = 1.0f;
 
+        // --- UV Transform ---
+        glm::vec2 uvScale = glm::vec2(1.0f);
+        glm::vec2 uvOffset = glm::vec2(0.0f);
+
         // --- Texture Indices ---
         int baseColorTextureIdx = -1;
         int emissiveTextureIdx = -1;
@@ -72,11 +76,15 @@ namespace ve
         const MaterialPBRData &GetData() const { return m_Data; }
         bool IsBuilt() const { return m_DescriptorSet != VK_NULL_HANDLE; }
 
+    public:
         void SetName(const std::string &name);
-        void SetBaseColor(const glm::vec4 &color);
-        void SetEmissive(const glm::vec3 &color);
-        void SetMetallic(float v);
-        void SetRoughness(float v);
+        void SetBaseColorFactor(const glm::vec4 &color);
+        void SetEmissiveFactor(const glm::vec3 &color);
+        void SetMetallicFactor(float v);
+        void SetRoughnessFactor(float v);
+
+        void SetUVScale(const glm::vec2 &scale);
+        void SetUVOffset(const glm::vec2 &offset);
 
         void SetBaseColorMap(std::shared_ptr<Texture> tex);
         void SetEmissiveMap(std::shared_ptr<Texture> tex);

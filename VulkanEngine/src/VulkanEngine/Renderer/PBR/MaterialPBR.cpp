@@ -235,8 +235,9 @@ namespace ve
 
     void MaterialPBR::UpdateGPU()
     {
-        if (m_UBO)
-            m_UBO->Upload(&m_Data, sizeof(MaterialPBRData));
+        assert(m_UBO && m_DescriptorSet != VK_NULL_HANDLE && "MaterialPBR is not built yet. Call Build() before UpdateGPU()");
+        
+        m_UBO->Upload(&m_Data, sizeof(MaterialPBRData));
     }
 
     VulkanDescriptorSetLayout MaterialPBR::CreateLayout(const VulkanLogicalDevice &device)
@@ -256,13 +257,17 @@ namespace ve
 
     void MaterialPBR::SetName(const std::string &name) { m_Name = name; }
 
-    void MaterialPBR::SetBaseColor(const glm::vec4 &color) { m_Data.baseColorFactor = color; }
+    void MaterialPBR::SetBaseColorFactor(const glm::vec4 &color) { m_Data.baseColorFactor = color; }
 
-    void MaterialPBR::SetEmissive(const glm::vec3 &color) { m_Data.emissiveFactor = color; }
+    void MaterialPBR::SetEmissiveFactor(const glm::vec3 &color) { m_Data.emissiveFactor = color; }
 
-    void MaterialPBR::SetMetallic(float v) { m_Data.metallicFactor = v; }
+    void MaterialPBR::SetMetallicFactor(float v) { m_Data.metallicFactor = v; }
 
-    void MaterialPBR::SetRoughness(float v) { m_Data.roughnessFactor = v; }
+    void MaterialPBR::SetRoughnessFactor(float v) { m_Data.roughnessFactor = v; }
+
+    void MaterialPBR::SetUVScale(const glm::vec2 &scale) { m_Data.uvScale = scale; }
+
+    void MaterialPBR::SetUVOffset(const glm::vec2 &offset) { m_Data.uvOffset = offset; }
 
     void MaterialPBR::SetBaseColorMap(std::shared_ptr<Texture> tex)
     {

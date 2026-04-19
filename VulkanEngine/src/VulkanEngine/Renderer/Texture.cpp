@@ -38,7 +38,7 @@ namespace ve
 
         if (!pixels)
         {
-            VE_CORE_ERROR("Failed to load texture: {0}", path);
+            VE_CORE_ERROR("Failed to load texture: {}", path);
             return nullptr;
         }
 

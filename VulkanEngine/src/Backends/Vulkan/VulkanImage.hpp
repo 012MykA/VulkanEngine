@@ -43,7 +43,7 @@ namespace ve
         float mipLodBias = 0.0f;
         float minLod = 0.0f;
         float maxLod = VK_LOD_CLAMP_NONE;
-        float maxAnisotropy = 1.0f;
+        float maxAnisotropy = 16.0f;
         VkBorderColor borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
         bool unnormalizedCoords = false;
     };

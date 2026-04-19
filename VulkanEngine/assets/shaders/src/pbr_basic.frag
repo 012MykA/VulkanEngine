@@ -36,6 +36,10 @@ layout(set = 1, binding = 0) uniform MaterialPBRData {
     float normalScale;
     float occlusionStrength;
 
+    // --- UV Transform ---
+    vec2 uvScale;
+    vec2 uvOffset;
+
     // --- Texture Indices ---
     int baseColorTextureIdx;
     int emissiveTextureIdx;
@@ -84,44 +88,46 @@ float aces(float x) {
 }
 
 void main() {
+    vec2 UV = inTexCoord * u_Material.uvScale + u_Material.uvOffset;
+    
     // Albedo
     vec4 albedoRGBA = u_Material.baseColorFactor;
     if(u_Material.baseColorTextureIdx != -1) {
-        albedoRGBA *= texture(baseColorMap, inTexCoord);
+        albedoRGBA *= texture(baseColorMap, UV);
     }
     vec3 albedo = albedoRGBA.rgb;
 
     // Emissive
     vec3 emissive = u_Material.emissiveFactor;
     if(u_Material.emissiveTextureIdx != -1) {
-        emissive *= texture(emissiveMap, inTexCoord).rgb;
+        emissive *= texture(emissiveMap, UV).rgb;
     }
 
     // Metallic
     float metallic = u_Material.metallicFactor;
     if(u_Material.metallicTextureIdx != -1) {
-        metallic *= texture(metallicMap, inTexCoord).r;
+        metallic *= texture(metallicMap, UV).r;
     }
 
     // Roughness
     float roughness = u_Material.roughnessFactor;
     if(u_Material.roughnessTextureIdx != -1) {
-        roughness *= texture(roughnessMap, inTexCoord).g;
+        roughness *= texture(roughnessMap, UV).g;
     }
 
     // Occlusion
     float occlusion = 1.0;
     if(u_Material.occlusionTextureIdx != -1) {
-        float aoSample = texture(occlusionMap, inTexCoord).r;
+        float aoSample = texture(occlusionMap, UV).r;
         occlusion = 1.0 + u_Material.occlusionStrength * (aoSample - 1.0);
     }
 
     // Constants
     const vec3 DIELECTRIC_F0 = vec3(0.04);
 
-    const float AMBIENT_INTENSITY = 0.001;
+    // const float AMBIENT_INTENSITY = 0.001;
 
-    const float GAMMA = 2.2;
+    // const float GAMMA = 2.2;
 
     const float EPSILON = 0.0001;
 
@@ -134,7 +140,7 @@ void main() {
 
         mat3 TBN = mat3(tangent, bitangent, normal);
 
-        vec3 localNormal = texture(normalMap, inTexCoord).rgb * 2.0 - 1.0;
+        vec3 localNormal = texture(normalMap, UV).rgb * 2.0 - 1.0;
 
         localNormal.xy *= u_Material.normalScale;
         localNormal = normalize(localNormal);

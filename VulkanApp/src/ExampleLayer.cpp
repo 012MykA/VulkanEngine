@@ -112,8 +112,8 @@ void ExampleLayer::SetupObjects()
     }
 
     // Lights
-    m_Renderer->AddLight({-1.5f, 1.5f, 1.5f}, glm::vec3(1.0f), 1.0f);
-    m_Renderer->AddLight({1.5f, 1.5f, -1.5f}, glm::vec3(0.9f, 0.2f, 0.8f), 2.0f);
+    m_Renderer->AddLight({-1.5f, 1.5f, 1.5f}, {0.0f, 0.9f, 0.4f}, 2.0f);
+    m_Renderer->AddLight({1.5f, 1.5f, -1.5f}, {0.9f, 0.2f, 0.8f}, 2.0f);
 }
 
 bool ExampleLayer::OnWindowResize(ve::WindowResizeEvent &e)

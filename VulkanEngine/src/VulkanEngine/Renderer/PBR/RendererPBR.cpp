@@ -31,7 +31,7 @@ namespace ve
             *m_PhysicalDevice,
             LogicalDeviceDesc{
                 .enabledFeatures{
-                    // .samplerAnisotropy = VK_TRUE,
+                    .samplerAnisotropy = VK_TRUE,
                 },
             });
 
