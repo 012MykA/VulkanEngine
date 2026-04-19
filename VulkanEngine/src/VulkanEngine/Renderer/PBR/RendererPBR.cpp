@@ -7,31 +7,37 @@
 
 #include <cassert>
 
+#include "VulkanEngine/Core/Log.hpp"
+
 namespace ve
 {
-    RendererPBR::RendererPBR(const Window &window)
+    RendererPBR::RendererPBR(const Window &window, const RenderSettings &settings)
     {
         m_Instance = std::make_unique<VulkanInstance>(
             InstanceDesc{
                 .requiredExtensions = window.GetRequiredVulkanExtensions(),
-#ifdef VE_DEBUG
+                // #ifdef VE_DEBUG
                 .enableValidation = true,
                 .debugMessenger{
                     .enableDebugMessenger = true,
                     .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
                                        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
                 },
-#endif
+                // #endif
             });
 
         m_Surface = std::make_unique<VulkanSurface>(*m_Instance, window);
         m_PhysicalDevice = std::make_unique<VulkanPhysicalDevice>(*m_Instance, *m_Surface);
 
+        ResolveSettings(settings);
+
+        const auto &caps = m_PhysicalDevice->GetCapabilities();
         m_LogicalDevice = std::make_unique<VulkanLogicalDevice>(
             *m_PhysicalDevice,
             LogicalDeviceDesc{
                 .enabledFeatures{
-                    .samplerAnisotropy = VK_TRUE,
+                    .geometryShader = caps.geometryShaderSupported ? VK_TRUE : VK_FALSE,
+                    .samplerAnisotropy = (m_EffectiveSettings.anisotropy > 1.0f) ? VK_TRUE : VK_FALSE,
                 },
             });
 
@@ -500,6 +506,23 @@ namespace ve
             *m_Allocator,
             *m_LogicalDevice,
             *m_GraphicsImmediateSubmit);
+    }
+
+    void RendererPBR::ResolveSettings(const RenderSettings &requested)
+    {
+        const DeviceCapabilities &caps = m_PhysicalDevice->GetCapabilities();
+
+        // Anisotropy
+        float requestedAnisotropy = static_cast<float>(requested.anisotropy);
+        m_EffectiveSettings.anisotropy = caps.ClampAnisotropy(requestedAnisotropy);
+
+        // MSAA
+        VkSampleCountFlagBits requestedSamples = static_cast<VkSampleCountFlagBits>(requested.msaaSamples);
+        m_EffectiveSettings.msaaSamples = caps.ClampMSAASamples(requestedSamples);
+
+        // Other settings
+        m_EffectiveSettings.shadowResolution = static_cast<uint32_t>(requested.shadowQuality);
+        m_EffectiveSettings.iblIntensity = requested.iblIntensity;
     }
 
     void RendererPBR::RecreateSwapchain()

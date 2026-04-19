@@ -1,3 +1,7 @@
+#ifdef DeviceCapabilities
+#undef DeviceCapabilities
+#endif
+
 #include "VulkanPhysicalDevice.hpp"
 #include "VulkanInstance.hpp"
 #include "VulkanSurface.hpp"
@@ -76,7 +80,26 @@ namespace ve
         vkGetPhysicalDeviceProperties(m_PhysicalDevice, &m_Properties);
         vkGetPhysicalDeviceFeatures(m_PhysicalDevice, &m_Features);
 
+        BuildCapabilities();
+
         VE_CORE_TRACE("Selected GPU: {}", m_Properties.deviceName);
+    }
+
+    void ve::VulkanPhysicalDevice::BuildCapabilities()
+    {
+        DeviceCapabilities &c = m_Capabilities;
+
+        c.anisotropySupported = (m_Features.samplerAnisotropy == VK_TRUE);
+        c.maxAnisotropy = c.anisotropySupported
+                              ? m_Properties.limits.maxSamplerAnisotropy
+                              : 1.0f;
+
+        VkSampleCountFlags colorMask = m_Properties.limits.framebufferColorSampleCounts;
+        VkSampleCountFlags depthMask = m_Properties.limits.framebufferDepthSampleCounts;
+        c.msaaSampleCounts = (colorMask & depthMask);
+
+        c.geometryShaderSupported = (m_Features.geometryShader == VK_TRUE);
+        c.tessellationShaderSupported = (m_Features.tessellationShader == VK_TRUE);
     }
 
     int32_t VulkanPhysicalDevice::RateDevice(VkPhysicalDevice device, VkSurfaceKHR surface) const

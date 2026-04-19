@@ -22,6 +22,7 @@
 #include "VulkanEngine/Renderer/Camera/Camera.hpp"
 #include "VulkanEngine/Renderer/Camera/FPSCamera.hpp"
 
+#include "VulkanEngine/Renderer/PBR/RenderSettings.hpp"
 #include "VulkanEngine/Renderer/PBR/RendererPBR.hpp"
 // --------------------------------------------------
 

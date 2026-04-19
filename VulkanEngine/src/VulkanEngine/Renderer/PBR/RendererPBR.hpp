@@ -17,6 +17,7 @@
 
 #include "VulkanEngine/Renderer/Mesh.hpp"
 #include "VulkanEngine/Renderer/PBR/MaterialPBR.hpp"
+#include "VulkanEngine/Renderer/PBR/RenderSettings.hpp"
 
 #include <glm/glm.hpp>
 
@@ -67,7 +68,7 @@ namespace ve
         static constexpr uint32_t k_MaxMaterials = 100;
 
     public:
-        explicit RendererPBR(const Window &window);
+        explicit RendererPBR(const Window &window, const RenderSettings &settings = {});
         ~RendererPBR();
 
         RendererPBR(const RendererPBR &) = delete;
@@ -102,6 +103,8 @@ namespace ve
         const VulkanDescriptorPool &GetDescriptorPool() const { return *m_DescriptorPool; }
 
     private:
+        void ResolveSettings(const RenderSettings &requested);
+
         void RecreateSwapchain();
 
         void DrawSkybox(VkCommandBuffer cmd, uint32_t frameIndex);
@@ -134,8 +137,8 @@ namespace ve
 
         // Global
         std::unique_ptr<VulkanDescriptorSetLayout> m_GlobalSetLayout;
-        std::unique_ptr<VulkanDescriptorSetLayout> m_MaterialSetLayout;        
-        
+        std::unique_ptr<VulkanDescriptorSetLayout> m_MaterialSetLayout;
+
         std::vector<VkDescriptorSet> m_GlobalDescriptorSets;
         std::vector<std::unique_ptr<VulkanBuffer>> m_GlobalUBOs;
 
@@ -152,11 +155,10 @@ namespace ve
         std::unique_ptr<VulkanDescriptorSetLayout> m_SkyboxSetLayout;
 
         VkDescriptorSet m_SkyboxDescriptorSet;
-        
+
         std::unique_ptr<VulkanPipelineLayout> m_SkyboxPipelineLayout;
         std::unique_ptr<VulkanGraphicsPipeline> m_SkyboxPipeline;
         std::shared_ptr<Mesh> m_SkyboxMesh;
-
 
         std::unique_ptr<VulkanFrameManager> m_FrameManager;
         uint32_t m_CurrentImageIndex = 0;
@@ -165,6 +167,15 @@ namespace ve
         bool m_NeedsResize = false;
         uint32_t m_ResizeWidth = 0;
         uint32_t m_ResizeHeight = 0;
+
+        // Resolved render settings
+        struct EffectiveSettings
+        {
+            float anisotropy = 1.0f;
+            VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+            uint32_t shadowResolution = 0;
+            float iblIntensity = 1.0f;
+        } m_EffectiveSettings{};
     };
 
 } // namespace ve
