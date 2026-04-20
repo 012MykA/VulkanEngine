@@ -1,9 +1,11 @@
 #include "RendererPBR.hpp"
 #include "VulkanEngine/Core/Window.hpp"
 #include "VulkanEngine/Renderer/Camera/Camera.hpp"
+#include "VulkanEngine/Renderer/PBR/IBLBaker.hpp"
+#include "VulkanEngine/Renderer/MeshLoader.hpp"
+
 #include "VulkanEngine/Core/Timer.hpp"
 #include "Backends/Vulkan/Debug/VulkanValidation.hpp"
-#include "VulkanEngine/Renderer/PBR/IBLBaker.hpp"
 
 #include <cassert>
 
@@ -136,7 +138,7 @@ namespace ve
 
         m_EnvironmentMap = Texture::LoadCubemapFromEquirect(
             "../VulkanEngine/assets/textures/modern_evening_street_4k.hdr",
-            2048,
+            512,
             *m_Allocator,
             *m_LogicalDevice,
             *m_GraphicsImmediateSubmit);
@@ -263,7 +265,7 @@ namespace ve
                 .layout = m_SkyboxPipelineLayout->GetVkHandle(),
             });
 
-        m_SkyboxMesh = Mesh::Load("../VulkanEngine/assets/models/Cube.glb");
+        m_SkyboxMesh = MeshLoader().LoadGLB("../VulkanEngine/assets/models/Cube.glb");
         UploadMesh(*m_SkyboxMesh);
 
         m_FrameManager = std::make_unique<VulkanFrameManager>(*m_LogicalDevice, *m_GraphicsCommandPool);
@@ -448,8 +450,12 @@ namespace ve
             0, sizeof(PushConstants), &pc);
 
         assert(object.mesh != nullptr && "object.mesh should be a valid pointer");
+
         object.mesh->Bind(cmd);
-        vkCmdDrawIndexed(cmd, object.mesh->GetIndexCount(), 1, 0, 0, 0);
+        for (const auto& primitive : object.mesh->GetPrimitives())
+        {
+            vkCmdDrawIndexed(cmd, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
+        }
     }
 
     void RendererPBR::AddLight(const glm::vec3 &position, const glm::vec3 &color, float intensity)
@@ -483,9 +489,12 @@ namespace ve
         m_ResizeHeight = height;
     }
 
-    void RendererPBR::UploadMesh(Mesh &mesh) const
+    void RendererPBR::UploadMesh(Mesh &mesh, bool freeCPU) const
     {
-        mesh.UploadToGPU(*m_Allocator, *m_TransferImmediateSubmit);
+        mesh.Upload(*m_Allocator, *m_TransferImmediateSubmit);
+
+        if (freeCPU)
+            mesh.FreeCPUData();
     }
 
     void RendererPBR::BuildMaterial(MaterialPBR &material) const
@@ -555,7 +564,10 @@ namespace ve
             0, nullptr);
 
         m_SkyboxMesh->Bind(cmd);
-        vkCmdDrawIndexed(cmd, m_SkyboxMesh->GetIndexCount(), 1, 0, 0, 0);
+        for (const auto& primitive : m_SkyboxMesh->GetPrimitives())
+        {
+            vkCmdDrawIndexed(cmd, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
+        }
     }
 
 } // namespace ve

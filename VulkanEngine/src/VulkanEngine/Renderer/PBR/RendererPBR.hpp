@@ -85,7 +85,7 @@ namespace ve
         void HandleResize(uint32_t width, uint32_t height);
 
     public:
-        void UploadMesh(Mesh &mesh) const;
+        void UploadMesh(Mesh &mesh, bool freeCPU = true) const;
 
         void BuildMaterial(MaterialPBR &material) const;
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VulkanEngine/Renderer/Primitives/AABB.hpp"
+#include "AABB.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_access.hpp>

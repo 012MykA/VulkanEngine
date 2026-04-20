@@ -2,10 +2,12 @@
 
 void ExampleLayer::SetupMeshes()
 {
-    m_CubeMesh = ve::Mesh::Load("assets/models/Cube.glb");
+    ve::MeshLoader loader;
+    
+    m_CubeMesh = loader.LoadGLB("assets/models/Cube.glb");
     m_Renderer->UploadMesh(*m_CubeMesh);
 
-    m_SphereMesh = ve::Mesh::Load("assets/models/Sphere.glb");
+    m_SphereMesh = loader.LoadGLB("assets/models/Sphere.glb");
     m_Renderer->UploadMesh(*m_SphereMesh);
 }
 

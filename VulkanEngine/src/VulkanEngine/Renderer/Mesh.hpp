@@ -1,33 +1,36 @@
 #pragma once
 
 #include "Backends/Vulkan/VulkanBuffer.hpp"
-#include "Backends/Vulkan/VulkanAllocator.hpp"
-#include "VulkanEngine/Renderer/Primitives/Vertex.hpp"
-#include "VulkanEngine/Renderer/Primitives/AABB.hpp"
+
+#include "AABB.hpp"
+#include "Vertex.hpp"
+
+#include <vulkan/vulkan.h>
 
 #include <cstdint>
-#include <string>
-#include <memory>
 #include <vector>
+#include <memory>
+#include <string>
 
 namespace ve
 {
-    class VulkanImmediateSubmit;
-    class VulkanLogicalDevice;
-
-    struct SubMesh
+    struct Primitive
     {
-        uint32_t indexOffset = 0;
-        uint32_t indexCount = 0;
-        uint32_t vertexOffset = 0;
+        uint32_t firstIndex;
+        uint32_t indexCount;
         int32_t materialIndex = -1;
-        AABB bounds;
+        AABB boundingBox;
     };
+
+    class VulkanAllocator;
+    class VulkanImmediateSubmit;
 
     class Mesh
     {
     public:
         Mesh() = default;
+        Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices);
+
         ~Mesh() = default;
 
         Mesh(const Mesh &) = delete;
@@ -36,45 +39,43 @@ namespace ve
         Mesh(Mesh &&) noexcept = default;
         Mesh &operator=(Mesh &&) noexcept = default;
 
-        static std::shared_ptr<Mesh> Load(const std::string &path);
-
     public:
-        void UploadToGPU(const VulkanAllocator &allocator, const VulkanImmediateSubmit &upload);
+        // Load data onto the GPU. After this, the data on the CPU can be released.
+        void Upload(const VulkanAllocator &allocator, const VulkanImmediateSubmit &upload);
+
+        // Clears vertices and indices stored in object
         void FreeCPUData();
 
+        // Binds vertex and index buffers
         void Bind(VkCommandBuffer cmd) const;
 
-        void ComputeTangents();
-        void ComputeBounds();
+        // --- Setters ---
 
-    public: // Setters
-        void SetVertices(std::vector<Vertex> &&vertices);
-        void SetIndices(std::vector<uint32_t> &&indices);
-        void AddSubMesh(SubMesh subMesh);
+        void SetVertices(std::vector<Vertex> vertices) { m_Vertices = std::move(vertices); }
+        void SetIndices(std::vector<uint32_t> indices) { m_Indices = std::move(indices); }
+        void AddPrimitive(const Primitive &primitive) { m_Primitives.push_back(primitive); }
+        void SetName(const std::string &name) { m_Name = name; }
+        void RecalculateBounds();
 
-    public:
-        // Getters
-        const std::vector<SubMesh> &GetSubMeshes() const { return m_SubMeshes; }
-        const AABB &GetBounds() const { return m_Bounds; }
-        bool IsUploaded() const { return m_VertexBuffer != nullptr; }
+        // --- Getters ---
+
         const std::vector<Vertex> &GetVertices() const { return m_Vertices; }
         const std::vector<uint32_t> &GetIndices() const { return m_Indices; }
+        const std::vector<Primitive> &GetPrimitives() const { return m_Primitives; }
         const std::string &GetName() const { return m_Name; }
-        void SetName(std::string name) { m_Name = std::move(name); }
-
-        uint32_t GetIndexCount() const { return m_IndexCount; }
+        const AABB &GetBoundingBox() const { return m_MeshBounds; }
+        bool IsUploaded() const { return m_VertexBuffer != nullptr; }
 
     private:
-        // CPU Data
+        // --- CPU data ---
         std::vector<Vertex> m_Vertices;
         std::vector<uint32_t> m_Indices;
-        std::vector<SubMesh> m_SubMeshes;
-        AABB m_Bounds;
+
+        std::vector<Primitive> m_Primitives;
+
         std::string m_Name;
+        AABB m_MeshBounds;
 
-        uint32_t m_IndexCount = 0;
-
-        // GPU Data
         std::unique_ptr<VulkanBuffer> m_VertexBuffer;
         std::unique_ptr<VulkanBuffer> m_IndexBuffer;
     };

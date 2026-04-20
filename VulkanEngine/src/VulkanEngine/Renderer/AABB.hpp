@@ -19,6 +19,12 @@ namespace ve
             min = glm::min(min, p);
             max = glm::max(max, p);
         }
+
+        void Expand(const AABB &other)
+        {
+            min = glm::min(min, other.min);
+            max = glm::max(max, other.max);
+        }
     };
 
 } // namespace ve

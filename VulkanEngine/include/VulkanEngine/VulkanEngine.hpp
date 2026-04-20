@@ -12,18 +12,19 @@
 // --------------------------------------------------
 
 // --- Renderer -------------------------------------
-#include "VulkanEngine/Renderer/Primitives/Vertex.hpp"
-#include "VulkanEngine/Renderer/Primitives/AABB.hpp"
+#include "VulkanEngine/Renderer/PBR/RenderSettings.hpp"
+#include "VulkanEngine/Renderer/PBR/RendererPBR.hpp"
 
-#include "VulkanEngine/Renderer/Mesh.hpp"
 #include "VulkanEngine/Renderer/Texture.hpp"
 #include "VulkanEngine/Renderer/PBR/MaterialPBR.hpp"
 
+#include "VulkanEngine/Renderer/Vertex.hpp"
+#include "VulkanEngine/Renderer/AABB.hpp"
+#include "VulkanEngine/Renderer/Mesh.hpp"
+#include "VulkanEngine/Renderer/MeshLoader.hpp"
+
 #include "VulkanEngine/Renderer/Camera/Camera.hpp"
 #include "VulkanEngine/Renderer/Camera/FPSCamera.hpp"
-
-#include "VulkanEngine/Renderer/PBR/RenderSettings.hpp"
-#include "VulkanEngine/Renderer/PBR/RendererPBR.hpp"
 // --------------------------------------------------
 
 // --- ECS ------------------------------------------

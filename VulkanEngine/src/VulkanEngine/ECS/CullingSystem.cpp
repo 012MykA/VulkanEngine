@@ -23,7 +23,7 @@ namespace ve
                 continue;
             }
 
-            const AABB &localBounds = meshComp.mesh->GetBounds();
+            const AABB &localBounds = meshComp.mesh->GetBoundingBox();
             const glm::mat4 &model = transformComp.GetTransform();
 
             AABB worldBounds;
