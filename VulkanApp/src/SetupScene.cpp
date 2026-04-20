@@ -39,14 +39,14 @@ void ExampleLayer::SetupObjects()
         auto entity = m_Scene->CreateEntity();
         entity.AddComponent<ve::TransformComponent>().SetPosition({-3.0f, 0.0f, 0.0f});
         entity.AddComponent<ve::MeshComponent>(m_SphereMesh);
-        entity.AddComponent<ve::MaterialPBRComponent>(m_VictorianBrick);
+        entity.AddComponent<ve::MaterialPBRComponent>(m_LightGold);
     }
 
     {
         auto entity = m_Scene->CreateEntity();
         entity.AddComponent<ve::TransformComponent>().SetPosition({0.0f, 0.0f, 0.0f});
         entity.AddComponent<ve::MeshComponent>(m_SphereMesh);
-        entity.AddComponent<ve::MaterialPBRComponent>(m_LightGold);
+        entity.AddComponent<ve::MaterialPBRComponent>(m_VictorianBrick);
     }
 
     {
