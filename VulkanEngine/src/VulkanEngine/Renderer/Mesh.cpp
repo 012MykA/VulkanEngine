@@ -12,12 +12,12 @@
 
 namespace ve
 {
-    void Mesh::SetVertices(std::vector<Vertex> vertices)
+    void Mesh::SetVertices(std::vector<Vertex> &&vertices)
     {
         m_Vertices = std::move(vertices);
     }
 
-    void Mesh::SetIndices(std::vector<uint32_t> indices)
+    void Mesh::SetIndices(std::vector<uint32_t> &&indices)
     {
         m_Indices = std::move(indices);
     }

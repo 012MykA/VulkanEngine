@@ -48,8 +48,8 @@ namespace ve
         void ComputeBounds();
 
     public: // Setters
-        void SetVertices(std::vector<Vertex> vertices);
-        void SetIndices(std::vector<uint32_t> indices);
+        void SetVertices(std::vector<Vertex> &&vertices);
+        void SetIndices(std::vector<uint32_t> &&indices);
         void AddSubMesh(SubMesh subMesh);
 
     public:
