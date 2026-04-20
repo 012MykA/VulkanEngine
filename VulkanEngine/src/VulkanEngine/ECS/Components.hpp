@@ -40,11 +40,6 @@ namespace ve
         const glm::quat &GetRotation() const { return m_Rotation; }
         const glm::vec3 &GetScale() const { return m_Scale; }
 
-        void SetDirty()
-        {
-            m_IsDirty = true;
-        }
-
         void SetPosition(const glm::vec3 &p)
         {
             m_Position = p;

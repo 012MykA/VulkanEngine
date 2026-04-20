@@ -25,6 +25,7 @@ private:
 
     std::shared_ptr<ve::Mesh> m_SphereMesh;
     std::shared_ptr<ve::Mesh> m_CubeMesh;
+    std::shared_ptr<ve::Mesh> m_GLTFSceneMesh;
 
     std::shared_ptr<ve::MaterialPBR> m_VictorianBrick;
     std::shared_ptr<ve::MaterialPBR> m_LightGold;

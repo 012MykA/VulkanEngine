@@ -9,6 +9,9 @@ void ExampleLayer::SetupMeshes()
 
     m_SphereMesh = loader.LoadGLB("assets/models/Sphere.glb");
     m_Renderer->UploadMesh(*m_SphereMesh);
+
+    m_GLTFSceneMesh = loader.LoadGLB("assets/scenes/KhronosGroup glTF-Sample-Models main 2.0-Sponza/glTF/Sponza.gltf");
+    m_Renderer->UploadMesh(*m_GLTFSceneMesh);
 }
 
 void ExampleLayer::SetupMaterials()
@@ -58,7 +61,10 @@ void ExampleLayer::SetupObjects()
         entity.AddComponent<ve::MaterialPBRComponent>(m_CarbonFiber);
     }
 
-    // Lights
-    m_Renderer->AddLight({-1.5f, 1.5f, 1.5f}, {0.0f, 0.9f, 0.4f}, 2.0f);
-    m_Renderer->AddLight({1.5f, 1.5f, -1.5f}, {0.9f, 0.2f, 0.8f}, 2.0f);
+    {
+        auto entity = m_Scene->CreateEntity("Sponza");
+        entity.AddComponent<ve::TransformComponent>().SetScale(glm::vec3(0.008f));
+        entity.AddComponent<ve::MeshComponent>(m_GLTFSceneMesh);
+        entity.AddComponent<ve::MaterialPBRComponent>(m_CarbonFiber);
+    }
 }
