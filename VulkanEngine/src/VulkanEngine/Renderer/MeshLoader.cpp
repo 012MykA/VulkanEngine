@@ -121,7 +121,7 @@ namespace ve
         VE_CORE_TRACE("  Vertices: {}", mesh->GetVertices().size());
         VE_CORE_TRACE("  Indices: {}", mesh->GetIndices().size());
 
-        return mesh;
+        return std::move(mesh);
     }
 
     std::future<std::shared_ptr<Mesh>> MeshLoader::LoadGLTFAsync(const std::string &path)
