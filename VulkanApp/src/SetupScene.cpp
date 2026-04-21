@@ -4,13 +4,13 @@ void ExampleLayer::SetupMeshes()
 {
     ve::MeshLoader loader;
     
-    m_CubeMesh = loader.LoadGLB("assets/models/Cube.glb");
+    m_CubeMesh = loader.LoadGLTF("assets/models/Cube.glb");
     m_Renderer->UploadMesh(*m_CubeMesh);
 
-    m_SphereMesh = loader.LoadGLB("assets/models/Sphere.glb");
+    m_SphereMesh = loader.LoadGLTF("assets/models/Sphere.glb");
     m_Renderer->UploadMesh(*m_SphereMesh);
 
-    m_GLTFSceneMesh = loader.LoadGLB("assets/scenes/KhronosGroup glTF-Sample-Models main 2.0-Sponza/glTF/Sponza.gltf");
+    m_GLTFSceneMesh = loader.LoadGLTF("assets/scenes/KhronosGroup glTF-Sample-Models main 2.0-Sponza/glTF/Sponza.gltf");
     m_Renderer->UploadMesh(*m_GLTFSceneMesh);
 }
 

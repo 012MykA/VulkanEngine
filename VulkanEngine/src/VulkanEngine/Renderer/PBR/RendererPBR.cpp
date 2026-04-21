@@ -265,7 +265,7 @@ namespace ve
                 .layout = m_SkyboxPipelineLayout->GetVkHandle(),
             });
 
-        m_SkyboxMesh = MeshLoader().LoadGLB("../VulkanEngine/assets/models/Cube.glb");
+        m_SkyboxMesh = MeshLoader().LoadGLTF("../VulkanEngine/assets/models/Cube.glb");
         UploadMesh(*m_SkyboxMesh);
 
         m_FrameManager = std::make_unique<VulkanFrameManager>(*m_LogicalDevice, *m_GraphicsCommandPool);

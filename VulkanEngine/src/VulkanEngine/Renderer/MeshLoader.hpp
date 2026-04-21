@@ -14,9 +14,11 @@ namespace ve
         MeshLoader() = default;
         ~MeshLoader() = default;
 
-        std::shared_ptr<Mesh> LoadGLB(const std::string &path);
+        // Load glTF / GLB
+        std::shared_ptr<Mesh> LoadGLTF(const std::string &path);
 
-        std::future<std::shared_ptr<Mesh>> LoadGLBAsync(const std::string &path);
+        // Load glTF / GLB (async)
+        std::future<std::shared_ptr<Mesh>> LoadGLTFAsync(const std::string &path);
     };
 
 } // namespace ve

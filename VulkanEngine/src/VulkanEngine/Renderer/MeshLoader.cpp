@@ -10,7 +10,7 @@
 
 namespace ve
 {
-    std::shared_ptr<Mesh> MeshLoader::LoadGLB(const std::string &path)
+    std::shared_ptr<Mesh> MeshLoader::LoadGLTF(const std::string &path)
     {
         Timer loadingTimer;
 
@@ -124,10 +124,10 @@ namespace ve
         return mesh;
     }
 
-    std::future<std::shared_ptr<Mesh>> MeshLoader::LoadGLBAsync(const std::string &path)
+    std::future<std::shared_ptr<Mesh>> MeshLoader::LoadGLTFAsync(const std::string &path)
     {
         return std::async(std::launch::async, [this, path]() {
-            return LoadGLB(path);
+            return LoadGLTF(path);
         });
     }
 
