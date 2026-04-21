@@ -423,22 +423,15 @@ namespace ve
         auto &frame = m_FrameManager->GetCurrentFrame();
         VkCommandBuffer cmd = frame.commandBuffer;
 
-        // Bind pipline
         m_Pipeline->Bind(cmd);
 
-        // Bind descriptors
-        assert(object.material != nullptr && "object.material should be a valid pointer");
-
-        VkDescriptorSet sets[] = {
-            m_GlobalDescriptorSets[frameIndex],
-            object.material->GetDescriptorSet(),
-        };
+        VkDescriptorSet globalSet = m_GlobalDescriptorSets[frameIndex];
         vkCmdBindDescriptorSets(
             cmd,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             m_PipelineLayout->GetVkHandle(),
             0,
-            2, sets,
+            1, &globalSet,
             0, nullptr);
 
         // Bind push constants
@@ -449,11 +442,17 @@ namespace ve
             VK_SHADER_STAGE_VERTEX_BIT,
             0, sizeof(PushConstants), &pc);
 
-        assert(object.mesh != nullptr && "object.mesh should be a valid pointer");
-
+            
+        assert(object.mesh && "object.mesh should be a valid pointer");
         object.mesh->Bind(cmd);
-        for (const auto& primitive : object.mesh->GetPrimitives())
+
+        for (const Primitive &primitive : object.mesh->GetPrimitives())
         {
+            assert(object.material && "object.material should be a valid pointer");
+            
+            const auto& currentMat = object.material;
+            currentMat->Bind(cmd, m_PipelineLayout->GetVkHandle(), 1);
+                        
             vkCmdDrawIndexed(cmd, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
         }
     }
@@ -497,13 +496,13 @@ namespace ve
             mesh.FreeCPUData();
     }
 
-    void RendererPBR::BuildMaterial(MaterialPBR &material) const
+    void RendererPBR::UploadMaterial(MaterialPBR &material) const
     {
-        material.Build(
+        material.Upload(
             *m_Allocator,
-            *m_LogicalDevice,
             *m_DescriptorPool,
             *m_MaterialSetLayout,
+            *m_LogicalDevice,
             *m_DefaultWhiteTexture,
             *m_DefaultNormalMap);
     }
@@ -564,7 +563,7 @@ namespace ve
             0, nullptr);
 
         m_SkyboxMesh->Bind(cmd);
-        for (const auto& primitive : m_SkyboxMesh->GetPrimitives())
+        for (const auto &primitive : m_SkyboxMesh->GetPrimitives())
         {
             vkCmdDrawIndexed(cmd, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
         }

@@ -17,6 +17,7 @@
 
 #include "VulkanEngine/Renderer/Texture.hpp"
 #include "VulkanEngine/Renderer/PBR/MaterialPBR.hpp"
+#include "VulkanEngine/Renderer/PBR/MaterialLoader.hpp"
 
 #include "VulkanEngine/Renderer/Vertex.hpp"
 #include "VulkanEngine/Renderer/AABB.hpp"

@@ -87,7 +87,7 @@ namespace ve
     public:
         void UploadMesh(Mesh &mesh, bool freeCPU = true) const;
 
-        void BuildMaterial(MaterialPBR &material) const;
+        void UploadMaterial(MaterialPBR &material) const;
 
         std::shared_ptr<Texture> LoadTexture(const std::string &path, const TextureDesc &desc);
 

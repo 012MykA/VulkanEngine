@@ -3,7 +3,7 @@
 void ExampleLayer::SetupMeshes()
 {
     ve::MeshLoader loader;
-    
+
     m_CubeMesh = loader.LoadGLTF("assets/models/Cube.glb");
     m_Renderer->UploadMesh(*m_CubeMesh);
 
@@ -16,26 +16,16 @@ void ExampleLayer::SetupMeshes()
 
 void ExampleLayer::SetupMaterials()
 {
-    m_VictorianBrick = ve::MaterialPBR::Load(
-        "assets/pbr_materials/victorian-brick",
-        m_Renderer->GetAllocator(),
-        m_Renderer->GetLogicalDevice(),
-        m_Renderer->GetGraphicsImmediateSubmit());
-    m_Renderer->BuildMaterial(*m_VictorianBrick);
+    ve::MaterialLoader loader;
 
-    m_LightGold = ve::MaterialPBR::Load(
-        "assets/pbr_materials/light-gold",
-        m_Renderer->GetAllocator(),
-        m_Renderer->GetLogicalDevice(),
-        m_Renderer->GetGraphicsImmediateSubmit());
-    m_Renderer->BuildMaterial(*m_LightGold);
+    m_VictorianBrick = loader.LoadFromDirectory("assets/pbr_materials/victorian-brick");
+    m_Renderer->UploadMaterial(*m_VictorianBrick);
 
-    m_CarbonFiber = ve::MaterialPBR::Load(
-        "assets/pbr_materials/carbon-fiber",
-        m_Renderer->GetAllocator(),
-        m_Renderer->GetLogicalDevice(),
-        m_Renderer->GetGraphicsImmediateSubmit());
-    m_Renderer->BuildMaterial(*m_CarbonFiber);
+    m_LightGold = loader.LoadFromDirectory("assets/pbr_materials/light-gold");
+    m_Renderer->UploadMaterial(*m_LightGold);
+
+    m_CarbonFiber = loader.LoadFromDirectory("assets/pbr_materials/carbon-fiber");
+    m_Renderer->UploadMaterial(*m_CarbonFiber);
 }
 
 void ExampleLayer::SetupObjects()

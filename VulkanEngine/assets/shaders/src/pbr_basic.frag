@@ -27,36 +27,30 @@ layout(set = 0, binding = 2) uniform samplerCube u_PrefilteredMap;
 layout(set = 0, binding = 3) uniform sampler2D u_BrdfLUT;
 
 layout(set = 1, binding = 0) uniform MaterialPBRData {
-    // --- Factors ---
     vec4 baseColorFactor;
     vec3 emissiveFactor;
+    float alphaCutoff;
+
     float metallicFactor;
     float roughnessFactor;
-    float alphaCutoff;
     float normalScale;
     float occlusionStrength;
 
-    // --- UV Transform ---
-    vec2 uvScale;
-    vec2 uvOffset;
+    uint alphaMode;   // 0: Opaque, 1: Mask, 2: Blend
+    uint doubleSided; // 0: false, 1: true
 
-    // --- Texture Indices ---
-    int baseColorTextureIdx;
-    int emissiveTextureIdx;
-    int metallicTextureIdx;
-    int roughnessTextureIdx;
-    int normalTextureIdx;
-    int occlusionTextureIdx;
-
-    int alphaMode;
+    uint hasBaseColorMap;
+    uint hasNormalMap;
+    uint hasMetallicRoughnessMap;
+    uint hasEmissiveMap;
+    uint hasOcclusionMap;
 } u_Material;
 
 layout(set = 1, binding = 1) uniform sampler2D baseColorMap;
 layout(set = 1, binding = 2) uniform sampler2D emissiveMap;
-layout(set = 1, binding = 3) uniform sampler2D metallicMap;
-layout(set = 1, binding = 4) uniform sampler2D roughnessMap;
-layout(set = 1, binding = 5) uniform sampler2D normalMap;
-layout(set = 1, binding = 6) uniform sampler2D occlusionMap;
+layout(set = 1, binding = 3) uniform sampler2D metallicRoughnessMap;
+layout(set = 1, binding = 4) uniform sampler2D normalMap;
+layout(set = 1, binding = 5) uniform sampler2D occlusionMap;
 
 layout(location = 0) out vec4 outColor;
 
@@ -88,36 +82,40 @@ float aces(float x) {
 }
 
 void main() {
-    vec2 UV = inTexCoord * u_Material.uvScale + u_Material.uvOffset;
-    
+    vec2 UV = inTexCoord;
+
     // Albedo
     vec4 albedoRGBA = u_Material.baseColorFactor;
-    if(u_Material.baseColorTextureIdx != -1) {
+    if(u_Material.hasBaseColorMap != 0) {
         albedoRGBA *= texture(baseColorMap, UV);
     }
     vec3 albedo = albedoRGBA.rgb;
 
+    // Alpha cutoff
+    if(u_Material.alphaMode == 1) { // MASK
+        if(albedoRGBA.a < u_Material.alphaCutoff) {
+            discard;
+        }
+    }
+
     // Emissive
     vec3 emissive = u_Material.emissiveFactor;
-    if(u_Material.emissiveTextureIdx != -1) {
+    if(u_Material.hasEmissiveMap != 0) {
         emissive *= texture(emissiveMap, UV).rgb;
     }
 
-    // Metallic
+    // Metallic & Roughness
     float metallic = u_Material.metallicFactor;
-    if(u_Material.metallicTextureIdx != -1) {
-        metallic *= texture(metallicMap, UV).r;
-    }
-
-    // Roughness
     float roughness = u_Material.roughnessFactor;
-    if(u_Material.roughnessTextureIdx != -1) {
-        roughness *= texture(roughnessMap, UV).g;
+
+    if(u_Material.hasMetallicRoughnessMap != 0) {
+        metallic *= texture(metallicRoughnessMap, UV).b;
+        roughness *= texture(metallicRoughnessMap, UV).g;
     }
 
     // Occlusion
     float occlusion = 1.0;
-    if(u_Material.occlusionTextureIdx != -1) {
+    if(u_Material.hasOcclusionMap != 0) {
         float aoSample = texture(occlusionMap, UV).r;
         occlusion = 1.0 + u_Material.occlusionStrength * (aoSample - 1.0);
     }
@@ -133,7 +131,7 @@ void main() {
 
     // --- Shading ---
     vec3 N;
-    if(u_Material.normalTextureIdx != -1) {
+    if(u_Material.hasNormalMap != 0) {
         vec3 tangent = normalize(inTangent.xyz);
         vec3 normal = normalize(inNormal);
         vec3 bitangent = normalize(cross(normal, tangent) * inTangent.w);
@@ -148,6 +146,13 @@ void main() {
         N = normalize(TBN * localNormal);
     } else {
         N = normalize(inNormal);
+    }
+
+    // Double sided
+    if(u_Material.doubleSided != 0) {
+        if(!gl_FrontFacing) {
+            N = -N;
+        }
     }
 
     vec3 V = normalize(u_Global.cameraPos.rgb - inWorldPos);
