@@ -1,5 +1,6 @@
 #include "MeshLoader.hpp"
 #include "VulkanEngine/Core/Log.hpp"
+#include "VulkanEngine/Core/Timer.hpp"
 
 #include <tiny_gltf.h>
 #include <glm/glm.hpp>
@@ -11,6 +12,8 @@ namespace ve
 {
     std::shared_ptr<Mesh> MeshLoader::LoadGLB(const std::string &path)
     {
+        Timer loadingTimer;
+
         tinygltf::Model model;
         tinygltf::TinyGLTF loader;
         std::string err;
@@ -114,7 +117,18 @@ namespace ve
         mesh->SetIndices(std::move(allIndices));
         mesh->RecalculateBounds();
 
+        VE_CORE_TRACE("Mesh '{}' loaded ({} ms)", mesh->GetName(), loadingTimer.ElapsedMilliseconds());
+        VE_CORE_TRACE("  Vertices: {}", mesh->GetVertices().size());
+        VE_CORE_TRACE("  Indices: {}", mesh->GetIndices().size());
+
         return mesh;
+    }
+
+    std::future<std::shared_ptr<Mesh>> MeshLoader::LoadGLBAsync(const std::string &path)
+    {
+        return std::async(std::launch::async, [this, path]() {
+            return LoadGLB(path);
+        });
     }
 
 } // namespace ve

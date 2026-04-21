@@ -4,6 +4,7 @@
 
 #include <string>
 #include <memory>
+#include <future>
 
 namespace ve
 {
@@ -13,7 +14,9 @@ namespace ve
         MeshLoader() = default;
         ~MeshLoader() = default;
 
-        std::shared_ptr<Mesh> LoadGLB(const std::string &path);        
+        std::shared_ptr<Mesh> LoadGLB(const std::string &path);
+
+        std::future<std::shared_ptr<Mesh>> LoadGLBAsync(const std::string &path);
     };
 
 } // namespace ve
