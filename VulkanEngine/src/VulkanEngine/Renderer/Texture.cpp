@@ -13,7 +13,8 @@ namespace ve
     Texture::Texture(const TextureDesc &desc)
         : m_Width(desc.width), m_Height(desc.height),
           m_Format(desc.format), m_GenerateMips(desc.generateMips),
-          m_MipLevels(m_GenerateMips ? CalcMipLevels(m_Width, m_Height) : 1)
+          m_MipLevels(m_GenerateMips ? CalcMipLevels(m_Width, m_Height) : 1),
+          m_IsCubeMap(desc.isCube)
     {
         if (desc.pixels)
         {
@@ -26,10 +27,13 @@ namespace ve
                          const VulkanImmediateSubmit &upload,
                          const SamplerDesc &samplerDesc)
     {
+        assert(m_Image == nullptr && "Texture is already uploaded");
         assert(!m_CPUData.empty() && "Nothing to upload");
 
         size_t pixelSize = GetPixelSize(m_Format);
-        VkDeviceSize dataSize = static_cast<VkDeviceSize>(m_Width) * m_Height * pixelSize;
+        uint32_t layers = m_IsCubeMap ? 6 : 1;
+
+        VkDeviceSize dataSize = static_cast<VkDeviceSize>(m_Width) * m_Height * pixelSize * layers;
 
         VulkanBuffer staging(allocator, MakeStagingBufferDesc(dataSize));
         staging.Upload(m_CPUData.data(), dataSize);
@@ -38,8 +42,9 @@ namespace ve
             .width = m_Width,
             .height = m_Height,
             .mipLevels = m_MipLevels,
+            .arrayLayers = layers,
             .format = ResolveVkFormat(m_Format),
-            .type = ImageType::Texture2D,
+            .type = m_IsCubeMap ? ImageType::Cube : ImageType::Texture2D,
         };
         m_Image = std::make_unique<VulkanImage>(allocator, device, imageDesc);
 
@@ -76,7 +81,8 @@ namespace ve
         m_Height = height;
         m_Format = format;
 
-        size_t size = static_cast<size_t>(width) * height * GetPixelSize(format);
+        uint32_t layers = m_IsCubeMap ? 6 : 1;
+        size_t size = static_cast<size_t>(width) * height * GetPixelSize(format) * layers;
         m_CPUData.assign(reinterpret_cast<const uint8_t *>(data), reinterpret_cast<const uint8_t *>(data) + size);
     }
 

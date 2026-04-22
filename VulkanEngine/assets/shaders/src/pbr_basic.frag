@@ -200,16 +200,13 @@ void main() {
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
 
-    vec3 invN = vec3(N.x, -N.y, N.z);
-    vec3 invR = vec3(R.x, -R.y, R.z);
-
     // Diffuse IBL (Irradiance)
-    vec3 irradiance = texture(u_IrradianceMap, invN).rgb;
+    vec3 irradiance = texture(u_IrradianceMap, N).rgb;
     vec3 diffuse = irradiance * albedo;
 
     // Specular IBL (Prefiltered)
     float lod = roughness * float(textureQueryLevels(u_PrefilteredMap) - 1);
-    vec3 prefilteredColor = textureLod(u_PrefilteredMap, invR, lod).rgb;
+    vec3 prefilteredColor = textureLod(u_PrefilteredMap, R, lod).rgb;
     vec2 brdf = texture(u_BrdfLUT, vec2(NdotV, roughness)).rg;
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 

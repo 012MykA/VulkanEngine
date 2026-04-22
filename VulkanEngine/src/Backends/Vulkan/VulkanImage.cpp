@@ -2,6 +2,8 @@
 #include "VulkanLogicalDevice.hpp"
 #include "Debug/VulkanValidation.hpp"
 
+#include <cassert>
+
 namespace ve
 {
     VulkanImage::VulkanImage(const VulkanAllocator &allocator,
@@ -243,6 +245,8 @@ namespace ve
     void VulkanImage::CopyFromBuffer(VkCommandBuffer cmd, VkBuffer srcBuffer,
                                      uint32_t mipLevel, uint32_t layer) const
     {
+        uint32_t layersToCopy = (layer == 0 && m_ArrayLayers > 1) ? m_ArrayLayers : 1;
+
         VkBufferImageCopy region{
             .bufferOffset = 0,
             .bufferRowLength = 0,
@@ -251,7 +255,7 @@ namespace ve
                 .aspectMask = m_Aspect,
                 .mipLevel = mipLevel,
                 .baseArrayLayer = layer,
-                .layerCount = 1,
+                .layerCount = layersToCopy,
             },
             .imageOffset = {0, 0, 0},
             .imageExtent{
@@ -412,7 +416,7 @@ namespace ve
     VkDescriptorImageInfo VulkanImage::GetDescriptorInfo() const
     {
         assert(m_Sampler != VK_NULL_HANDLE && m_ImageView != VK_NULL_HANDLE);
-        
+
         VkDescriptorImageInfo info{
             .sampler = m_Sampler,
             .imageView = m_ImageView,
@@ -425,8 +429,11 @@ namespace ve
     void VulkanImage::CreateImage(const VulkanAllocator &allocator, const ImageDesc &desc)
     {
         VkImageCreateFlags flags = 0;
-        if (desc.type == ImageType::TextureCube)
+        if (desc.type == ImageType::Cube)
+        {
+            assert(desc.arrayLayers % 6 == 0 && "CubeMap must have multiple of 6 layers");
             flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+        }
 
         VkImageCreateInfo imageInfo{
             .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -512,7 +519,7 @@ namespace ve
         }
 
         case ImageType::Texture2D:
-        case ImageType::TextureCube:
+        case ImageType::Cube:
         {
             usage |= VK_IMAGE_USAGE_SAMPLED_BIT |
                      VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -549,7 +556,7 @@ namespace ve
 
     VkImageViewType VulkanImage::ResolveViewType(const ImageDesc &desc)
     {
-        if (desc.type == ImageType::TextureCube)
+        if (desc.type == ImageType::Cube)
             return VK_IMAGE_VIEW_TYPE_CUBE;
 
         if (desc.arrayLayers > 1)

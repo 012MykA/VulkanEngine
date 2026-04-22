@@ -27,6 +27,7 @@ namespace ve
         uint32_t height = 0;
         TextureFormat format = TextureFormat::RGBA8_SRGB;
         bool generateMips = true;
+        bool isCube = false;
     };
 
     class VulkanAllocator;
@@ -63,8 +64,9 @@ namespace ve
         uint32_t GetWidth() const { return m_Width; }
         uint32_t GetHeight() const { return m_Height; }
         bool IsMipsGenerated() const { return m_GenerateMips; }
+        bool IsCubeMap() const { return m_IsCubeMap; }
 
-    private:
+    public:
         static VkFormat ResolveVkFormat(TextureFormat format);
         static size_t GetPixelSize(TextureFormat format);
         static uint32_t CalcMipLevels(uint32_t w, uint32_t h);
@@ -75,6 +77,7 @@ namespace ve
         uint32_t m_Height = 0;
         TextureFormat m_Format = TextureFormat::RGBA8_SRGB;
         bool m_GenerateMips = true;
+        bool m_IsCubeMap = false;
 
         std::unique_ptr<VulkanImage> m_Image;
         uint32_t m_MipLevels = 1;

@@ -13,10 +13,8 @@ layout(location = 0) out vec3 localPos;
 void main() {
     localPos = inPos;
 
-    vec3 flippedPos = vec3(inPos.x, -inPos.y, inPos.z);
-
     mat4 rotView = mat4(mat3(u_Global.view));
-    vec4 clipPos = u_Global.proj * rotView * vec4(flippedPos, 1.0);
+    vec4 clipPos = u_Global.proj * rotView * vec4(inPos, 1.0);
 
     gl_Position = clipPos.xyww;
 }

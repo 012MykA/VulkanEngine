@@ -1,7 +1,6 @@
 #include "RendererPBR.hpp"
 #include "VulkanEngine/Core/Window.hpp"
 #include "VulkanEngine/Renderer/Camera/Camera.hpp"
-#include "VulkanEngine/Renderer/PBR/IBLBaker.hpp"
 #include "VulkanEngine/Renderer/MeshLoader.hpp"
 #include "VulkanEngine/Renderer/TextureLoader.hpp"
 
@@ -93,8 +92,10 @@ namespace ve
 
         // Default resources
         m_DefaultWhiteTexture = TextureLoader().CreateSolid(255, 255, 255, 255);
+        UploadTexture(*m_DefaultWhiteTexture);
 
         m_DefaultNormalMap = TextureLoader().CreateSolid(128, 128, 255, 255);
+        UploadTexture(*m_DefaultNormalMap);
 
         // Descriptors
         constexpr uint32_t framesInFlight = VulkanFrameManager::k_MaxFramesInFlight;
@@ -133,18 +134,21 @@ namespace ve
         m_GlobalUBOs.resize(VulkanFrameManager::k_MaxFramesInFlight);
         m_GlobalDescriptorSets.resize(VulkanFrameManager::k_MaxFramesInFlight);
 
-        m_EnvironmentMap = TextureLoader().LoadCubemapFromEquirect("../VulkanEngine/assets/textures/modern_evening_street_4k.hdr", 512);
+        std::string cubeMapDir = "../VulkanEngine/assets/skyboxes/street/faces/";
+        std::array<std::string, 6> cubeMapFaces = {
+            cubeMapDir + "px.hdr",  // +X
+            cubeMapDir + "nx.hdr",  // -X
+            cubeMapDir + "py.hdr",  // +Y
+            cubeMapDir + "ny.hdr",  // -Y
+            cubeMapDir + "pz.hdr",  // +Z
+            cubeMapDir + "nz.hdr",  // -Z
+        };
+        m_EnvironmentMap = TextureLoader().LoadCubeMap(cubeMapFaces);
         UploadTexture(*m_EnvironmentMap);
 
-        auto iblResult = IBLBaker::Bake(
-            *m_EnvironmentMap,
-            *m_Allocator,
-            *m_LogicalDevice,
-            *m_GraphicsImmediateSubmit);
-
-        m_IrradianceMap = iblResult.irradianceMap;
-        m_PrefilteredMap = iblResult.prefilteredMap;
-        m_BrdfLUT = iblResult.brdfLUT;
+        m_IrradianceMap = m_EnvironmentMap;
+        m_PrefilteredMap = m_EnvironmentMap;
+        m_BrdfLUT = m_DefaultWhiteTexture;
 
         for (uint32_t i = 0; i < VulkanFrameManager::k_MaxFramesInFlight; i++)
         {

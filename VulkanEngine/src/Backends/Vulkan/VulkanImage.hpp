@@ -17,7 +17,7 @@ namespace ve
         DepthStencilAttachment,
 
         Texture2D,
-        TextureCube,
+        Cube,
 
         SwapchainColor,
     };
