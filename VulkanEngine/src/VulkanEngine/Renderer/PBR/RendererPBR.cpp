@@ -1,6 +1,7 @@
 #include "RendererPBR.hpp"
 #include "VulkanEngine/Core/Window.hpp"
 #include "VulkanEngine/Renderer/Camera/Camera.hpp"
+#include "Backends/Vulkan/VulkanShader.hpp"
 #include "VulkanEngine/Renderer/MeshLoader.hpp"
 #include "VulkanEngine/Renderer/TextureLoader.hpp"
 

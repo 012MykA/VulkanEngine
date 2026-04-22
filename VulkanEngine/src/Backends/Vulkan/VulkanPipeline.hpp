@@ -3,36 +3,15 @@
 #include <vulkan/vulkan.h>
 
 #include <vector>
-#include <string>
-#include <span>
 #include <cstdint>
 
 namespace ve
 {
     class VulkanLogicalDevice;
 
-    // --- VulkanShader (SPIR-V module) ---
-    class VulkanShader
-    {
-    public:
-        VulkanShader(const VulkanLogicalDevice &device, const std::string &spvPath);
-        VulkanShader(const VulkanLogicalDevice &device, std::span<const uint32_t> spvCode);
-        ~VulkanShader();
-
-        VulkanShader(const VulkanShader &) = delete;
-        VulkanShader &operator=(const VulkanShader &) = delete;
-
-        VkShaderModule GetVkHandle() const { return m_Module; }
-
-    private:
-        static std::vector<uint32_t> LoadSpv(const std::string &path);
-
-    private:
-        VkDevice m_Device = VK_NULL_HANDLE;
-        VkShaderModule m_Module = VK_NULL_HANDLE;
-    };
-
-    // --- Vertex ipnut ---
+    /**
+     * Vertex Input
+     */
     struct VertexInputDesc
     {
         std::vector<VkVertexInputBindingDescription> bindings;
@@ -45,40 +24,9 @@ namespace ve
 
     VertexInputDesc GetFullscreenVertexInputDesc();
 
-    // --- GraphicsPipelineDesc ---
-    struct GraphicsPipelineDesc
-    {
-        // Shaders
-        VkShaderModule vertexShader = VK_NULL_HANDLE;
-        const char *vertexEntry = "main";
-        VkShaderModule fragmentShader = VK_NULL_HANDLE;
-        const char *fragmentEntry = "main";
-
-        // Vertices
-        VertexInputDesc vertexInput;
-
-        // Rasterization
-        VkPolygonMode polygonMode = VK_POLYGON_MODE_FILL;
-        VkCullModeFlags cullMode = VK_CULL_MODE_BACK_BIT;
-        VkFrontFace frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-        float lineWidth = 1.0f;
-
-        // Multisampling
-        VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
-
-        // Depth/Stencil
-        bool depthTest = true;
-        bool depthWrite = true;
-        VkCompareOp depthCompareOp = VK_COMPARE_OP_LESS;
-
-        // Color blending
-        VkPipelineColorBlendAttachmentState colorBlendAttachment;
-
-        VkRenderPass renderPass = VK_NULL_HANDLE;
-        VkPipelineLayout layout = VK_NULL_HANDLE;
-    };
-
-    // --- VulkanPipelineLayout ---
+    /**
+     * Vulkan Pipeline layout
+     */
     class VulkanPipelineLayout
     {
     public:
@@ -125,7 +73,41 @@ namespace ve
         VkPipelineLayout m_Layout = VK_NULL_HANDLE;
     };
 
-    // --- VulkanGraphicsPipeline ---
+    /**
+     * Vulkan Graphics Pipeline
+     */
+    struct GraphicsPipelineDesc
+    {
+        // Shaders
+        VkShaderModule vertexShader = VK_NULL_HANDLE;
+        const char *vertexEntry = "main";
+        VkShaderModule fragmentShader = VK_NULL_HANDLE;
+        const char *fragmentEntry = "main";
+
+        // Vertices
+        VertexInputDesc vertexInput;
+
+        // Rasterization
+        VkPolygonMode polygonMode = VK_POLYGON_MODE_FILL;
+        VkCullModeFlags cullMode = VK_CULL_MODE_BACK_BIT;
+        VkFrontFace frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        float lineWidth = 1.0f;
+
+        // Multisampling
+        VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
+
+        // Depth/Stencil
+        bool depthTest = true;
+        bool depthWrite = true;
+        VkCompareOp depthCompareOp = VK_COMPARE_OP_LESS;
+
+        // Color blending
+        VkPipelineColorBlendAttachmentState colorBlendAttachment;
+
+        VkRenderPass renderPass = VK_NULL_HANDLE;
+        VkPipelineLayout layout = VK_NULL_HANDLE;
+    };
+
     class VulkanGraphicsPipeline
     {
     public:
