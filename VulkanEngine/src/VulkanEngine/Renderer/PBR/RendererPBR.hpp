@@ -12,6 +12,7 @@
 #include "Backends/Vulkan/VulkanCommandPool.hpp"
 #include "Backends/Vulkan/VulkanImmediateSubmit.hpp"
 #include "Backends/Vulkan/VulkanDescriptor.hpp"
+#include "Backends/Vulkan/VulkanPipelineLayout.hpp"
 #include "Backends/Vulkan/VulkanPipeline.hpp"
 #include "Backends/Vulkan/VulkanFrameManager.hpp"
 
