@@ -1,17 +1,15 @@
 #pragma once
 
 #include "Backends/Vulkan/VulkanImage.hpp"
-#include "Backends/Vulkan/VulkanAllocator.hpp"
 
-#include <string>
-#include <memory>
+#include <vulkan/vulkan.h>
+
 #include <cstdint>
+#include <vector>
+#include <memory>
 
 namespace ve
 {
-    class VulkanLogicalDevice;
-    class VulkanImmediateSubmit;
-
     enum class TextureFormat
     {
         RGBA8_SRGB,
@@ -24,82 +22,62 @@ namespace ve
 
     struct TextureDesc
     {
+        const void *pixels = nullptr;
+        uint32_t width = 0;
+        uint32_t height = 0;
         TextureFormat format = TextureFormat::RGBA8_SRGB;
         bool generateMips = true;
     };
 
+    class VulkanAllocator;
+    class VulkanLogicalDevice;
+    class VulkanImmediateSubmit;
+
     class Texture
     {
     public:
-        Texture() = default;
+        Texture(const TextureDesc &desc);
+        ~Texture() = default;
 
-        static std::shared_ptr<Texture> LoadFromFile(
-            const std::string &path,
-            TextureDesc desc,
-            const VulkanAllocator &allocator,
-            const VulkanLogicalDevice &logicalDevice,
-            const VulkanImmediateSubmit &upload);
+        Texture(const Texture &) = delete;
+        Texture &operator=(const Texture &) = delete;
 
-        // Converts an equirectangular HDR panorama to a TextureCube on the CPU (face-by-face)
-        // faceSize is the size of a single face (512, 1024, 2048)
-        static std::shared_ptr<Texture> LoadCubemapFromEquirect(
-            const std::string &path,
-            uint32_t faceSize,
-            const VulkanAllocator &allocator,
-            const VulkanLogicalDevice &device,
-            const VulkanImmediateSubmit &upload);
+    public:
+        // Upload data on GPU
+        void Upload(const VulkanAllocator &allocator,
+                    const VulkanLogicalDevice &device,
+                    const VulkanImmediateSubmit &upload,
+                    const SamplerDesc &sampleDesc);
+        void FreeCPUData();
 
-        static std::shared_ptr<Texture> LoadFromMemory(
-            const uint8_t *data,
-            size_t size,
-            TextureDesc &desc,
-            const VulkanAllocator &allocator,
-            const VulkanLogicalDevice &device,
-            const VulkanImmediateSubmit &upload);
+        // --- Setters ---
 
-        static std::shared_ptr<Texture> CreateEmpty(
-            uint32_t width,
-            uint32_t height,
-            const TextureDesc &desc,
-            const VulkanAllocator &allocator,
-            const VulkanLogicalDevice &device);
+        void SetData(const void *data, uint32_t width, uint32_t height, TextureFormat format);
+        void SetGenerateMips(bool generate);
 
-        static std::shared_ptr<Texture> CreateSolid(
-            uint8_t r, uint8_t g, uint8_t b, uint8_t a,
-            const VulkanAllocator &allocator,
-            const VulkanLogicalDevice &device,
-            const VulkanImmediateSubmit &upload);
+        // --- Getters ---
 
-        VulkanImage &GetImage() { return *m_Image; }
-        const VulkanImage &GetImage() const { return *m_Image; }
-
+        bool IsUploaded() const { return m_Image != nullptr; }
+        const VulkanImage &GetImage() { return *m_Image; }
         VkDescriptorImageInfo GetDescriptorInfo() const { return m_Image->GetDescriptorInfo(); }
-
         uint32_t GetWidth() const { return m_Width; }
         uint32_t GetHeight() const { return m_Height; }
-        uint32_t GetMipLevels() const { return m_MipLevels; }
-        const std::string &GetPath() const { return m_Path; }
-
-        void InitializeAndUpload(
-            const void *pixels,
-            uint32_t width,
-            uint32_t height,
-            const TextureDesc &desc,
-            const VulkanAllocator &allocator,
-            const VulkanLogicalDevice &logicalDevice,
-            const VulkanImmediateSubmit &upload);
+        bool IsMipsGenerated() const { return m_GenerateMips; }
 
     private:
         static VkFormat ResolveVkFormat(TextureFormat format);
-        static uint32_t CalcMipLevels(uint32_t w, uint32_t h);
         static size_t GetPixelSize(TextureFormat format);
+        static uint32_t CalcMipLevels(uint32_t w, uint32_t h);
 
-    protected:
-        std::unique_ptr<VulkanImage> m_Image;
+    private:
+        std::vector<uint8_t> m_CPUData;
         uint32_t m_Width = 0;
         uint32_t m_Height = 0;
+        TextureFormat m_Format = TextureFormat::RGBA8_SRGB;
+        bool m_GenerateMips = true;
+
+        std::unique_ptr<VulkanImage> m_Image;
         uint32_t m_MipLevels = 1;
-        std::string m_Path;
     };
 
 } // namespace ve

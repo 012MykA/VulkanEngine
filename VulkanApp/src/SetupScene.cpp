@@ -25,6 +25,11 @@ void ExampleLayer::SetupMaterials()
     m_Renderer->UploadMaterial(*m_LightGold);
 
     m_CarbonFiber = loader.LoadFromDirectory("assets/pbr_materials/carbon-fiber");
+
+    auto baseColorTex = ve::TextureLoader().Load("assets/textures/texture.jpg");
+    m_Renderer->UploadTexture(*baseColorTex);    
+    m_CarbonFiber->SetBaseColorMap(baseColorTex);
+    
     m_Renderer->UploadMaterial(*m_CarbonFiber);
 }
 

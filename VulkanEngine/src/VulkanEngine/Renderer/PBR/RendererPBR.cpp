@@ -3,6 +3,7 @@
 #include "VulkanEngine/Renderer/Camera/Camera.hpp"
 #include "VulkanEngine/Renderer/PBR/IBLBaker.hpp"
 #include "VulkanEngine/Renderer/MeshLoader.hpp"
+#include "VulkanEngine/Renderer/TextureLoader.hpp"
 
 #include "VulkanEngine/Core/Timer.hpp"
 #include "Backends/Vulkan/Debug/VulkanValidation.hpp"
@@ -91,13 +92,9 @@ namespace ve
             m_LogicalDevice->GetTransferQueue());
 
         // Default resources
-        m_DefaultWhiteTexture = Texture::CreateSolid(
-            255, 255, 255, 255,
-            *m_Allocator, *m_LogicalDevice, *m_GraphicsImmediateSubmit);
+        m_DefaultWhiteTexture = TextureLoader().CreateSolid(255, 255, 255, 255);
 
-        m_DefaultNormalMap = Texture::CreateSolid(
-            128, 128, 255, 255,
-            *m_Allocator, *m_LogicalDevice, *m_GraphicsImmediateSubmit);
+        m_DefaultNormalMap = TextureLoader().CreateSolid(128, 128, 255, 255);
 
         // Descriptors
         constexpr uint32_t framesInFlight = VulkanFrameManager::k_MaxFramesInFlight;
@@ -136,12 +133,8 @@ namespace ve
         m_GlobalUBOs.resize(VulkanFrameManager::k_MaxFramesInFlight);
         m_GlobalDescriptorSets.resize(VulkanFrameManager::k_MaxFramesInFlight);
 
-        m_EnvironmentMap = Texture::LoadCubemapFromEquirect(
-            "../VulkanEngine/assets/textures/modern_evening_street_4k.hdr",
-            512,
-            *m_Allocator,
-            *m_LogicalDevice,
-            *m_GraphicsImmediateSubmit);
+        m_EnvironmentMap = TextureLoader().LoadCubemapFromEquirect("../VulkanEngine/assets/textures/modern_evening_street_4k.hdr", 512);
+        UploadTexture(*m_EnvironmentMap);
 
         auto iblResult = IBLBaker::Bake(
             *m_EnvironmentMap,
@@ -442,17 +435,16 @@ namespace ve
             VK_SHADER_STAGE_VERTEX_BIT,
             0, sizeof(PushConstants), &pc);
 
-            
         assert(object.mesh && "object.mesh should be a valid pointer");
         object.mesh->Bind(cmd);
 
         for (const Primitive &primitive : object.mesh->GetPrimitives())
         {
             assert(object.material && "object.material should be a valid pointer");
-            
-            const auto& currentMat = object.material;
+
+            const auto &currentMat = object.material;
             currentMat->Bind(cmd, m_PipelineLayout->GetVkHandle(), 1);
-                        
+
             vkCmdDrawIndexed(cmd, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
         }
     }
@@ -507,13 +499,19 @@ namespace ve
             *m_DefaultNormalMap);
     }
 
-    std::shared_ptr<Texture> RendererPBR::LoadTexture(const std::string &path, const TextureDesc &desc)
+    void RendererPBR::UploadTexture(Texture &texture, bool freeCPU) const
     {
-        return Texture::LoadFromFile(
-            path, desc,
+        SamplerDesc samplerDesc{};
+        samplerDesc.maxAnisotropy = m_EffectiveSettings.anisotropy;
+
+        texture.Upload(
             *m_Allocator,
             *m_LogicalDevice,
-            *m_GraphicsImmediateSubmit);
+            *m_GraphicsImmediateSubmit,
+            samplerDesc);
+
+        if (freeCPU)
+            texture.FreeCPUData();
     }
 
     void RendererPBR::ResolveSettings(const RenderSettings &requested)

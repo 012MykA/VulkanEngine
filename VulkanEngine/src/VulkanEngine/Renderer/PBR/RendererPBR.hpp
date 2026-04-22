@@ -89,7 +89,7 @@ namespace ve
 
         void UploadMaterial(MaterialPBR &material) const;
 
-        std::shared_ptr<Texture> LoadTexture(const std::string &path, const TextureDesc &desc);
+        void UploadTexture(Texture &texture, bool freeCPU = true) const;
 
     public:
         void AddLight(const glm::vec3 &position, const glm::vec3 &color, float intensity = 1.0f);

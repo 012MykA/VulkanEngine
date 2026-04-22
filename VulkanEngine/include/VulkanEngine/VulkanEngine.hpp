@@ -16,6 +16,8 @@
 #include "VulkanEngine/Renderer/PBR/RendererPBR.hpp"
 
 #include "VulkanEngine/Renderer/Texture.hpp"
+#include "VulkanEngine/Renderer/TextureLoader.hpp"
+
 #include "VulkanEngine/Renderer/PBR/MaterialPBR.hpp"
 #include "VulkanEngine/Renderer/PBR/MaterialLoader.hpp"
 
