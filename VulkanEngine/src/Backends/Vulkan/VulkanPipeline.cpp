@@ -25,29 +25,6 @@ namespace ve
         return desc;
     }
 
-    VertexInputDesc GetPositionOnlyVertexInputDesc()
-    {
-        VertexInputDesc desc;
-        desc.bindings.push_back(VkVertexInputBindingDescription{
-            .binding = 0,
-            .stride = sizeof(float) * 3,
-            .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
-        });
-
-        desc.attributes.push_back(VkVertexInputAttributeDescription{
-            .location = 0,
-            .binding = 0,
-            .format = VK_FORMAT_R32G32B32_SFLOAT,
-            .offset = 0,
-        });
-        return desc;
-    }
-
-    VertexInputDesc GetFullscreenVertexInputDesc()
-    {
-        return VertexInputDesc{};
-    }
-
     // --- VulkanPipelineLayout ---
     VulkanPipelineLayout::Builder::Builder(const VulkanLogicalDevice &logicalDevice)
         : m_Device(logicalDevice.GetVkHandle())

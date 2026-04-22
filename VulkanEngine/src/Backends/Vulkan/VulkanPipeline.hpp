@@ -10,21 +10,6 @@ namespace ve
     class VulkanLogicalDevice;
 
     /**
-     * Vertex Input
-     */
-    struct VertexInputDesc
-    {
-        std::vector<VkVertexInputBindingDescription> bindings;
-        std::vector<VkVertexInputAttributeDescription> attributes;
-    };
-
-    VertexInputDesc GetPBRVertexInputDesc();
-
-    VertexInputDesc GetPositionOnlyVertexInputDesc();
-
-    VertexInputDesc GetFullscreenVertexInputDesc();
-
-    /**
      * Vulkan Pipeline layout
      */
     class VulkanPipelineLayout
@@ -76,6 +61,14 @@ namespace ve
     /**
      * Vulkan Graphics Pipeline
      */
+    struct VertexInputDesc
+    {
+        std::vector<VkVertexInputBindingDescription> bindings;
+        std::vector<VkVertexInputAttributeDescription> attributes;
+    };
+
+    VertexInputDesc GetPBRVertexInputDesc();
+
     struct GraphicsPipelineDesc
     {
         // Shaders

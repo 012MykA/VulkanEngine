@@ -10,7 +10,7 @@
 namespace ve
 {
     class VulkanLogicalDevice;
-    
+
     class VulkanShader
     {
     public:

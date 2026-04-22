@@ -137,12 +137,12 @@ namespace ve
 
         std::string cubeMapDir = "../VulkanEngine/assets/skyboxes/street/faces/";
         std::array<std::string, 6> cubeMapFaces = {
-            cubeMapDir + "px.hdr",  // +X
-            cubeMapDir + "nx.hdr",  // -X
-            cubeMapDir + "py.hdr",  // +Y
-            cubeMapDir + "ny.hdr",  // -Y
-            cubeMapDir + "pz.hdr",  // +Z
-            cubeMapDir + "nz.hdr",  // -Z
+            cubeMapDir + "px.hdr", // +X
+            cubeMapDir + "nx.hdr", // -X
+            cubeMapDir + "py.hdr", // +Y
+            cubeMapDir + "ny.hdr", // -Y
+            cubeMapDir + "pz.hdr", // +Z
+            cubeMapDir + "nz.hdr", // -Z
         };
         m_EnvironmentMap = TextureLoader().LoadCubeMap(cubeMapFaces);
         UploadTexture(*m_EnvironmentMap);
@@ -191,17 +191,7 @@ namespace ve
                 .vertexShader = pbrVertexShader.GetVkHandle(),
                 .fragmentShader = pbrFragmentShader.GetVkHandle(),
 
-                .vertexInput{
-                    .bindings = {
-                        VkVertexInputBindingDescription{.binding = 0, .stride = sizeof(Vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX},
-                    },
-                    .attributes = {
-                        {.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, position)},
-                        {.location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, normal)},
-                        {.location = 2, .binding = 0, .format = VK_FORMAT_R32G32B32A32_SFLOAT, .offset = offsetof(Vertex, tangent)},
-                        {.location = 3, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(Vertex, uv)},
-                    },
-                },
+                .vertexInput = GetPBRVertexInputDesc(),
 
                 .depthTest = true,
                 .depthWrite = true,
