@@ -86,7 +86,8 @@ namespace ve
     class VulkanComputePipeline
     {
     public:
-        VulkanComputePipeline(const ComputePipelineDesc &desc);
+        VulkanComputePipeline( const VulkanLogicalDevice &logicalDevice,
+            const ComputePipelineDesc &desc);
         ~VulkanComputePipeline();
 
         VulkanComputePipeline(const VulkanComputePipeline &) = delete;

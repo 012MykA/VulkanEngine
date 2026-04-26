@@ -218,7 +218,9 @@ namespace ve
         };
     }
 
-    VulkanComputePipeline::VulkanComputePipeline(const ComputePipelineDesc &desc)
+    VulkanComputePipeline::VulkanComputePipeline(const VulkanLogicalDevice &logicalDevice,
+                                                 const ComputePipelineDesc &desc)
+        : m_Device(logicalDevice.GetVkHandle())
     {
         VkPipelineShaderStageCreateInfo stage{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
