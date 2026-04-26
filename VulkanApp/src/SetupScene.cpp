@@ -30,16 +30,19 @@ void ExampleLayer::SetupMeshes()
 
 void ExampleLayer::SetupMaterials()
 {
-    ve::MaterialLoader loader;
+    m_DefaultMaterial = std::make_shared<ve::MaterialPBR>();
+    m_DefaultMaterial->SetName("Default");
+    m_Renderer->UploadMaterial(*m_DefaultMaterial);
 
-    m_VictorianBrick = loader.LoadFromDirectory("assets/pbr_materials/victorian-brick");
-    m_Renderer->UploadMaterial(*m_VictorianBrick);
+    m_PurpleNeon = std::make_shared<ve::MaterialPBR>();
+    m_PurpleNeon->SetName("Purple neon");
+    m_PurpleNeon->SetEmissiveColorFactor({0.9f, 0.0f, 0.8f});
+    m_Renderer->UploadMaterial(*m_PurpleNeon);
 
-    m_LightGold = loader.LoadFromDirectory("assets/pbr_materials/light-gold");
-    m_Renderer->UploadMaterial(*m_LightGold);
-
-    m_CarbonFiber = loader.LoadFromDirectory("assets/pbr_materials/carbon-fiber");
-    m_Renderer->UploadMaterial(*m_CarbonFiber);
+    m_GreenNeon = std::make_shared<ve::MaterialPBR>();
+    m_GreenNeon->SetName("Green neon");
+    m_GreenNeon->SetEmissiveColorFactor({0.0f, 0.7f, 1.0f});
+    m_Renderer->UploadMaterial(*m_GreenNeon);
 }
 
 void ExampleLayer::SetupObjects()
@@ -48,27 +51,27 @@ void ExampleLayer::SetupObjects()
         auto entity = m_Scene->CreateEntity();
         entity.AddComponent<ve::TransformComponent>().SetPosition({-3.0f, 0.0f, 0.0f});
         entity.AddComponent<ve::MeshComponent>(m_SphereMesh);
-        entity.AddComponent<ve::MaterialPBRComponent>(m_LightGold);
+        entity.AddComponent<ve::MaterialPBRComponent>(m_PurpleNeon);
     }
 
     {
         auto entity = m_Scene->CreateEntity();
         entity.AddComponent<ve::TransformComponent>().SetPosition({0.0f, 0.0f, 0.0f});
         entity.AddComponent<ve::MeshComponent>(m_SphereMesh);
-        entity.AddComponent<ve::MaterialPBRComponent>(m_VictorianBrick);
+        entity.AddComponent<ve::MaterialPBRComponent>(m_DefaultMaterial);
     }
 
     {
         auto entity = m_Scene->CreateEntity();
         entity.AddComponent<ve::TransformComponent>().SetPosition({3.0f, 0.0f, 0.0f});
         entity.AddComponent<ve::MeshComponent>(m_SphereMesh);
-        entity.AddComponent<ve::MaterialPBRComponent>(m_CarbonFiber);
+        entity.AddComponent<ve::MaterialPBRComponent>(m_GreenNeon);
     }
 
     {
         auto entity = m_Scene->CreateEntity("Sponza");
         entity.AddComponent<ve::TransformComponent>().SetScale(glm::vec3(0.008f));
         entity.AddComponent<ve::MeshComponent>(m_GLTFSceneMesh);
-        entity.AddComponent<ve::MaterialPBRComponent>(m_CarbonFiber);
+        entity.AddComponent<ve::MaterialPBRComponent>(m_DefaultMaterial);
     }
 }

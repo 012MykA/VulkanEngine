@@ -26,24 +26,24 @@ namespace ve
     struct alignas(16) MaterialPBRData
     {
         glm::vec4 baseColorFactor = glm::vec4(1.0f);
-        glm::vec3 emissiveFactor = glm::vec3(0.0f);
-        float alphaCutoff = 0.5f;
 
+        glm::vec3 emissiveColorFactor = glm::vec3(0.0f);
+        float emissiveStrength = 1.0f;
+
+        float alphaCutoff = 0.5f;
         float metallicFactor = 1.0f;
         float roughnessFactor = 1.0f;
         float normalScale = 1.0f;
-        float occlusionStrength = 1.0f;
 
+        float occlusionStrength = 1.0f;
         uint32_t alphaMode = 0;   // 0: Opaque, 1: Mask, 2: Blend
         uint32_t doubleSided = 0; // 0: false, 1: true
-
         uint32_t hasBaseColorMap = 0;
+
         uint32_t hasNormalMap = 0;
         uint32_t hasEmissiveMap = 0;
         uint32_t hasMetallicRoughnessMap = 0;
         uint32_t hasOcclusionMap = 0;
-
-        float _padding[3];
     };
 
     class MaterialPBR
@@ -83,9 +83,11 @@ namespace ve
 
         void SetName(const std::string &name) { m_Name = name; }
 
-        void SetBaseColor(const glm::vec4 &factor) { m_Data.baseColorFactor = factor; }
-        void SetMetallic(float factor) { m_Data.metallicFactor = factor; }
-        void SetRoughness(float factor) { m_Data.roughnessFactor = factor; }
+        void SetBaseColorFactor(const glm::vec4 &factor) { m_Data.baseColorFactor = factor; }
+        void SetEmissiveColorFactor(const glm::vec3 &factor) { m_Data.emissiveColorFactor = factor; }
+        void SetEmissiveStrength(float strength) { m_Data.emissiveStrength = strength; }
+        void SetMetallicFactor(float factor) { m_Data.metallicFactor = factor; }
+        void SetRoughnessFactor(float factor) { m_Data.roughnessFactor = factor; }
         void SetAlphaMode(AlphaMode mode) { m_Data.alphaMode = static_cast<uint32_t>(mode); }
         void SetAlphaCutoff(float cutoff) { m_Data.alphaCutoff = cutoff; }
         void SetDoubleSided(bool doubleSided) { m_Data.doubleSided = doubleSided ? 1 : 0; }
@@ -104,6 +106,7 @@ namespace ve
         const std::string &GetName() const { return m_Name; }
         AlphaMode GetAlphaMode() const { return static_cast<AlphaMode>(m_Data.alphaMode); }
         bool IsDoubleSided() const { return m_Data.doubleSided == 1; }
+        bool IsEmissive() const { return glm::any(glm::greaterThan(m_Data.emissiveColorFactor, glm::vec3(0.0f))); }
 
     private:
         std::string m_Name;

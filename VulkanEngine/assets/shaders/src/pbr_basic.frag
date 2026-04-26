@@ -24,18 +24,20 @@ layout(set = 0, binding = 0) uniform GlobalUBO {
 
 layout(set = 1, binding = 0) uniform MaterialPBRData {
     vec4 baseColorFactor;
-    vec3 emissiveFactor;
-    float alphaCutoff;
 
+    vec3 emissiveColorFactor;
+    float emissiveStrength;
+
+    float alphaCutoff;
     float metallicFactor;
     float roughnessFactor;
     float normalScale;
-    float occlusionStrength;
 
+    float occlusionStrength;
     uint alphaMode;   // 0: Opaque, 1: Mask, 2: Blend
     uint doubleSided; // 0: false, 1: true
-
     uint hasBaseColorMap;
+
     uint hasNormalMap;
     uint hasMetallicRoughnessMap;
     uint hasEmissiveMap;
@@ -95,10 +97,11 @@ void main() {
     }
 
     // Emissive
-    vec3 emissive = u_Material.emissiveFactor;
+    vec3 emissive = u_Material.emissiveColorFactor;
     if(u_Material.hasEmissiveMap != 0) {
         emissive *= texture(emissiveMap, UV).rgb;
     }
+    emissive *= u_Material.emissiveStrength;
 
     // Metallic & Roughness
     float metallic = u_Material.metallicFactor;
@@ -110,7 +113,7 @@ void main() {
     }
 
     // Occlusion
-    float occlusion = u_Material.occlusionStrength;
+    float occlusion = 1.0;
     if(u_Material.hasOcclusionMap != 0) {
         float aoSample = texture(occlusionMap, UV).r;
         occlusion = 1.0 + u_Material.occlusionStrength * (aoSample - 1.0);
