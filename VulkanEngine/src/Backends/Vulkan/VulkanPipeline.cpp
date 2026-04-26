@@ -2,6 +2,8 @@
 #include "VulkanLogicalDevice.hpp"
 #include "Debug/VulkanValidation.hpp"
 
+#include <array>
+
 namespace ve
 {
     // --- Vertex ipnut ---
@@ -29,25 +31,25 @@ namespace ve
         : m_Device(logicalDevice.GetVkHandle())
     {
         // Shader stages
-        std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+        std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
 
         if (desc.vertexShader != VK_NULL_HANDLE)
         {
-            shaderStages.push_back(VkPipelineShaderStageCreateInfo{
+            shaderStages[0] = VkPipelineShaderStageCreateInfo{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
                 .stage = VK_SHADER_STAGE_VERTEX_BIT,
                 .module = desc.vertexShader,
                 .pName = desc.vertexEntry,
-            });
+            };
         }
         if (desc.fragmentShader != VK_NULL_HANDLE)
         {
-            shaderStages.push_back({
+            shaderStages[1] = VkPipelineShaderStageCreateInfo{
                 .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
                 .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
                 .module = desc.fragmentShader,
                 .pName = desc.fragmentEntry,
-            });
+            };
         }
 
         // Vertex input
@@ -161,7 +163,10 @@ namespace ve
     VulkanGraphicsPipeline::~VulkanGraphicsPipeline()
     {
         if (m_Pipeline != VK_NULL_HANDLE)
+        {
             vkDestroyPipeline(m_Device, m_Pipeline, nullptr);
+            m_Pipeline = VK_NULL_HANDLE;
+        }
     }
 
     void VulkanGraphicsPipeline::Bind(VkCommandBuffer cmd) const
@@ -211,6 +216,48 @@ namespace ve
             .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
                               VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
         };
+    }
+
+    VulkanComputePipeline::VulkanComputePipeline(const ComputePipelineDesc &desc)
+    {
+        VkPipelineShaderStageCreateInfo stage{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+            .module = desc.computeShader,
+            .pName = desc.computeEntry,
+        };
+
+        VkComputePipelineCreateInfo pipelineInfo{
+            .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+            .stage = stage,
+            .layout = desc.layout,
+        };
+
+        VkResult result = vkCreateComputePipelines(m_Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);
+        CHECK_VK_RESULT(result);
+    }
+
+    VulkanComputePipeline::~VulkanComputePipeline()
+    {
+        if (m_Pipeline != VK_NULL_HANDLE)
+        {
+            vkDestroyPipeline(m_Device, m_Pipeline, nullptr);
+            m_Pipeline = VK_NULL_HANDLE;
+        }
+    }
+
+    void VulkanComputePipeline::Bind(VkCommandBuffer cmd) const
+    {
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, m_Pipeline);
+    }
+
+    void VulkanComputePipeline::Dispatch(
+        VkCommandBuffer cmd,
+        uint32_t groupsX,
+        uint32_t groupsY,
+        uint32_t groupsZ) const
+    {
+        vkCmdDispatch(cmd, groupsX, groupsY, groupsZ);
     }
 
 } // namespace ve

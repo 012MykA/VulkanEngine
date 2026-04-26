@@ -8,9 +8,10 @@ namespace ve
 {
     class VulkanLogicalDevice;
 
-    /**
-     * Vulkan Graphics Pipeline
-     */
+    // -------------------------------------------------------
+    // Graphics Pipeline
+    // -------------------------------------------------------
+
     struct VertexInputDesc
     {
         std::vector<VkVertexInputBindingDescription> bindings;
@@ -63,6 +64,40 @@ namespace ve
         VulkanGraphicsPipeline &operator=(const VulkanGraphicsPipeline &) = delete;
 
         void Bind(VkCommandBuffer cmd) const;
+
+        VkPipeline GetVkHandle() const { return m_Pipeline; }
+
+    private:
+        VkDevice m_Device = VK_NULL_HANDLE;
+        VkPipeline m_Pipeline = VK_NULL_HANDLE;
+    };
+
+    // -------------------------------------------------------
+    // Compute Pipeline
+    // -------------------------------------------------------
+
+    struct ComputePipelineDesc
+    {
+        VkShaderModule computeShader = VK_NULL_HANDLE;
+        const char *computeEntry = "main";
+        VkPipelineLayout layout = VK_NULL_HANDLE;
+    };
+
+    class VulkanComputePipeline
+    {
+    public:
+        VulkanComputePipeline(const ComputePipelineDesc &desc);
+        ~VulkanComputePipeline();
+
+        VulkanComputePipeline(const VulkanComputePipeline &) = delete;
+        VulkanComputePipeline &operator=(const VulkanComputePipeline &) = delete;
+
+        void Bind(VkCommandBuffer cmd) const;
+
+        void Dispatch(VkCommandBuffer cmd,
+                      uint32_t groupsX,
+                      uint32_t groupsY = 1,
+                      uint32_t groupsZ = 1) const;
 
         VkPipeline GetVkHandle() const { return m_Pipeline; }
 
