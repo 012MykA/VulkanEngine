@@ -37,35 +37,49 @@ void ExampleLayer::SetupMaterials()
     m_PurpleNeon = std::make_shared<ve::MaterialPBR>();
     m_PurpleNeon->SetName("Purple neon");
     m_PurpleNeon->SetEmissiveColorFactor({0.9f, 0.0f, 0.8f});
+    m_PurpleNeon->SetEmissiveStrength(5.0f);
     m_Renderer->UploadMaterial(*m_PurpleNeon);
 
-    m_GreenNeon = std::make_shared<ve::MaterialPBR>();
-    m_GreenNeon->SetName("Green neon");
-    m_GreenNeon->SetEmissiveColorFactor({0.0f, 0.7f, 1.0f});
-    m_Renderer->UploadMaterial(*m_GreenNeon);
+    m_BlueNeon = std::make_shared<ve::MaterialPBR>();
+    m_BlueNeon->SetName("Blue neon");
+    m_BlueNeon->SetEmissiveColorFactor({0.0f, 0.7f, 1.0f});
+    m_BlueNeon->SetEmissiveStrength(5.0f);
+    m_Renderer->UploadMaterial(*m_BlueNeon);
 }
 
 void ExampleLayer::SetupObjects()
 {
     {
+        glm::vec3 position = {-3.0f, 1.0f, 0.0f};
+
         auto entity = m_Scene->CreateEntity();
-        entity.AddComponent<ve::TransformComponent>().SetPosition({-3.0f, 0.0f, 0.0f});
+        entity.AddComponent<ve::TransformComponent>().SetPosition(position);
         entity.AddComponent<ve::MeshComponent>(m_SphereMesh);
         entity.AddComponent<ve::MaterialPBRComponent>(m_PurpleNeon);
+
+        m_Renderer->AddLight(position,
+                             m_PurpleNeon->GetEmissiveColorFactor(),
+                             m_PurpleNeon->GetEmissiveStrength());
     }
 
     {
         auto entity = m_Scene->CreateEntity();
-        entity.AddComponent<ve::TransformComponent>().SetPosition({0.0f, 0.0f, 0.0f});
+        entity.AddComponent<ve::TransformComponent>().SetPosition({0.0f, 1.0f, 0.0f});
         entity.AddComponent<ve::MeshComponent>(m_SphereMesh);
         entity.AddComponent<ve::MaterialPBRComponent>(m_DefaultMaterial);
     }
 
     {
+        glm::vec3 position = {3.0f, 1.0f, 0.0f};
+
         auto entity = m_Scene->CreateEntity();
-        entity.AddComponent<ve::TransformComponent>().SetPosition({3.0f, 0.0f, 0.0f});
+        entity.AddComponent<ve::TransformComponent>().SetPosition(position);
         entity.AddComponent<ve::MeshComponent>(m_SphereMesh);
-        entity.AddComponent<ve::MaterialPBRComponent>(m_GreenNeon);
+        entity.AddComponent<ve::MaterialPBRComponent>(m_BlueNeon);
+
+        m_Renderer->AddLight(position,
+                             m_BlueNeon->GetEmissiveColorFactor(),
+                             m_BlueNeon->GetEmissiveStrength());
     }
 
     {

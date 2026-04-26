@@ -102,6 +102,9 @@ namespace ve
 
         // --- Getters ---
 
+        const glm::vec3 &GetEmissiveColorFactor() const { return m_Data.emissiveColorFactor; }
+        float GetEmissiveStrength() const { return m_Data.emissiveStrength; }
+
         VkDescriptorSet GetDescriptorSet() const { return m_DescriptorSet; }
         const std::string &GetName() const { return m_Name; }
         AlphaMode GetAlphaMode() const { return static_cast<AlphaMode>(m_Data.alphaMode); }

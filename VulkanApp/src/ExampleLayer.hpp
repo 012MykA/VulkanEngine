@@ -30,6 +30,7 @@ private:
     std::shared_ptr<ve::Mesh> m_GLTFSceneMesh;
 
     std::shared_ptr<ve::MaterialPBR> m_DefaultMaterial;
+
     std::shared_ptr<ve::MaterialPBR> m_PurpleNeon;
-    std::shared_ptr<ve::MaterialPBR> m_GreenNeon;
+    std::shared_ptr<ve::MaterialPBR> m_BlueNeon;
 };
