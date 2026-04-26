@@ -1,5 +1,19 @@
 #include "ExampleLayer.hpp"
 
+void ExampleLayer::SetupScene()
+{
+    SetupMeshes();
+    SetupMaterials();
+    SetupObjects();
+
+    m_Renderer->SetSkybox("assets/skyboxes/street/faces/");
+    m_Renderer->SetSkyboxEnabled(true);
+
+    m_Renderer->AddLight({-5.0f, 5.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, 5.0f);
+    m_Renderer->AddLight({0.0f, 5.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, 5.0f);
+    m_Renderer->AddLight({5.0f, 5.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, 5.0f);
+}
+
 void ExampleLayer::SetupMeshes()
 {
     ve::MeshLoader loader;

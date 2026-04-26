@@ -19,14 +19,14 @@ namespace ve
         m_Instance = std::make_unique<VulkanInstance>(
             InstanceDesc{
                 .requiredExtensions = window.GetRequiredVulkanExtensions(),
-                // #ifdef VE_DEBUG
+#ifdef VE_DEBUG
                 .enableValidation = true,
                 .debugMessenger{
                     .enableDebugMessenger = true,
                     .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
                                        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
                 },
-                // #endif
+#endif
             });
 
         m_Surface = std::make_unique<VulkanSurface>(*m_Instance, window);
@@ -125,31 +125,12 @@ namespace ve
         m_GlobalSetLayout = std::make_unique<VulkanDescriptorSetLayout>(
             VulkanDescriptorSetLayout::Builder(*m_LogicalDevice)
                 .AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
-                .AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-                .AddBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-                .AddBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
                 .Build());
 
         m_MaterialSetLayout = std::make_unique<VulkanDescriptorSetLayout>(MaterialPBR::CreateLayout(*m_LogicalDevice));
 
         m_GlobalUBOs.resize(VulkanFrameManager::k_MaxFramesInFlight);
         m_GlobalDescriptorSets.resize(VulkanFrameManager::k_MaxFramesInFlight);
-
-        std::string cubeMapDir = "../VulkanEngine/assets/skyboxes/street/faces/";
-        std::array<std::string, 6> cubeMapFaces = {
-            cubeMapDir + "px.hdr", // +X
-            cubeMapDir + "nx.hdr", // -X
-            cubeMapDir + "py.hdr", // +Y
-            cubeMapDir + "ny.hdr", // -Y
-            cubeMapDir + "pz.hdr", // +Z
-            cubeMapDir + "nz.hdr", // -Z
-        };
-        m_EnvironmentMap = TextureLoader().LoadCubeMap(cubeMapFaces);
-        UploadTexture(*m_EnvironmentMap);
-
-        m_IrradianceMap = m_EnvironmentMap;
-        m_PrefilteredMap = m_EnvironmentMap;
-        m_BrdfLUT = m_DefaultWhiteTexture;
 
         for (uint32_t i = 0; i < VulkanFrameManager::k_MaxFramesInFlight; i++)
         {
@@ -163,15 +144,8 @@ namespace ve
                 .range = sizeof(GlobalUBO),
             };
 
-            VkDescriptorImageInfo irradianceInfo = m_IrradianceMap->GetDescriptorInfo();
-            VkDescriptorImageInfo prefilteredInfo = m_PrefilteredMap->GetDescriptorInfo();
-            VkDescriptorImageInfo brdfInfo = m_BrdfLUT->GetDescriptorInfo();
-
             VulkanDescriptorWriter(m_LogicalDevice->GetVkHandle())
                 .WriteBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_GlobalDescriptorSets[i], bufferInfo)
-                .WriteImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_GlobalDescriptorSets[i], irradianceInfo)
-                .WriteImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_GlobalDescriptorSets[i], prefilteredInfo)
-                .WriteImage(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_GlobalDescriptorSets[i], brdfInfo)
                 .Flush();
         }
 
@@ -209,11 +183,6 @@ namespace ve
                 .Build());
 
         m_SkyboxDescriptorSet = m_DescriptorPool->Allocate(m_SkyboxSetLayout->GetVkHandle());
-
-        VkDescriptorImageInfo envImageInfo = m_EnvironmentMap->GetDescriptorInfo();
-        VulkanDescriptorWriter(m_LogicalDevice->GetVkHandle())
-            .WriteImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_SkyboxDescriptorSet, envImageInfo)
-            .Flush();
 
         m_SkyboxPipelineLayout = std::make_unique<VulkanPipelineLayout>(
             VulkanPipelineLayout::Builder(*m_LogicalDevice)
@@ -346,7 +315,8 @@ namespace ve
         };
         vkCmdSetScissor(cmd, 0, 1, &scissor);
 
-        DrawSkybox(cmd, frameIndex);
+        if (m_SkyboxEnabled)
+            DrawSkybox(cmd, frameIndex);
     }
 
     void RendererPBR::EndFrame()
@@ -444,21 +414,6 @@ namespace ve
         }
     }
 
-    void RendererPBR::AddLight(const glm::vec3 &position, const glm::vec3 &color, float intensity)
-    {
-        auto &light = m_GlobalData.lights[m_GlobalData.lightCount];
-
-        light.position = glm::vec4(position, 0.0f);
-        light.color = glm::vec4(color, intensity);
-
-        m_GlobalData.lightCount++;
-    }
-
-    void RendererPBR::ClearLights()
-    {
-        m_GlobalData.lightCount = 0;
-    }
-
     void RendererPBR::WaitIdle() const
     {
         if (m_LogicalDevice)
@@ -473,6 +428,50 @@ namespace ve
         m_NeedsResize = true;
         m_ResizeWidth = width;
         m_ResizeHeight = height;
+    }
+
+    void RendererPBR::AddLight(const glm::vec3 &position, const glm::vec3 &color, float intensity)
+    {
+        if (m_GlobalData.lightCount >= MAX_LIGHTS)
+        {
+            VE_CORE_WARN("Unable to AddLight. Limit reached ({})", MAX_LIGHTS);
+            return;
+        }
+
+        auto &light = m_GlobalData.lights[m_GlobalData.lightCount];
+
+        light.position = glm::vec4(position, 0.0f);
+        light.color = glm::vec4(color, intensity);
+
+        m_GlobalData.lightCount++;
+    }
+
+    void RendererPBR::ClearLights()
+    {
+        m_GlobalData.lightCount = 0;
+    }
+
+    void RendererPBR::SetSkybox(const std::array<std::string, 6> &faces)
+    {
+        WaitIdle();
+
+        m_EnvironmentMap = TextureLoader().LoadCubeMap(faces);
+        UploadTexture(*m_EnvironmentMap);
+
+        RebindSkyboxDescriptor();
+    }
+
+    void RendererPBR::SetSkybox(const std::string &directory)
+    {
+        std::array<std::string, 6> faces = {
+            directory + "px.hdr", // +X
+            directory + "nx.hdr", // -X
+            directory + "py.hdr", // +Y
+            directory + "ny.hdr", // -Y
+            directory + "pz.hdr", // +Z
+            directory + "nz.hdr", // -Z
+        };
+        SetSkybox(faces);
     }
 
     void RendererPBR::UploadMesh(Mesh &mesh, bool freeCPU) const
@@ -537,6 +536,14 @@ namespace ve
         m_Framebuffers->Recreate(*m_Swapchain, *m_RenderPass, *m_DepthBuffer);
 
         VE_CORE_TRACE("Swapchain recreated: {}x{} ({} ms)", m_ResizeWidth, m_ResizeHeight, timer.ElapsedMilliseconds());
+    }
+
+    void RendererPBR::RebindSkyboxDescriptor()
+    {
+        VkDescriptorImageInfo envImageInfo = m_EnvironmentMap->GetDescriptorInfo();
+        VulkanDescriptorWriter(m_LogicalDevice->GetVkHandle())
+            .WriteImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, m_SkyboxDescriptorSet, envImageInfo)
+            .Flush();
     }
 
     void RendererPBR::DrawSkybox(VkCommandBuffer cmd, uint32_t frameIndex)

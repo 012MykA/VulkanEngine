@@ -26,10 +26,7 @@ void ExampleLayer::OnAttach()
 
     m_Scene = std::make_unique<ve::Scene>();
 
-    SetupMeshes();
-    SetupMaterials();
-
-    SetupObjects();
+    SetupScene();
 }
 
 void ExampleLayer::OnUpdate(ve::Timestep ts)
@@ -40,15 +37,17 @@ void ExampleLayer::OnUpdate(ve::Timestep ts)
     ve::CullingResult culling = ve::CullingSystem::Cull(vp, *m_Scene);
 
     m_Renderer->BeginFrame(*m_Camera);
-    for (const auto &obj : culling.visibleEntities)
     {
-        ve::RenderObject renderObj{
-            .transform = obj.GetComponent<ve::TransformComponent>().GetTransform(),
-            .mesh = obj.GetComponent<ve::MeshComponent>().mesh,
-            .material = obj.GetComponent<ve::MaterialPBRComponent>().material,
-        };
+        for (const auto &obj : culling.visibleEntities)
+        {
+            ve::RenderObject renderObj{
+                .transform = obj.GetComponent<ve::TransformComponent>().GetTransform(),
+                .mesh = obj.GetComponent<ve::MeshComponent>().mesh,
+                .material = obj.GetComponent<ve::MaterialPBRComponent>().material,
+            };
 
-        m_Renderer->Submit(renderObj);
+            m_Renderer->Submit(renderObj);
+        }
     }
     m_Renderer->EndFrame();
 }

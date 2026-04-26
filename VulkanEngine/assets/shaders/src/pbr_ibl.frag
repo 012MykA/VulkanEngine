@@ -22,6 +22,10 @@ layout(set = 0, binding = 0) uniform GlobalUBO {
     int lightCount;
 } u_Global;
 
+layout(set = 0, binding = 1) uniform samplerCube u_IrradianceMap;
+layout(set = 0, binding = 2) uniform samplerCube u_PrefilteredMap;
+layout(set = 0, binding = 3) uniform sampler2D u_BrdfLUT;
+
 layout(set = 1, binding = 0) uniform MaterialPBRData {
     vec4 baseColorFactor;
     vec3 emissiveFactor;
@@ -110,7 +114,7 @@ void main() {
     }
 
     // Occlusion
-    float occlusion = u_Material.occlusionStrength;
+    float occlusion = 1.0;
     if(u_Material.hasOcclusionMap != 0) {
         float aoSample = texture(occlusionMap, UV).r;
         occlusion = 1.0 + u_Material.occlusionStrength * (aoSample - 1.0);
@@ -119,7 +123,7 @@ void main() {
     // Constants
     const vec3 DIELECTRIC_F0 = vec3(0.04);
 
-    const float BASE_AMBIENT = 0.3;
+    // const float AMBIENT_INTENSITY = 0.001;
 
     // const float GAMMA = 2.2;
 
@@ -188,7 +192,7 @@ void main() {
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
 
-    // --- NO IBL ---
+    // --- IBL ---
     float NdotV = max(dot(N, V), 0.0);
     vec3 F = fresnelSchlickRoughness(NdotV, F0, roughness);
 
@@ -196,9 +200,15 @@ void main() {
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
 
-    vec3 diffuse = BASE_AMBIENT * albedo;
+    // Diffuse IBL (Irradiance)
+    vec3 irradiance = texture(u_IrradianceMap, N).rgb;
+    vec3 diffuse = irradiance * albedo;
 
-    vec3 specular = vec3(0.0);
+    // Specular IBL (Prefiltered)
+    float lod = roughness * float(textureQueryLevels(u_PrefilteredMap) - 1);
+    vec3 prefilteredColor = textureLod(u_PrefilteredMap, R, lod).rgb;
+    vec2 brdf = texture(u_BrdfLUT, vec2(NdotV, roughness)).rg;
+    vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
     // Ambient
     vec3 ambient = (kD * diffuse + specular) * occlusion;

@@ -75,38 +75,65 @@ namespace ve
         RendererPBR(const RendererPBR &) = delete;
         RendererPBR &operator=(const RendererPBR &) = delete;
 
-    public:
+        // -------------------------------------------------------
+        // Render Commands
+        // -------------------------------------------------------
+
         void BeginFrame(const Camera &camera);
         void EndFrame();
 
         void Submit(const RenderObject &object);
 
-    public:
+        // -------------------------------------------------------
+        // required for use
+        // -------------------------------------------------------
+
+        // Must be called in the destructor of the RendererPBR owner class
         void WaitIdle() const;
+
+        // Must be called on framebuffer reisze
         void HandleResize(uint32_t width, uint32_t height);
 
-    public:
+        // -------------------------------------------------------
+        // Customization
+        // -------------------------------------------------------
+
+        void AddLight(const glm::vec3 &position, const glm::vec3 &color, float intensity = 1.0f);
+        void ClearLights();
+
+        void SetSkyboxEnabled(bool enabled) { m_SkyboxEnabled = enabled; }
+
+        void SetSkybox(const std::array<std::string, 6> &faces);
+
+        void SetSkybox(const std::string &directory);
+
+        // -------------------------------------------------------
+        // Helpers
+        // -------------------------------------------------------
+
         void UploadMesh(Mesh &mesh, bool freeCPU = true) const;
 
         void UploadMaterial(MaterialPBR &material) const;
 
         void UploadTexture(Texture &texture, bool freeCPU = true) const;
 
-    public:
-        void AddLight(const glm::vec3 &position, const glm::vec3 &color, float intensity = 1.0f);
-        void ClearLights();
+        // -------------------------------------------------------
+        // Getters
+        // -------------------------------------------------------
 
-    public:
         const VulkanLogicalDevice &GetLogicalDevice() const { return *m_LogicalDevice; }
         const VulkanAllocator &GetAllocator() const { return *m_Allocator; }
         const VulkanImmediateSubmit &GetGraphicsImmediateSubmit() { return *m_GraphicsImmediateSubmit; }
         const VulkanImmediateSubmit &GetTransferImmediateSubmit() { return *m_TransferImmediateSubmit; }
         const VulkanDescriptorPool &GetDescriptorPool() const { return *m_DescriptorPool; }
+        bool IsSkyboxEnabled() const { return m_SkyboxEnabled; }
 
     private:
         void ResolveSettings(const RenderSettings &requested);
 
         void RecreateSwapchain();
+
+        void RebindSkyboxDescriptor();
 
         void DrawSkybox(VkCommandBuffer cmd, uint32_t frameIndex);
 
@@ -145,14 +172,12 @@ namespace ve
 
         GlobalUBO m_GlobalData{};
         std::shared_ptr<Texture> m_EnvironmentMap;
-        std::shared_ptr<Texture> m_IrradianceMap;
-        std::shared_ptr<Texture> m_PrefilteredMap;
-        std::shared_ptr<Texture> m_BrdfLUT;
 
         std::unique_ptr<VulkanPipelineLayout> m_PipelineLayout;
         std::unique_ptr<VulkanGraphicsPipeline> m_Pipeline;
 
         // Skybox
+        bool m_SkyboxEnabled = false;
         std::unique_ptr<VulkanDescriptorSetLayout> m_SkyboxSetLayout;
 
         VkDescriptorSet m_SkyboxDescriptorSet;
