@@ -32,5 +32,6 @@ private:
     std::shared_ptr<ve::MaterialPBR> m_DefaultMaterial;
 
     std::shared_ptr<ve::MaterialPBR> m_PurpleNeon;
+    std::shared_ptr<ve::MaterialPBR> m_YellowNeon;
     std::shared_ptr<ve::MaterialPBR> m_BlueNeon;
 };
