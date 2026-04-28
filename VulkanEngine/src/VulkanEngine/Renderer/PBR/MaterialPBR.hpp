@@ -42,8 +42,8 @@ namespace ve
 
         uint32_t hasNormalMap = 0;
         uint32_t hasEmissiveMap = 0;
-        uint32_t hasMetallicRoughnessMap = 0;
-        uint32_t hasOcclusionMap = 0;
+        uint32_t hasAoMetallicRoughnessMap = 0;
+        float _pad[1];
     };
 
     class MaterialPBR
@@ -56,7 +56,6 @@ namespace ve
             static constexpr uint32_t Emissive = 2;
             static constexpr uint32_t MetallicRoughness = 3;
             static constexpr uint32_t Normal = 4;
-            static constexpr uint32_t Occlusion = 5;
         };
 
     public:
@@ -95,9 +94,8 @@ namespace ve
         // clang-format off
         void SetBaseColorMap(std::shared_ptr<Texture> tex) { m_BaseColorMap = std::move(tex); m_Data.hasBaseColorMap = 1;}
         void SetNormalMap(std::shared_ptr<Texture> tex) { m_NormalMap = std::move(tex); m_Data.hasNormalMap = 1;}
-        void SetMetallicRoughnessMap(std::shared_ptr<Texture> tex) { m_MetallicRoughnessMap = std::move(tex); m_Data.hasMetallicRoughnessMap = 1;}
+        void SetAoMetallicRoughnessMap(std::shared_ptr<Texture> tex) { m_AoMetallicRoughnessMap = std::move(tex); m_Data.hasAoMetallicRoughnessMap = 1;}
         void SetEmissiveMap(std::shared_ptr<Texture> tex) { m_EmissiveMap = std::move(tex); m_Data.hasEmissiveMap = 1;}
-        void SetOcclusionMap(std::shared_ptr<Texture> tex) { m_OcclusionMap = std::move(tex); m_Data.hasOcclusionMap = 1;}
         // clang-format on
 
         // --- Getters ---
@@ -117,9 +115,8 @@ namespace ve
 
         std::shared_ptr<Texture> m_BaseColorMap;
         std::shared_ptr<Texture> m_NormalMap;
-        std::shared_ptr<Texture> m_MetallicRoughnessMap;
+        std::shared_ptr<Texture> m_AoMetallicRoughnessMap;
         std::shared_ptr<Texture> m_EmissiveMap;
-        std::shared_ptr<Texture> m_OcclusionMap;
 
         std::unique_ptr<VulkanBuffer> m_UBO;
         VkDescriptorSet m_DescriptorSet = VK_NULL_HANDLE;

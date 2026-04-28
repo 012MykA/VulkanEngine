@@ -39,16 +39,14 @@ layout(set = 1, binding = 0) uniform MaterialPBRData {
     uint hasBaseColorMap;
 
     uint hasNormalMap;
-    uint hasMetallicRoughnessMap;
+    uint hasAoMetallicRoughnessMap;
     uint hasEmissiveMap;
-    uint hasOcclusionMap;
 } u_Material;
 
 layout(set = 1, binding = 1) uniform sampler2D baseColorMap;
 layout(set = 1, binding = 2) uniform sampler2D emissiveMap;
-layout(set = 1, binding = 3) uniform sampler2D metallicRoughnessMap;
+layout(set = 1, binding = 3) uniform sampler2D aoMetallicRoughnessMap;
 layout(set = 1, binding = 4) uniform sampler2D normalMap;
-layout(set = 1, binding = 5) uniform sampler2D occlusionMap;
 
 layout(location = 0) out vec4 outColor;
 
@@ -103,28 +101,21 @@ void main() {
     }
     emissive *= u_Material.emissiveStrength;
 
-    // Metallic & Roughness
+    // AO & Metallic & Roughness
+    float occlusion = 1.0;
     float metallic = u_Material.metallicFactor;
     float roughness = u_Material.roughnessFactor;
 
-    if(u_Material.hasMetallicRoughnessMap != 0) {
-        metallic *= texture(metallicRoughnessMap, UV).b;
-        roughness *= texture(metallicRoughnessMap, UV).g;
-    }
-
-    // Occlusion
-    float occlusion = 1.0;
-    if(u_Material.hasOcclusionMap != 0) {
-        float aoSample = texture(occlusionMap, UV).r;
-        occlusion = 1.0 + u_Material.occlusionStrength * (aoSample - 1.0);
+    if(u_Material.hasAoMetallicRoughnessMap != 0) {
+        occlusion = 1.0 + u_Material.occlusionStrength * (texture(aoMetallicRoughnessMap, UV).r - 1.0);
+        metallic *= texture(aoMetallicRoughnessMap, UV).b;
+        roughness *= texture(aoMetallicRoughnessMap, UV).g;
     }
 
     // Constants
     const vec3 DIELECTRIC_F0 = vec3(0.04);
 
     const float BASE_AMBIENT = 0.3;
-
-    // const float GAMMA = 2.2;
 
     const float EPSILON = 0.0001;
 
@@ -160,55 +151,48 @@ void main() {
     vec3 F0 = DIELECTRIC_F0;
     F0 = mix(F0, albedo, metallic);
 
-    // reflectance equation
+    // Direct Lighting
     vec3 Lo = vec3(0.0);
-
     int lightCount = min(u_Global.lightCount, MAX_LIGHTS);
-    for(int i = 0; i < lightCount; ++i) {
-        // calculate per-light radiance
-        vec3 L = normalize(u_Global.lights[i].position.rgb - inWorldPos);
-        vec3 H = normalize(V + L);
-        float distance = length(u_Global.lights[i].position.rgb - inWorldPos);
-        float attenuation = 1.0 / (distance * distance);
-        float intensity = u_Global.lights[i].color.a;
-        vec3 radiance = u_Global.lights[i].color.rgb * intensity * attenuation;
 
-        // cook-torrance brdf
+    for(int i = 0; i < lightCount; ++i) {
+        vec3 L = normalize(u_Global.lights[i].position.xyz - inWorldPos);
+        vec3 H = normalize(V + L);
+        float distance = length(u_Global.lights[i].position.xyz - inWorldPos);
+
+        float attenuation = 1.0 / (distance * distance);
+        vec3 radiance = u_Global.lights[i].color.rgb * u_Global.lights[i].color.a * attenuation;
+
+        // Cook-Torrance BRDF
         float NDF = DistributionGGX(N, H, roughness);
         float G = GeometrySmith(N, V, L, roughness);
         vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
         vec3 kS = F;
-        vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metallic;
+        vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
         vec3 numerator = NDF * G * F;
         float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + EPSILON;
-        vec3 specular = numerator / denominator;  
+        vec3 specular = numerator / denominator;
 
-        // add to outgoing radiance Lo
         float NdotL = max(dot(N, L), 0.0);
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
 
-    // --- NO IBL ---
+    // --- Indirect Lighting ---
     float NdotV = max(dot(N, V), 0.0);
     vec3 F = fresnelSchlickRoughness(NdotV, F0, roughness);
 
     vec3 kS = F;
-    vec3 kD = 1.0 - kS;
-    kD *= 1.0 - metallic;
+    vec3 kD = (1.0 - kS) * (1.0 - metallic);
 
-    vec3 diffuse = BASE_AMBIENT * albedo;
-
-    vec3 specular = vec3(0.0);
-
-    // Ambient
-    vec3 ambient = (kD * diffuse + specular) * occlusion;
+    vec3 ambientDiffuse = kD * albedo * BASE_AMBIENT;
+    vec3 ambient = ambientDiffuse * occlusion;
 
     // Final color
     vec3 color = ambient + Lo + emissive;
 
+    // Tone Mappging (ACES)
     color = aces(color);
 
     outColor = vec4(color, albedoRGBA.a);
