@@ -6,7 +6,10 @@
 
 namespace ve
 {
-    // --- Vertex ipnut ---
+    // -------------------------------------------------------
+    // Graphics Pipeline
+    // -------------------------------------------------------
+
     VertexInputDesc GetPBRVertexInputDesc()
     {
         VertexInputDesc desc;
@@ -174,49 +177,9 @@ namespace ve
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
     }
 
-    // -- Blendings ---
-
-    // Opaque blending
-    VkPipelineColorBlendAttachmentState MakeOpaqueBlend()
-    {
-        return VkPipelineColorBlendAttachmentState{
-            .blendEnable = VK_FALSE,
-            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                              VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-        };
-    }
-
-    // Additive blending
-    VkPipelineColorBlendAttachmentState MakeAdditiveBlend()
-    {
-        return VkPipelineColorBlendAttachmentState{
-            .blendEnable = VK_TRUE,
-            .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
-            .dstColorBlendFactor = VK_BLEND_FACTOR_ONE,
-            .colorBlendOp = VK_BLEND_OP_ADD,
-            .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-            .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-            .alphaBlendOp = VK_BLEND_OP_ADD,
-            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                              VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-        };
-    }
-
-    // Alpha blending
-    VkPipelineColorBlendAttachmentState MakeAlphaBlend()
-    {
-        return VkPipelineColorBlendAttachmentState{
-            .blendEnable = VK_TRUE,
-            .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
-            .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-            .colorBlendOp = VK_BLEND_OP_ADD,
-            .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-            .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
-            .alphaBlendOp = VK_BLEND_OP_ADD,
-            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                              VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-        };
-    }
+    // -------------------------------------------------------
+    // Compute Pipeline
+    // -------------------------------------------------------
 
     VulkanComputePipeline::VulkanComputePipeline(const VulkanLogicalDevice &logicalDevice,
                                                  const ComputePipelineDesc &desc)
@@ -260,6 +223,52 @@ namespace ve
         uint32_t groupsZ) const
     {
         vkCmdDispatch(cmd, groupsX, groupsY, groupsZ);
+    }
+
+    // -------------------------------------------------------
+    // Blendings
+    // -------------------------------------------------------
+
+    // Opaque blending
+    VkPipelineColorBlendAttachmentState MakeOpaqueBlend()
+    {
+        return VkPipelineColorBlendAttachmentState{
+            .blendEnable = VK_FALSE,
+            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                              VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+        };
+    }
+
+    // Additive blending
+    VkPipelineColorBlendAttachmentState MakeAdditiveBlend()
+    {
+        return VkPipelineColorBlendAttachmentState{
+            .blendEnable = VK_TRUE,
+            .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
+            .dstColorBlendFactor = VK_BLEND_FACTOR_ONE,
+            .colorBlendOp = VK_BLEND_OP_ADD,
+            .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+            .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+            .alphaBlendOp = VK_BLEND_OP_ADD,
+            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                              VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+        };
+    }
+
+    // Alpha blending
+    VkPipelineColorBlendAttachmentState MakeAlphaBlend()
+    {
+        return VkPipelineColorBlendAttachmentState{
+            .blendEnable = VK_TRUE,
+            .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+            .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+            .colorBlendOp = VK_BLEND_OP_ADD,
+            .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+            .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+            .alphaBlendOp = VK_BLEND_OP_ADD,
+            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                              VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+        };
     }
 
 } // namespace ve

@@ -107,7 +107,9 @@ namespace ve
         VkPipeline m_Pipeline = VK_NULL_HANDLE;
     };
 
-    // -- Blendings ---
+    // -------------------------------------------------------
+    // Blendings
+    // -------------------------------------------------------
 
     // Opaque blending - one attachment
     VkPipelineColorBlendAttachmentState MakeOpaqueBlend();
