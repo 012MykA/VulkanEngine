@@ -388,11 +388,9 @@ namespace ve
             cmd,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             m_PipelineLayout->GetVkHandle(),
-            0,
-            1, &globalSet,
+            0, 1, &globalSet,
             0, nullptr);
 
-        // Bind push constants
         PushConstants pc{.model = object.transform};
         vkCmdPushConstants(
             cmd,
@@ -403,15 +401,19 @@ namespace ve
         assert(object.mesh && "object.mesh should be a valid pointer");
         object.mesh->Bind(cmd);
 
-        for (const Primitive &primitive : object.mesh->GetPrimitives())
-        {
-            assert(object.material && "object.material should be a valid pointer");
+        assert(object.material && "object.material should be a valid pointer");
+        object.material->Bind(cmd, m_PipelineLayout->GetVkHandle(), 1);
 
-            const auto &currentMat = object.material;
-            currentMat->Bind(cmd, m_PipelineLayout->GetVkHandle(), 1);
+        const auto &primitives = object.mesh->GetPrimitives();
+        assert(object.primitiveIndex < primitives.size());
+        const Primitive &primitive = primitives[object.primitiveIndex];
 
-            vkCmdDrawIndexed(cmd, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
-        }
+        vkCmdDrawIndexed(
+            cmd,
+            primitive.indexCount,
+            1,
+            primitive.firstIndex,
+            0, 0);
     }
 
     void RendererPBR::WaitIdle() const

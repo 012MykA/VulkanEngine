@@ -41,8 +41,8 @@ namespace ve
         uint32_t hasBaseColorMap = 0;
 
         uint32_t hasNormalMap = 0;
-        uint32_t hasEmissiveMap = 0;
         uint32_t hasAoMetallicRoughnessMap = 0;
+        uint32_t hasEmissiveMap = 0;
         float _pad[1];
     };
 

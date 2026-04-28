@@ -24,7 +24,9 @@ void ExampleLayer::OnAttach()
     m_Camera = std::make_unique<ve::FPSCamera>(ve::FPSCameraDesc{}, window);
     m_Camera->SetPosition({0.0f, 0.0f, 5.0f});
 
-    m_Scene = std::make_unique<ve::Scene>();
+    ve::GLTFLoader loader(*m_Renderer);
+    auto sponza = loader.Load("assets/scenes/KhronosGroup glTF-Sample-Models main 2.0-Sponza/glTF/Sponza.gltf");
+    m_SceneRenderer.AddScene(sponza);
 
     SetupScene();
 }
@@ -35,17 +37,19 @@ void ExampleLayer::OnUpdate(ve::Timestep ts)
 
     const glm::mat4 vp = m_Camera->GetViewProjection();
     ve::CullingResult culling = ve::CullingSystem::Cull(vp, *m_Scene);
-
+    
     m_Renderer->BeginFrame(*m_Camera);
     {
-        for (const auto &obj : culling.visibleEntities)
+        m_SceneRenderer.Draw(*m_Renderer, *m_Camera);
+    
+        for (const auto& obj : culling.visibleEntities)
         {
             ve::RenderObject renderObj{
                 .transform = obj.GetComponent<ve::TransformComponent>().GetTransform(),
                 .mesh = obj.GetComponent<ve::MeshComponent>().mesh,
                 .material = obj.GetComponent<ve::MaterialPBRComponent>().material,
+                .primitiveIndex = 0,
             };
-
             m_Renderer->Submit(renderObj);
         }
     }

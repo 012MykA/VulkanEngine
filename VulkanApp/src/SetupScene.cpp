@@ -2,6 +2,8 @@
 
 void ExampleLayer::SetupScene()
 {
+    m_Scene = std::make_unique<ve::Scene>();
+    
     SetupMeshes();
     SetupMaterials();
     SetupObjects();
@@ -20,8 +22,8 @@ void ExampleLayer::SetupMeshes()
     m_SphereMesh = loader.LoadGLTF("assets/models/Sphere.glb");
     m_Renderer->UploadMesh(*m_SphereMesh);
 
-    m_GLTFSceneMesh = loader.LoadGLTF("assets/scenes/KhronosGroup glTF-Sample-Models main 2.0-Sponza/glTF/Sponza.gltf");
-    m_Renderer->UploadMesh(*m_GLTFSceneMesh);
+    // m_GLTFSceneMesh = loader.LoadGLTF("assets/scenes/KhronosGroup glTF-Sample-Models main 2.0-Sponza/glTF/Sponza.gltf");
+    // m_Renderer->UploadMesh(*m_GLTFSceneMesh);
 }
 
 void ExampleLayer::SetupMaterials()
@@ -88,12 +90,5 @@ void ExampleLayer::SetupObjects()
         m_Renderer->AddLight(position,
                              m_BlueNeon->GetEmissiveColorFactor(),
                              m_BlueNeon->GetEmissiveStrength());
-    }
-
-    {
-        auto entity = m_Scene->CreateEntity("Sponza");
-        entity.AddComponent<ve::TransformComponent>().SetScale(glm::vec3(0.008f));
-        entity.AddComponent<ve::MeshComponent>(m_GLTFSceneMesh);
-        entity.AddComponent<ve::MaterialPBRComponent>(m_DefaultMaterial);
     }
 }

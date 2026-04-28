@@ -26,6 +26,9 @@
 #include "VulkanEngine/Renderer/Mesh.hpp"
 #include "VulkanEngine/Renderer/MeshLoader.hpp"
 
+#include "VulkanEngine/Renderer/GLTFLoader.hpp"
+#include "VulkanEngine/Renderer/SceneRenderer.hpp"
+
 #include "VulkanEngine/Renderer/Camera/Camera.hpp"
 #include "VulkanEngine/Renderer/Camera/FPSCamera.hpp"
 // --------------------------------------------------

@@ -61,6 +61,7 @@ namespace ve
         glm::mat4 transform;
         std::shared_ptr<Mesh> mesh;
         std::shared_ptr<MaterialPBR> material;
+        uint32_t primitiveIndex;
     };
 
     class RendererPBR
@@ -80,6 +81,7 @@ namespace ve
         // -------------------------------------------------------
 
         void BeginFrame(const Camera &camera);
+
         void EndFrame();
 
         void Submit(const RenderObject &object);
