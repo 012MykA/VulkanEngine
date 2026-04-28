@@ -87,6 +87,8 @@ namespace ve
         void SetEmissiveStrength(float strength) { m_Data.emissiveStrength = strength; }
         void SetMetallicFactor(float factor) { m_Data.metallicFactor = factor; }
         void SetRoughnessFactor(float factor) { m_Data.roughnessFactor = factor; }
+        void SetNormalScale(float scale) { m_Data.normalScale = scale; }
+        void SetOcclusionStrength(float strength) { m_Data.occlusionStrength = strength; }
         void SetAlphaMode(AlphaMode mode) { m_Data.alphaMode = static_cast<uint32_t>(mode); }
         void SetAlphaCutoff(float cutoff) { m_Data.alphaCutoff = cutoff; }
         void SetDoubleSided(bool doubleSided) { m_Data.doubleSided = doubleSided ? 1 : 0; }
@@ -108,6 +110,11 @@ namespace ve
         AlphaMode GetAlphaMode() const { return static_cast<AlphaMode>(m_Data.alphaMode); }
         bool IsDoubleSided() const { return m_Data.doubleSided == 1; }
         bool IsEmissive() const { return glm::any(glm::greaterThan(m_Data.emissiveColorFactor, glm::vec3(0.0f))); }
+
+        const std::shared_ptr<Texture> &GetBaseColorMap() const { return m_BaseColorMap; }
+        const std::shared_ptr<Texture> &GetNormalMap() const { return m_NormalMap; }
+        const std::shared_ptr<Texture> &GetAoMetallicRoughnessMap() const { return m_AoMetallicRoughnessMap; }
+        const std::shared_ptr<Texture> &GetEmissiveMap() const { return m_EmissiveMap; }
 
     private:
         std::string m_Name;
