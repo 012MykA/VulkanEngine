@@ -11,24 +11,26 @@
 #include "VulkanEngine/Events/MouseEvent.hpp"
 // --------------------------------------------------
 
+// --- Assets ---------------------------------------
+#include "VulkanEngine/Assets/GLTFScene.hpp"
+#include "VulkanEngine/Assets/GLTFLoader.hpp"
+
+#include "VulkanEngine/Assets/MaterialPBR.hpp"
+#include "VulkanEngine/Assets/MaterialLoader.hpp"
+
+#include "VulkanEngine/Assets/Vertex.hpp"
+#include "VulkanEngine/Assets/Mesh.hpp"
+#include "VulkanEngine/Assets/MeshLoader.hpp"
+
+#include "VulkanEngine/Assets/Texture.hpp"
+#include "VulkanEngine/Assets/TextureLoader.hpp"
+// --------------------------------------------------
+
 // --- Renderer -------------------------------------
 #include "VulkanEngine/Renderer/RenderSettings.hpp"
 #include "VulkanEngine/Renderer/RendererPBR.hpp"
-
-#include "VulkanEngine/Renderer/Texture.hpp"
-#include "VulkanEngine/Renderer/TextureLoader.hpp"
-
-#include "VulkanEngine/Renderer/MaterialPBR.hpp"
-#include "VulkanEngine/Renderer/MaterialLoader.hpp"
-
-#include "VulkanEngine/Renderer/Vertex.hpp"
-#include "VulkanEngine/Renderer/AABB.hpp"
-#include "VulkanEngine/Renderer/Mesh.hpp"
-#include "VulkanEngine/Renderer/MeshLoader.hpp"
-
-#include "VulkanEngine/Renderer/GLTFLoader.hpp"
 #include "VulkanEngine/Renderer/SceneRenderer.hpp"
-
+#include "VulkanEngine/Renderer/AABB.hpp"
 #include "VulkanEngine/Renderer/Camera/Camera.hpp"
 #include "VulkanEngine/Renderer/Camera/FPSCamera.hpp"
 // --------------------------------------------------

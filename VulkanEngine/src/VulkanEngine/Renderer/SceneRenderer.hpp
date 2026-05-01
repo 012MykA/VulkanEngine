@@ -1,7 +1,7 @@
 #pragma once
 
 #include "VulkanEngine/Renderer/RendererPBR.hpp"
-#include "VulkanEngine/Renderer/GLTFLoader.hpp"
+#include "VulkanEngine/Assets/GLTFScene.hpp"
 #include "VulkanEngine/Renderer/Camera/Camera.hpp"
 
 #include <memory>

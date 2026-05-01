@@ -2,8 +2,8 @@
 #include "VulkanEngine/Core/Window.hpp"
 #include "VulkanEngine/Renderer/Camera/Camera.hpp"
 #include "Backends/Vulkan/VulkanShader.hpp"
-#include "VulkanEngine/Renderer/MeshLoader.hpp"
-#include "VulkanEngine/Renderer/TextureLoader.hpp"
+#include "VulkanEngine/Assets/MeshLoader.hpp"
+#include "VulkanEngine/Assets/TextureLoader.hpp"
 
 #include "VulkanEngine/Core/Timer.hpp"
 #include "Backends/Vulkan/Debug/VulkanValidation.hpp"

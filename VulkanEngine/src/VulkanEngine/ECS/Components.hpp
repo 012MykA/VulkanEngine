@@ -1,7 +1,7 @@
 #pragma once
 
-#include "VulkanEngine/Renderer/Mesh.hpp"
-#include "VulkanEngine/Renderer/MaterialPBR.hpp"
+#include "VulkanEngine/Assets/Mesh.hpp"
+#include "VulkanEngine/Assets/MaterialPBR.hpp"
 
 #include <string>
 #include <memory>

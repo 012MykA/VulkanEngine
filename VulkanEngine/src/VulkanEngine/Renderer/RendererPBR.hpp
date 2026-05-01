@@ -16,8 +16,8 @@
 #include "Backends/Vulkan/VulkanPipeline.hpp"
 #include "Backends/Vulkan/VulkanFrameManager.hpp"
 
-#include "VulkanEngine/Renderer/Mesh.hpp"
-#include "VulkanEngine/Renderer/MaterialPBR.hpp"
+#include "VulkanEngine/Assets/Mesh.hpp"
+#include "VulkanEngine/Assets/MaterialPBR.hpp"
 #include "VulkanEngine/Renderer/RenderSettings.hpp"
 
 #include <glm/glm.hpp>

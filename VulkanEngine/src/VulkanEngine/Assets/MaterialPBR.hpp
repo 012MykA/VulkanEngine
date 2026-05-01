@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Backends/Vulkan/VulkanBuffer.hpp"
-#include "VulkanEngine/Renderer/Texture.hpp"
+#include "VulkanEngine/Assets/Texture.hpp"
 
 #include <cstdint>
 #include <string>
