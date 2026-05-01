@@ -1,5 +1,5 @@
 #include "GLTFLoader.hpp"
-#include "VulkanEngine/Renderer/PBR/RendererPBR.hpp"
+#include "VulkanEngine/Renderer/RendererPBR.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 
 #include <glm/gtc/type_ptr.hpp>

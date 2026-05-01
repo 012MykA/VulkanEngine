@@ -12,14 +12,14 @@
 // --------------------------------------------------
 
 // --- Renderer -------------------------------------
-#include "VulkanEngine/Renderer/PBR/RenderSettings.hpp"
-#include "VulkanEngine/Renderer/PBR/RendererPBR.hpp"
+#include "VulkanEngine/Renderer/RenderSettings.hpp"
+#include "VulkanEngine/Renderer/RendererPBR.hpp"
 
 #include "VulkanEngine/Renderer/Texture.hpp"
 #include "VulkanEngine/Renderer/TextureLoader.hpp"
 
-#include "VulkanEngine/Renderer/PBR/MaterialPBR.hpp"
-#include "VulkanEngine/Renderer/PBR/MaterialLoader.hpp"
+#include "VulkanEngine/Renderer/MaterialPBR.hpp"
+#include "VulkanEngine/Renderer/MaterialLoader.hpp"
 
 #include "VulkanEngine/Renderer/Vertex.hpp"
 #include "VulkanEngine/Renderer/AABB.hpp"

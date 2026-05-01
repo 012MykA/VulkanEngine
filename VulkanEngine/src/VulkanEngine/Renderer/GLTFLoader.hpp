@@ -1,7 +1,7 @@
 #pragma once
 
 #include "VulkanEngine/Renderer/Mesh.hpp"
-#include "VulkanEngine/Renderer/PBR/MaterialPBR.hpp"
+#include "VulkanEngine/Renderer/MaterialPBR.hpp"
 #include "VulkanEngine/Renderer/Texture.hpp"
 
 #include <tiny_gltf.h>
@@ -83,7 +83,7 @@ namespace ve
                                                    const tinygltf::Primitive &primitive);
 
         static std::vector<uint32_t> ExtractIndices(const tinygltf::Model &model,
-                                                  const tinygltf::Primitive &primitive);
+                                                    const tinygltf::Primitive &primitive);
 
         static glm::mat4 NodeLocalMatrix(const tinygltf::Node &node);
 

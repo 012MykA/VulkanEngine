@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VulkanEngine/Renderer/PBR/RendererPBR.hpp"
+#include "VulkanEngine/Renderer/RendererPBR.hpp"
 #include "VulkanEngine/Renderer/GLTFLoader.hpp"
 #include "VulkanEngine/Renderer/Camera/Camera.hpp"
 

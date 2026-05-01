@@ -1,5 +1,5 @@
 #include "SceneRenderer.hpp"
-#include "VulkanEngine/Renderer/PBR/RendererPBR.hpp"
+#include "VulkanEngine/Renderer/RendererPBR.hpp"
 
 namespace ve
 {
