@@ -18,12 +18,12 @@ namespace ve
     {
         const GLTFLoadOptions *opts = nullptr;
         tinygltf::Model gltf;
-        GLTFScene scene;
+        gltf::Scene scene;
     };
 
     GLTFLoader::GLTFLoader(RendererPBR &renderer) : m_Renderer(renderer) {}
 
-    GLTFScene GLTFLoader::Load(const std::string &path, const GLTFLoadOptions &options)
+    gltf::Scene GLTFLoader::Load(const std::string &path, const GLTFLoadOptions &options)
     {
         LoadCtx ctx;
         ctx.opts = &options;
@@ -54,6 +54,73 @@ namespace ve
         UploadAll(ctx);
 
         return std::move(ctx.scene);
+    }
+
+    // -------------------------------------------------------
+    // ParseLights
+    // -------------------------------------------------------
+    void GLTFLoader::ParseLights(LoadCtx &ctx)
+    {
+        const auto &gltf = ctx.gltf;
+
+        if (!gltf.extensions.count("KHR_lights_punctual"))
+            return;
+
+        const auto &ext = gltf.extensions.at("KHR_lights_punctual");
+        if (!ext.Has("lights"))
+            return;
+
+        const auto &lightsArray = ext.Get("lights");
+
+        for (size_t i = 0; i < lightsArray.ArrayLen(); ++i)
+        {
+            const auto &lightVal = lightsArray.Get(static_cast<int>(i));
+            ve::gltf::Light light{};
+
+            if (lightVal.Has("name"))
+                light.name = lightVal.Get("name").Get<std::string>();
+
+            if (lightVal.Has("color"))
+            {
+                auto c = lightVal.Get("color");
+                light.color = glm::vec3(c.Get(0).Get<double>(), c.Get(1).Get<double>(), c.Get(2).Get<double>());
+            }
+
+            if (lightVal.Has("intensity"))
+            {
+                light.intensity = static_cast<float>(lightVal.Get("intensity").Get<double>());
+            }
+
+            if (lightVal.Has("range"))
+            {
+                light.range = static_cast<float>(lightVal.Get("range").Get<double>());
+            }
+
+            std::string type = lightVal.Get("type").Get<std::string>();
+            if (type == "directional")
+            {
+                light.type = gltf::LightType::Directional;
+            }
+            else if (type == "point")
+            {
+                light.type = gltf::LightType::Point;
+            }
+            else if (type == "spot")
+            {
+                light.type = gltf::LightType::Spot;
+
+                if (lightVal.Has("spot"))
+                {
+                    const auto &spot = lightVal.Get("spot");
+                    if (spot.Has("innerConeAngle"))
+                        light.innerConeAngle = static_cast<float>(spot.Get("innerConeAngle").Get<double>());
+                    if (spot.Has("outerConeAngle"))
+                        light.outerConeAngle = static_cast<float>(spot.Get("outerConeAngle").Get<double>());
+                }
+            }
+
+            ctx.scene.lights.push_back(light);
+        }
     }
 
     // -------------------------------------------------------
@@ -174,8 +241,6 @@ namespace ve
                     mat->SetAoMetallicRoughnessMap(std::move(tex));
             }
 
-            // BUG FIX: было RebakeTexture(..., gltfMat.normalTexture, ...) — передавался объект
-            // вместо индекса. Нужно gltfMat.normalTexture.index
             if (gltfMat.normalTexture.index >= 0)
             {
                 auto tex = RebakeTexture(ctx.scene.textures, gltf.textures, gltf,
@@ -306,7 +371,7 @@ namespace ve
             mesh->SetIndices(std::move(allIndices));
             mesh->RecalculateBounds();
 
-            ctx.scene.meshEntries.push_back(SceneMeshEntry{
+            ctx.scene.meshEntries.push_back(gltf::SceneMeshEntry{
                 .mesh = std::move(mesh),
                 .materialIndices = std::move(matIndices),
             });
@@ -314,7 +379,7 @@ namespace ve
     }
 
     // -------------------------------------------------------
-    // ExtractVertices — BUG FIX: параметр `primitive`, использовался `prim`
+    // ExtractVertices
     // -------------------------------------------------------
     std::vector<Vertex> GLTFLoader::ExtractVertices(const tinygltf::Model &model,
                                                     const tinygltf::Primitive &primitive)
@@ -349,7 +414,7 @@ namespace ve
     }
 
     // -------------------------------------------------------
-    // ExtractIndices — BUG FIX: параметр `primitive`, использовался `prim`
+    // ExtractIndices
     // -------------------------------------------------------
     std::vector<uint32_t> GLTFLoader::ExtractIndices(const tinygltf::Model &model,
                                                      const tinygltf::Primitive &primitive)
@@ -450,7 +515,7 @@ namespace ve
     }
 
     // -------------------------------------------------------
-    // NodeLocalMatrix — BUG FIX: `mode.matrix` → `node.matrix`
+    // NodeLocalMatrix
     // -------------------------------------------------------
     glm::mat4 GLTFLoader::NodeLocalMatrix(const tinygltf::Node &node)
     {
@@ -478,7 +543,7 @@ namespace ve
     }
 
     // -------------------------------------------------------
-    // UploadAll — BUG FIX: `m_Renderer->` → `m_Renderer.`
+    // UploadAll
     // -------------------------------------------------------
     void GLTFLoader::UploadAll(LoadCtx &ctx)
     {

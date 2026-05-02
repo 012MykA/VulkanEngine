@@ -11,7 +11,7 @@
 #include <vector>
 #include <memory>
 
-namespace ve
+namespace ve::gltf
 {
     struct SceneNode
     {
@@ -35,7 +35,29 @@ namespace ve
         std::vector<int32_t> materialIndices;
     };
 
-    struct GLTFScene
+    enum class LightType
+    {
+        Directional = 0,
+        Point = 1,
+        Spot = 2,
+    };
+
+    struct Light
+    {
+        std::string name;
+        glm::vec3 color{1.0f, 1.0f, 1.0f};
+        float intensity{1.0f};
+        LightType type;
+        float range{0.0f};
+
+        // For spot light
+        float innerConeAngle{0.0f};
+        float outerConeAngle = glm::radians(45.0f);
+
+        int32_t nodeIndex = -1;
+    };
+
+    struct Scene
     {
         std::string name;
         std::string sourceFile;
@@ -44,6 +66,8 @@ namespace ve
         std::vector<SceneMeshEntry> meshEntries;
         std::vector<std::shared_ptr<MaterialPBR>> materials;
         std::vector<std::shared_ptr<Texture>> textures;
+
+        std::vector<Light> lights;
 
         std::vector<int32_t> rootNodes;
     };

@@ -18,6 +18,7 @@
 
 #include "VulkanEngine/Assets/Mesh.hpp"
 #include "VulkanEngine/Assets/MaterialPBR.hpp"
+#include "VulkanEngine/Assets/GLTFScene.hpp"
 #include "VulkanEngine/Renderer/RenderSettings.hpp"
 
 #include <glm/glm.hpp>
@@ -31,22 +32,23 @@ namespace ve
     class Window;
     class Camera;
 
-    struct PointLight
+    struct ShaderLight
     {
-        alignas(16) glm::vec4 position;
-        alignas(16) glm::vec4 color;
+        glm::vec4 position;   // [x, y, z, type]
+        glm::vec4 color;      // [r, g, b, intensity]
+        glm::vec4 direction;  // [x, y, z, range]
+        glm::vec4 coneAngles; // [inner, outer, _padding, _padding]
     };
 
     struct GlobalUBO
     {
-        alignas(16) glm::mat4 viewProj;
-        alignas(16) glm::mat4 view;
-        alignas(16) glm::mat4 proj;
-        alignas(16) glm::vec4 cameraPos;
+        glm::mat4 viewProj;
+        glm::mat4 view;
+        glm::mat4 proj;
+        glm::vec4 cameraPos;
 
-        alignas(16) PointLight lights[MAX_LIGHTS];
+        ShaderLight lights[MAX_LIGHTS];
         int lightCount = 0;
-
         float iblIntensity = 1.0f;
         float _padding[2];
     };
@@ -100,7 +102,7 @@ namespace ve
         // Customization
         // -------------------------------------------------------
 
-        void AddLight(const glm::vec3 &position, const glm::vec3 &color, float intensity = 1.0f);
+        void AddLight(const gltf::Light &light, const glm::mat4 &worldTransform);
         void ClearLights();
 
         void SetSkyboxEnabled(bool enabled) { m_SkyboxEnabled = enabled; }

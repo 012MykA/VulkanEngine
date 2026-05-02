@@ -26,9 +26,10 @@ namespace ve
     public:
         explicit GLTFLoader(RendererPBR &renderer);
 
-        GLTFScene Load(const std::string &path, const GLTFLoadOptions &options = {});
+        gltf::Scene Load(const std::string &path, const GLTFLoadOptions &options = {});
 
     private:
+        void ParseLights(struct LoadCtx &ctx);
         void ParseTextures(struct LoadCtx &ctx);
         void ParseMaterials(struct LoadCtx &ctx);
         void ParseMeshes(struct LoadCtx &ctx);

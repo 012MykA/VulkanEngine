@@ -24,7 +24,7 @@ private:
     std::unique_ptr<ve::RendererPBR> m_Renderer;
     std::unique_ptr<ve::FPSCamera> m_Camera;
     ve::SceneRenderer m_SceneRenderer;
-    
+
     std::unique_ptr<ve::Scene> m_Scene;
     std::shared_ptr<ve::Mesh> m_SphereMesh;
     std::shared_ptr<ve::Mesh> m_CubeMesh;

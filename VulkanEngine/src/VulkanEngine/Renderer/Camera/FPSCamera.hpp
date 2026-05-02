@@ -27,6 +27,12 @@ namespace ve
         virtual void OnUpdate(Timestep ts) override;
         virtual void OnEvent(Event &e) override;
 
+    public:
+        // clang-format off
+        void SetYaw(float yaw) { m_Yaw = yaw; UpdateCameraVectors(); }
+        void SetPitch(float pitch) { m_Pitch = pitch; UpdateCameraVectors(); }
+        // clang-format on
+
     protected:
         virtual void UpdateViewMatrix() const override;
         virtual void UpdateProjectionMatrix() const override;
@@ -34,7 +40,6 @@ namespace ve
     private:
         void UpdateCameraVectors();
 
-    private:
         bool OnKeyPressed(KeyPressedEvent &e);
 
     private:

@@ -7,9 +7,11 @@ layout(location = 3) in vec2 inTexCoord;
 
 #define MAX_LIGHTS 10
 
-struct PointLight {
-    vec4 position;
-    vec4 color;
+struct Light {
+    vec4 position;     // [x, y, z, type]
+    vec4 color;        // [r, g, b, intensity]
+    vec4 direction;    // [x, y, z, range]
+    vec4 coneAngles;   // [inner, outer, _padding, _padding]
 };
 
 layout(set = 0, binding = 0) uniform GlobalUBO {
@@ -18,7 +20,7 @@ layout(set = 0, binding = 0) uniform GlobalUBO {
     mat4 proj;
     vec4 cameraPos;
 
-    PointLight lights[MAX_LIGHTS];
+    Light lights[MAX_LIGHTS];
     int lightCount;
 } u_Global;
 
@@ -34,8 +36,8 @@ layout(set = 1, binding = 0) uniform MaterialPBRData {
     float normalScale;
 
     float occlusionStrength;
-    uint alphaMode;   // 0: Opaque, 1: Mask, 2: Blend
-    uint doubleSided; // 0: false, 1: true
+    uint alphaMode; // Opaque = 0, Mask = 1, Blend = 2
+    uint doubleSided;
     uint hasBaseColorMap;
 
     uint hasNormalMap;
@@ -115,7 +117,7 @@ void main() {
     // Constants
     const vec3 DIELECTRIC_F0 = vec3(0.04);
 
-    const float BASE_AMBIENT = 0.3;
+    // const float BASE_AMBIENT = 1.0;
 
     const float EPSILON = 0.0001;
 
@@ -156,6 +158,9 @@ void main() {
     int lightCount = min(u_Global.lightCount, MAX_LIGHTS);
 
     for(int i = 0; i < lightCount; ++i) {
+        Light l = u_Global.lights[i];
+        int type = int(l.position.w);
+        
         vec3 L = normalize(u_Global.lights[i].position.xyz - inWorldPos);
         vec3 H = normalize(V + L);
         float distance = length(u_Global.lights[i].position.xyz - inWorldPos);
@@ -186,7 +191,7 @@ void main() {
     vec3 kS = F;
     vec3 kD = (1.0 - kS) * (1.0 - metallic);
 
-    vec3 ambientDiffuse = kD * albedo * BASE_AMBIENT;
+    vec3 ambientDiffuse = kD * albedo;
     vec3 ambient = ambientDiffuse * occlusion;
 
     // Final color

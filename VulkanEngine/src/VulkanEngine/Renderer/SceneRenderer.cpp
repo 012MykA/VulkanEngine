@@ -3,7 +3,7 @@
 
 namespace ve
 {
-    void SceneRenderer::AddScene(const GLTFScene &scene)
+    void SceneRenderer::AddScene(const gltf::Scene &scene)
     {
         m_Scenes.push_back(scene);
     }
@@ -26,17 +26,17 @@ namespace ve
 
     void SceneRenderer::DrawNode(
         RendererPBR &renderer,
-        const GLTFScene &scene,
+        const gltf::Scene &scene,
         int32_t nodeIdx,
         const glm::mat4 &parentTransform)
     {
-        const SceneNode &node = scene.nodes[nodeIdx];
+        const gltf::SceneNode &node = scene.nodes[nodeIdx];
 
         glm::mat4 worldTransform = parentTransform * node.localTransform;
 
         if (node.meshIndex >= 0)
         {
-            const SceneMeshEntry &entry = scene.meshEntries[node.meshIndex];
+            const gltf::SceneMeshEntry &entry = scene.meshEntries[node.meshIndex];
 
             for (size_t i = 0; i < entry.mesh->GetPrimitives().size(); i++)
             {

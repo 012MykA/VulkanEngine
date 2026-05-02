@@ -1,5 +1,7 @@
 #include "ExampleLayer.hpp"
 
+#include <glm/gtc/matrix_transform.hpp>
+
 void ExampleLayer::SetupScene()
 {
     m_Scene = std::make_unique<ve::Scene>();
@@ -21,9 +23,6 @@ void ExampleLayer::SetupMeshes()
 
     m_SphereMesh = loader.LoadGLTF("assets/models/Sphere.glb");
     m_Renderer->UploadMesh(*m_SphereMesh);
-
-    // m_GLTFSceneMesh = loader.LoadGLTF("assets/scenes/KhronosGroup glTF-Sample-Models main 2.0-Sponza/glTF/Sponza.gltf");
-    // m_Renderer->UploadMesh(*m_GLTFSceneMesh);
 }
 
 void ExampleLayer::SetupMaterials()
@@ -60,10 +59,6 @@ void ExampleLayer::SetupObjects()
         entity.AddComponent<ve::TransformComponent>().SetPosition(position);
         entity.AddComponent<ve::MeshComponent>(m_SphereMesh);
         entity.AddComponent<ve::MaterialPBRComponent>(m_PurpleNeon);
-
-        m_Renderer->AddLight(position,
-                             m_PurpleNeon->GetEmissiveColorFactor(),
-                             m_PurpleNeon->GetEmissiveStrength());
     }
 
     {
@@ -73,10 +68,6 @@ void ExampleLayer::SetupObjects()
         entity.AddComponent<ve::TransformComponent>().SetPosition(position);
         entity.AddComponent<ve::MeshComponent>(m_SphereMesh);
         entity.AddComponent<ve::MaterialPBRComponent>(m_YellowNeon);
-
-        m_Renderer->AddLight(position,
-                             m_YellowNeon->GetEmissiveColorFactor(),
-                             m_YellowNeon->GetEmissiveStrength());
     }
 
     {
@@ -86,9 +77,5 @@ void ExampleLayer::SetupObjects()
         entity.AddComponent<ve::TransformComponent>().SetPosition(position);
         entity.AddComponent<ve::MeshComponent>(m_SphereMesh);
         entity.AddComponent<ve::MaterialPBRComponent>(m_BlueNeon);
-
-        m_Renderer->AddLight(position,
-                             m_BlueNeon->GetEmissiveColorFactor(),
-                             m_BlueNeon->GetEmissiveStrength());
     }
 }

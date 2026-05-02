@@ -22,36 +22,40 @@ void ExampleLayer::OnAttach()
     m_Renderer = std::make_unique<ve::RendererPBR>(window, settings);
 
     m_Camera = std::make_unique<ve::FPSCamera>(ve::FPSCameraDesc{}, window);
-    m_Camera->SetPosition({0.0f, 0.0f, 5.0f});
+    m_Camera->SetPosition({-8.0f, 1.0f, 0.0f});
+    m_Camera->SetYaw(0);
 
     ve::GLTFLoader loader(*m_Renderer);
     auto sponza = loader.Load("assets/scenes/KhronosGroup glTF-Sample-Models main 2.0-Sponza/glTF/Sponza.gltf");
     m_SceneRenderer.AddScene(sponza);
 
-    SetupScene();
+    ve::gltf::Light purpleNeon{
+        .name = "Puprle Neon",
+        .color = {0.9f, 0.0f, 0.8f},
+        .intensity = 5.0f,
+        .type = ve::gltf::LightType::Point,
+    };
+
+    ve::gltf::Light yellowNeon = purpleNeon;
+    yellowNeon.name = "Yellow Neon";
+    yellowNeon.color = {1.0f, 1.0f, 0.0f};
+
+    ve::gltf::Light blueNeon = purpleNeon;
+    blueNeon.name = "Blue Neon";
+    blueNeon.color = {0.0f, 0.7f, 1.0f};
+
+    m_Renderer->AddLight(purpleNeon, glm::translate(glm::mat4(1.0f), glm::vec3(-3.0f, 2.0f, 0.0f)));
+    m_Renderer->AddLight(yellowNeon, glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f)));
+    m_Renderer->AddLight(blueNeon, glm::translate(glm::mat4(1.0f), glm::vec3(3.0f, 2.0f, 0.0f)));
 }
 
 void ExampleLayer::OnUpdate(ve::Timestep ts)
 {
     m_Camera->OnUpdate(ts);
 
-    const glm::mat4 vp = m_Camera->GetViewProjection();
-    ve::CullingResult culling = ve::CullingSystem::Cull(vp, *m_Scene);
-    
     m_Renderer->BeginFrame(*m_Camera);
     {
         m_SceneRenderer.Draw(*m_Renderer, *m_Camera);
-    
-        for (const auto& obj : culling.visibleEntities)
-        {
-            ve::RenderObject renderObj{
-                .transform = obj.GetComponent<ve::TransformComponent>().GetTransform(),
-                .mesh = obj.GetComponent<ve::MeshComponent>().mesh,
-                .material = obj.GetComponent<ve::MaterialPBRComponent>().material,
-                .primitiveIndex = 0,
-            };
-            m_Renderer->Submit(renderObj);
-        }
     }
     m_Renderer->EndFrame();
 }

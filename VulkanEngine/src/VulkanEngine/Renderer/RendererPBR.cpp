@@ -432,7 +432,7 @@ namespace ve
         m_ResizeHeight = height;
     }
 
-    void RendererPBR::AddLight(const glm::vec3 &position, const glm::vec3 &color, float intensity)
+    void RendererPBR::AddLight(const gltf::Light &light, const glm::mat4 &worldTransform)
     {
         if (m_GlobalData.lightCount >= MAX_LIGHTS)
         {
@@ -440,10 +440,18 @@ namespace ve
             return;
         }
 
-        auto &light = m_GlobalData.lights[m_GlobalData.lightCount];
+        ShaderLight &sl = m_GlobalData.lights[m_GlobalData.lightCount];
 
-        light.position = glm::vec4(position, 0.0f);
-        light.color = glm::vec4(color, intensity);
+        sl.position = glm::vec4(glm::vec3(worldTransform[3]), static_cast<float>(light.type));
+        sl.color = glm::vec4(light.color, light.intensity);
+
+        glm::vec3 dir = glm::normalize(glm::vec3(worldTransform * glm::vec4(0, 0, -1, 0)));
+        sl.direction = glm::vec4(dir, light.range);
+
+        sl.coneAngles = glm::vec4(
+            glm::cos(light.innerConeAngle),
+            glm::sin(light.outerConeAngle),
+            0.0f, 0.0f);
 
         m_GlobalData.lightCount++;
     }

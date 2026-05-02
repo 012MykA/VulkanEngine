@@ -36,8 +36,8 @@ namespace ve
         float normalScale = 1.0f;
 
         float occlusionStrength = 1.0f;
-        uint32_t alphaMode = 0;   // 0: Opaque, 1: Mask, 2: Blend
-        uint32_t doubleSided = 0; // 0: false, 1: true
+        uint32_t alphaMode = 0; // Opaque = 0, Mask = 1, Blend = 2
+        uint32_t doubleSided = 0;
         uint32_t hasBaseColorMap = 0;
 
         uint32_t hasNormalMap = 0;

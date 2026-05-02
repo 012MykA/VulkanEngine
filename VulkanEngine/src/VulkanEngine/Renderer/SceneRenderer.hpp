@@ -21,7 +21,7 @@ namespace ve
         SceneRenderer(const SceneRenderer &) = delete;
         SceneRenderer &operator=(const SceneRenderer &) = delete;
 
-        void AddScene(const GLTFScene &scene);
+        void AddScene(const gltf::Scene &scene);
         void ClearScenes();
 
         void Draw(RendererPBR &renderer, const Camera &camera);
@@ -29,12 +29,12 @@ namespace ve
     private:
         void DrawNode(
             RendererPBR &renderer,
-            const GLTFScene &scene,
+            const gltf::Scene &scene,
             int32_t nodeIdx,
             const glm::mat4 &parentTransform);
 
     private:
-        std::vector<GLTFScene> m_Scenes;
+        std::vector<gltf::Scene> m_Scenes;
     };
 
 } // namespace ve
