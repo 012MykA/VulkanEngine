@@ -7,11 +7,13 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <future>
 
 namespace ve
 {
     struct GLTFLoadOptions
     {
+        bool autoUpload = true;
         bool keepCPUData = false;
 
         TextureFormat baseColorFormat = TextureFormat::RGBA8_SRGB;
@@ -28,6 +30,18 @@ namespace ve
 
         gltf::Scene Load(const std::string &path, const GLTFLoadOptions &options = {});
 
+        std::future<gltf::Scene> LoadAsync(const std::string &path, const GLTFLoadOptions &options = {.autoUpload = false})
+        {
+            // clang-format off
+            return std::async(std::launch::async, [this, path, options](){
+                return GLTFLoader::Load(path, options);
+            });
+            // clang-format on
+        }
+
+    public:
+        void UploadScene(gltf::Scene &scene, const GLTFLoadOptions &options = {});
+
     private:
         void ParseLights(struct LoadCtx &ctx);
         void ParseTextures(struct LoadCtx &ctx);
@@ -36,7 +50,6 @@ namespace ve
         void ParseNodes(struct LoadCtx &ctx);
         void ComputeLocalTransforms(struct LoadCtx &ctx);
         void BuildSceneRoots(struct LoadCtx &ctx);
-
         void UploadAll(struct LoadCtx &ctx);
 
         static std::vector<Vertex> ExtractVertices(const tinygltf::Model &model,

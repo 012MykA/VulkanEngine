@@ -5,8 +5,10 @@
 void ExampleLayer::BuildLightTestScene()
 {
     ve::GLTFLoader loader(*m_Renderer);
-    auto sponza = loader.Load("assets/scenes/KhronosGroup glTF-Sample-Models main 2.0-Sponza/glTF/Sponza.gltf");
-    m_SceneRenderer.AddScene(sponza);
+    m_LoadingScenes.push_back(loader.LoadAsync("assets/scenes/KhronosGroup glTF-Sample-Models main 2.0-Sponza/glTF/Sponza.gltf"));
+    
+    // auto sponza = loader.Load("assets/scenes/KhronosGroup glTF-Sample-Models main 2.0-Sponza/glTF/Sponza.gltf");
+    // m_SceneRenderer.AddScene(sponza);
 
     ve::gltf::Light purpleNeon{
         .name = "Puprle Neon",
@@ -39,14 +41,14 @@ void ExampleLayer::BuildLightTestScene()
 
     ve::gltf::Light spot{
         .name = "Spot Light",
-        .color = {0.1f, 0.9f, 0.2f},
+        .color = {0.1f, 0.5f, 0.2f},
         .intensity = 75,
         .type = ve::gltf::LightType::Spot,
     };
 
     glm::mat4 spotTransform = glm::rotate(
         glm::translate(glm::mat4(1.0f), glm::vec3(-7, 2, -0.2f)),
-        glm::radians(45.0f),
+        glm::radians(90.0f),
         glm::vec3(0, 1, 0));
     m_Renderer->AddLight(spot, spotTransform);
 }

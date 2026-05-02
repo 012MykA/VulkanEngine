@@ -6,6 +6,12 @@ ExampleLayer::ExampleLayer() : ve::Layer("ExampleLayer")
 
 ExampleLayer::~ExampleLayer()
 {
+    for (auto &sceneFuture : m_LoadingScenes)
+    {
+        if (sceneFuture.valid())
+            sceneFuture.wait();
+    }
+
     m_Renderer->WaitIdle();
 }
 
@@ -31,6 +37,23 @@ void ExampleLayer::OnAttach()
 void ExampleLayer::OnUpdate(ve::Timestep ts)
 {
     m_Camera->OnUpdate(ts);
+
+    for (auto it = m_LoadingScenes.begin(); it != m_LoadingScenes.end();)
+    {
+        if (it->wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+        {
+            ve::gltf::Scene loadedScene = it->get();            
+            
+            ve::GLTFLoader loader(*m_Renderer);
+            loader.UploadScene(loadedScene);            
+            m_SceneRenderer.AddScene(std::move(loadedScene));            
+            it = m_LoadingScenes.erase(it);
+        }
+        else
+        {
+            it++;
+        }
+    }
 
     m_Renderer->BeginFrame(*m_Camera);
     {

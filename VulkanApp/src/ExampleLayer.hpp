@@ -4,7 +4,7 @@ class ExampleLayer : public ve::Layer
 {
 public:
     ExampleLayer();
-    ~ExampleLayer() override;
+    virtual ~ExampleLayer() override;
 
     virtual void OnAttach() override;
     virtual void OnUpdate(ve::Timestep ts) override;
@@ -19,5 +19,6 @@ private:
 private:
     std::unique_ptr<ve::RendererPBR> m_Renderer;
     std::unique_ptr<ve::FPSCamera> m_Camera;
+    std::vector<std::future<ve::gltf::Scene>> m_LoadingScenes;
     ve::SceneRenderer m_SceneRenderer;
 };

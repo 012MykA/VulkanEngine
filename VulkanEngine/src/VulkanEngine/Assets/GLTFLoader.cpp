@@ -1,6 +1,7 @@
 #include "GLTFLoader.hpp"
 #include "VulkanEngine/Renderer/RendererPBR.hpp"
 #include "VulkanEngine/Core/Log.hpp"
+#include "VulkanEngine/Core/Timer.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
@@ -11,6 +12,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <unordered_map>
+#include <filesystem>
 
 namespace ve
 {
@@ -25,6 +27,8 @@ namespace ve
 
     gltf::Scene GLTFLoader::Load(const std::string &path, const GLTFLoadOptions &options)
     {
+        Timer loadingTimer;
+
         LoadCtx ctx;
         ctx.opts = &options;
 
@@ -51,9 +55,27 @@ namespace ve
         ParseNodes(ctx);
         ComputeLocalTransforms(ctx);
         BuildSceneRoots(ctx);
-        UploadAll(ctx);
+
+        if (options.autoUpload)
+            UploadAll(ctx);
+
+        VE_CORE_TRACE("GLTFScene '{}' loaded ({} ms)",
+                      ctx.scene.name.empty() ? ctx.scene.name : std::filesystem::path(path).string(),
+                      loadingTimer.ElapsedMilliseconds());
 
         return std::move(ctx.scene);
+    }
+
+    void GLTFLoader::UploadScene(gltf::Scene &scene, const GLTFLoadOptions &options)
+    {
+        LoadCtx ctx{
+            .opts = &options,
+            .scene = std::move(scene),
+        };
+
+        UploadAll(ctx);
+
+        scene = std::move(ctx.scene);
     }
 
     // -------------------------------------------------------
