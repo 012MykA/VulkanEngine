@@ -19,6 +19,12 @@ private:
 private:
     std::unique_ptr<ve::RendererPBR> m_Renderer;
     std::unique_ptr<ve::FPSCamera> m_Camera;
-    std::vector<std::future<ve::gltf::Scene>> m_LoadingScenes;
+
+    struct PendingScene
+    {
+        std::future<ve::gltf::Scene> scene;
+        glm::mat4 transform;
+    };
+    std::vector<PendingScene> m_LoadingScenes;
     ve::SceneRenderer m_SceneRenderer;
 };

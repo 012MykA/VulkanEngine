@@ -22,7 +22,7 @@ namespace ve
         SceneRenderer(const SceneRenderer &) = delete;
         SceneRenderer &operator=(const SceneRenderer &) = delete;
 
-        void AddScene(const gltf::Scene &scene);
+        void AddScene(const gltf::Scene &scene, const glm::mat4 &transform);
         void ClearScenes();
 
         void Draw(RendererPBR &renderer, const Camera &camera);
@@ -36,7 +36,13 @@ namespace ve
                       const Frustum &frustum);
 
     private:
-        std::vector<gltf::Scene> m_Scenes;
+        struct RenderScene
+        {
+            gltf::Scene scene;
+            glm::mat4 transform;
+        };
+    
+        std::vector<RenderScene> m_Scenes;
     };
 
 } // namespace ve

@@ -69,7 +69,7 @@ namespace ve
     class RendererPBR
     {
     public:
-        static constexpr uint32_t k_MaxMaterials = 100;
+        static constexpr uint32_t k_MaxMaterials = 150;
 
     public:
         explicit RendererPBR(const Window &window, const RenderSettings &settings = {});

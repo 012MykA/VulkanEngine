@@ -6,10 +6,10 @@ ExampleLayer::ExampleLayer() : ve::Layer("ExampleLayer")
 
 ExampleLayer::~ExampleLayer()
 {
-    for (auto &sceneFuture : m_LoadingScenes)
+    for (auto &p : m_LoadingScenes)
     {
-        if (sceneFuture.valid())
-            sceneFuture.wait();
+        if (p.scene.valid())
+            p.scene.wait();
     }
 
     m_Renderer->WaitIdle();
@@ -40,13 +40,15 @@ void ExampleLayer::OnUpdate(ve::Timestep ts)
 
     for (auto it = m_LoadingScenes.begin(); it != m_LoadingScenes.end();)
     {
-        if (it->wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+        if (it->scene.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
         {
-            ve::gltf::Scene loadedScene = it->get();            
-            
+            ve::gltf::Scene loadedScene = it->scene.get();
+
             ve::GLTFLoader loader(*m_Renderer);
-            loader.UploadScene(loadedScene);            
-            m_SceneRenderer.AddScene(std::move(loadedScene));            
+            loader.UploadScene(loadedScene);
+
+            m_SceneRenderer.AddScene(std::move(loadedScene), it->transform);
+
             it = m_LoadingScenes.erase(it);
         }
         else

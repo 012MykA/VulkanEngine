@@ -5,10 +5,25 @@
 void ExampleLayer::BuildLightTestScene()
 {
     ve::GLTFLoader loader(*m_Renderer);
-    m_LoadingScenes.push_back(loader.LoadAsync("assets/scenes/KhronosGroup glTF-Sample-Models main 2.0-Sponza/glTF/Sponza.gltf"));
-    
-    // auto sponza = loader.Load("assets/scenes/KhronosGroup glTF-Sample-Models main 2.0-Sponza/glTF/Sponza.gltf");
-    // m_SceneRenderer.AddScene(sponza);
+
+    for (int i = 0; i < 10; i += 2)
+    {
+        for (int j = 0; j < 6; j += 2)
+        {
+            m_LoadingScenes.push_back(PendingScene{
+                .scene = loader.LoadAsync("assets/scenes/DamagedHelmet/glTF/DamagedHelmet.gltf"),
+                .transform = glm::rotate(
+                    glm::translate(glm::mat4(1.0f), glm::vec3(-7 + i, 1, -1 + j)),
+                    glm::radians(180.0f),
+                    glm::vec3(0, 1, 0)),
+            });
+        }
+    }
+
+    m_LoadingScenes.push_back(PendingScene{
+        .scene = loader.LoadAsync("assets/scenes/Sponza/glTF/Sponza.gltf"),
+        .transform = glm::mat4(1.0f),
+    });
 
     ve::gltf::Light purpleNeon{
         .name = "Puprle Neon",

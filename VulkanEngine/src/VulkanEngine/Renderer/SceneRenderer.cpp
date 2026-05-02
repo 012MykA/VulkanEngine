@@ -4,9 +4,9 @@
 
 namespace ve
 {
-    void SceneRenderer::AddScene(const gltf::Scene &scene)
+    void SceneRenderer::AddScene(const gltf::Scene &scene, const glm::mat4 &transform)
     {
-        m_Scenes.push_back(scene);
+        m_Scenes.emplace_back(scene, transform);
     }
 
     void SceneRenderer::ClearScenes()
@@ -23,11 +23,11 @@ namespace ve
         renderer.BindPipeline(cmd);
         renderer.BindGlobalDescriptorSet(cmd, frameIndex);
 
-        for (const auto &scene : m_Scenes)
+        for (const auto &renderScene : m_Scenes)
         {
-            for (int32_t nodeIdx : scene.rootNodes)
+            for (int32_t nodeIdx : renderScene.scene.rootNodes)
             {
-                DrawNode(renderer, cmd, scene, nodeIdx, glm::mat4(1.0f), frustum);
+                DrawNode(renderer, cmd, renderScene.scene, nodeIdx, renderScene.transform, frustum);
             }
         }
     }
@@ -47,7 +47,7 @@ namespace ve
         {
             const gltf::SceneMeshEntry &entry = scene.meshEntries[node.meshIndex];
             const auto &primitives = entry.mesh->GetPrimitives();
-            
+
             entry.mesh->Bind(cmd);
 
             for (size_t i = 0; i < primitives.size(); i++)
