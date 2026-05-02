@@ -160,13 +160,33 @@ void main() {
     for(int i = 0; i < lightCount; ++i) {
         Light l = u_Global.lights[i];
         int type = int(l.position.w);
-        
-        vec3 L = normalize(u_Global.lights[i].position.xyz - inWorldPos);
-        vec3 H = normalize(V + L);
-        float distance = length(u_Global.lights[i].position.xyz - inWorldPos);
 
-        float attenuation = 1.0 / (distance * distance);
-        vec3 radiance = u_Global.lights[i].color.rgb * u_Global.lights[i].color.a * attenuation;
+        vec3 L;
+        float attenuation = 1.0;
+
+        if(type == 0) { // Directional
+            L = normalize(-l.direction.xyz);
+        } else { // Point or Spot
+            L = normalize(l.position.xyz - inWorldPos);
+            float dist = length(l.position.xyz - inWorldPos);
+
+            attenuation = 1.0 / (dist * dist + 0.01);
+
+            if(l.direction.w > 0.0) {
+                attenuation *= clamp(1.0 - dist / l.direction.w, 0.0, 1.0);
+            }
+
+            if(type == 2) { // Spot
+                float theta = dot(L, normalize(-l.direction.xyz));
+                float epsilon = l.coneAngles.x - l.coneAngles.y;
+                float intensity = clamp((theta - l.coneAngles.y) / epsilon, 0.0, 1.0);
+                attenuation *= intensity;
+            }
+        }
+
+        vec3 radiance = l.color.rgb * l.color.a * attenuation;
+
+        vec3 H = normalize(V + L);
 
         // Cook-Torrance BRDF
         float NDF = DistributionGGX(N, H, roughness);

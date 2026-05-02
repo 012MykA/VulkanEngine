@@ -25,28 +25,7 @@ void ExampleLayer::OnAttach()
     m_Camera->SetPosition({-8.0f, 1.0f, 0.0f});
     m_Camera->SetYaw(0);
 
-    ve::GLTFLoader loader(*m_Renderer);
-    auto sponza = loader.Load("assets/scenes/KhronosGroup glTF-Sample-Models main 2.0-Sponza/glTF/Sponza.gltf");
-    m_SceneRenderer.AddScene(sponza);
-
-    ve::gltf::Light purpleNeon{
-        .name = "Puprle Neon",
-        .color = {0.9f, 0.0f, 0.8f},
-        .intensity = 5.0f,
-        .type = ve::gltf::LightType::Point,
-    };
-
-    ve::gltf::Light yellowNeon = purpleNeon;
-    yellowNeon.name = "Yellow Neon";
-    yellowNeon.color = {1.0f, 1.0f, 0.0f};
-
-    ve::gltf::Light blueNeon = purpleNeon;
-    blueNeon.name = "Blue Neon";
-    blueNeon.color = {0.0f, 0.7f, 1.0f};
-
-    m_Renderer->AddLight(purpleNeon, glm::translate(glm::mat4(1.0f), glm::vec3(-3.0f, 2.0f, 0.0f)));
-    m_Renderer->AddLight(yellowNeon, glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 2.0f, 0.0f)));
-    m_Renderer->AddLight(blueNeon, glm::translate(glm::mat4(1.0f), glm::vec3(3.0f, 2.0f, 0.0f)));
+    BuildLightTestScene();
 }
 
 void ExampleLayer::OnUpdate(ve::Timestep ts)

@@ -11,25 +11,13 @@ public:
     virtual void OnEvent(ve::Event &e) override;
 
 private:
-    void SetupScene();
-
     bool OnWindowResize(ve::WindowResizeEvent &e);
 
 private:
-    void SetupMeshes();
-    void SetupMaterials();
-    void SetupObjects();
+    void BuildLightTestScene();
 
 private:
     std::unique_ptr<ve::RendererPBR> m_Renderer;
     std::unique_ptr<ve::FPSCamera> m_Camera;
     ve::SceneRenderer m_SceneRenderer;
-
-    std::unique_ptr<ve::Scene> m_Scene;
-    std::shared_ptr<ve::Mesh> m_SphereMesh;
-    std::shared_ptr<ve::Mesh> m_CubeMesh;
-    std::shared_ptr<ve::MaterialPBR> m_DefaultMaterial;
-    std::shared_ptr<ve::MaterialPBR> m_PurpleNeon;
-    std::shared_ptr<ve::MaterialPBR> m_YellowNeon;
-    std::shared_ptr<ve::MaterialPBR> m_BlueNeon;
 };
