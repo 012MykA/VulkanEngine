@@ -82,11 +82,33 @@ namespace ve
         // Render Commands
         // -------------------------------------------------------
 
-        void BeginFrame(const Camera &camera);
+        // Common API
 
+        void BeginFrame(const Camera &camera);
         void EndFrame();
 
+        // API v1
+
+#ifdef VE_USE_RENDERER_API_V1
+
         void Submit(const RenderObject &object);
+
+#endif // VE_USE_RENDERER_API_V1
+
+        // API v2
+
+        void BindPipeline(VkCommandBuffer cmd);
+        void BindGlobalDescriptorSet(VkCommandBuffer cmd, uint32_t frameIndex);
+
+        void PushData(VkCommandBuffer cmd, const PushConstants &push);
+        void BindMaterial(VkCommandBuffer cmd, const std::shared_ptr<MaterialPBR> &material);
+
+        void DrawIndexed(VkCommandBuffer cmd, const Primitive &primitive);
+
+        VkCommandBuffer GetCurrentCommandBuffer() const { return m_FrameManager->GetCurrentFrame().commandBuffer; }
+        uint32_t GetCurrentFrameIndex() const { return m_FrameManager->GetCurrentFrameIndex(); }
+
+        // ---
 
         // -------------------------------------------------------
         // required for use

@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 
 #include <limits>
+#include <array>
 
 namespace ve
 {
@@ -24,6 +25,30 @@ namespace ve
         {
             min = glm::min(min, other.min);
             max = glm::max(max, other.max);
+        }
+
+        static AABB GetWorldAABB(const AABB &localAABB, const glm::mat4 &worldTransform)
+        {
+            glm::vec3 min = localAABB.min;
+            glm::vec3 max = localAABB.max;
+
+            std::array<glm::vec3, 8> corners = {
+                glm::vec3(min.x, min.y, min.z),
+                glm::vec3(min.x, min.y, max.z),
+                glm::vec3(min.x, max.y, min.z),
+                glm::vec3(min.x, max.y, max.z),
+                glm::vec3(max.x, min.y, min.z),
+                glm::vec3(max.x, min.y, max.z),
+                glm::vec3(max.x, max.y, min.z),
+                glm::vec3(max.x, max.y, max.z),
+            };
+
+            AABB worldAABB;
+            for (const auto &corner : corners)
+            {
+                worldAABB.Expand(glm::vec3(worldTransform * glm::vec4(corner, 1.0f)));
+            }
+            return worldAABB;
         }
     };
 

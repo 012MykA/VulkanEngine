@@ -375,6 +375,8 @@ namespace ve
         m_FrameManager->AdvanceFrame();
     }
 
+#ifdef VE_USE_RENDERER_API_V1
+
     void RendererPBR::Submit(const RenderObject &object)
     {
         const uint32_t frameIndex = m_FrameManager->GetCurrentFrameIndex();
@@ -408,6 +410,50 @@ namespace ve
         assert(object.primitiveIndex < primitives.size());
         const Primitive &primitive = primitives[object.primitiveIndex];
 
+        vkCmdDrawIndexed(
+            cmd,
+            primitive.indexCount,
+            1,
+            primitive.firstIndex,
+            0, 0);
+    }
+
+#endif // VE_USE_RENDERER_API_V1
+
+    void RendererPBR::BindPipeline(VkCommandBuffer cmd)
+    {
+        m_Pipeline->Bind(cmd);
+    }
+
+    void RendererPBR::BindGlobalDescriptorSet(VkCommandBuffer cmd, uint32_t frameIndex)
+    {
+        VkDescriptorSet globalSet = m_GlobalDescriptorSets[frameIndex];
+        vkCmdBindDescriptorSets(
+            cmd,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            m_PipelineLayout->GetVkHandle(),
+            0, 1, &globalSet,
+            0, nullptr);
+    }
+
+    void RendererPBR::PushData(VkCommandBuffer cmd, const PushConstants &push)
+    {
+        vkCmdPushConstants(
+            cmd,
+            m_PipelineLayout->GetVkHandle(),
+            VK_SHADER_STAGE_VERTEX_BIT,
+            0, sizeof(PushConstants), &push);
+    }
+
+    void RendererPBR::BindMaterial(VkCommandBuffer cmd, const std::shared_ptr<MaterialPBR> &material)
+    {
+        assert(material && "object.material should be a valid pointer");
+
+        material->Bind(cmd, m_PipelineLayout->GetVkHandle(), 1);
+    }
+
+    void RendererPBR::DrawIndexed(VkCommandBuffer cmd, const Primitive &primitive)
+    {
         vkCmdDrawIndexed(
             cmd,
             primitive.indexCount,

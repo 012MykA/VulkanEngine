@@ -1,5 +1,6 @@
 #include "SceneRenderer.hpp"
 #include "VulkanEngine/Renderer/RendererPBR.hpp"
+#include "VulkanEngine/Core/Log.hpp"
 
 namespace ve
 {
@@ -15,46 +16,62 @@ namespace ve
 
     void SceneRenderer::Draw(RendererPBR &renderer, const Camera &camera)
     {
+        VkCommandBuffer cmd = renderer.GetCurrentCommandBuffer();
+        uint32_t frameIndex = renderer.GetCurrentFrameIndex();
+        Frustum frustum = Frustum::FromViewProjection(camera.GetViewProjection());
+
+        renderer.BindPipeline(cmd);
+        renderer.BindGlobalDescriptorSet(cmd, frameIndex);
+
         for (const auto &scene : m_Scenes)
         {
             for (int32_t nodeIdx : scene.rootNodes)
             {
-                DrawNode(renderer, scene, nodeIdx, glm::mat4(1.0f));
+                DrawNode(renderer, cmd, scene, nodeIdx, glm::mat4(1.0f), frustum);
             }
         }
     }
 
     void SceneRenderer::DrawNode(
         RendererPBR &renderer,
+        VkCommandBuffer cmd,
         const gltf::Scene &scene,
         int32_t nodeIdx,
-        const glm::mat4 &parentTransform)
+        const glm::mat4 &parentTransform,
+        const Frustum &frustum)
     {
         const gltf::SceneNode &node = scene.nodes[nodeIdx];
-
         glm::mat4 worldTransform = parentTransform * node.localTransform;
 
         if (node.meshIndex >= 0)
         {
             const gltf::SceneMeshEntry &entry = scene.meshEntries[node.meshIndex];
+            const auto &primitives = entry.mesh->GetPrimitives();
+            
+            entry.mesh->Bind(cmd);
 
-            for (size_t i = 0; i < entry.mesh->GetPrimitives().size(); i++)
+            for (size_t i = 0; i < primitives.size(); i++)
             {
+                const Primitive &prim = primitives[i];
+
+                // Culling
+                AABB primitiveWorldBounds = AABB::GetWorldAABB(prim.boundingBox, worldTransform);
+                if (!frustum.TestAABB(primitiveWorldBounds))
+                    continue;
+
+                // Rendering
                 int32_t matIdx = entry.materialIndices[i];
                 const auto &material = scene.materials[matIdx];
 
-                renderer.Submit(RenderObject{
-                    .transform = worldTransform,
-                    .mesh = entry.mesh,
-                    .material = material,
-                    .primitiveIndex = static_cast<uint32_t>(i),
-                });
+                renderer.PushData(cmd, PushConstants{.model = worldTransform});
+                renderer.BindMaterial(cmd, material);
+                renderer.DrawIndexed(cmd, prim);
             }
         }
 
         for (int32_t childIdx : node.childIndices)
         {
-            DrawNode(renderer, scene, childIdx, worldTransform);
+            DrawNode(renderer, cmd, scene, childIdx, worldTransform, frustum);
         }
     }
 
