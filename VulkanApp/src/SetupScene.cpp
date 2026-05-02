@@ -6,23 +6,13 @@ void ExampleLayer::BuildLightTestScene()
 {
     ve::GLTFLoader loader(*m_Renderer);
 
-    for (int i = 0; i < 10; i += 2)
-    {
-        for (int j = 0; j < 6; j += 2)
-        {
-            m_LoadingScenes.push_back(PendingScene{
-                .scene = loader.LoadAsync("assets/scenes/DamagedHelmet/glTF/DamagedHelmet.gltf"),
-                .transform = glm::rotate(
-                    glm::translate(glm::mat4(1.0f), glm::vec3(-7 + i, 1, -1 + j)),
-                    glm::radians(180.0f),
-                    glm::vec3(0, 1, 0)),
-            });
-        }
-    }
-
     m_LoadingScenes.push_back(PendingScene{
         .scene = loader.LoadAsync("assets/scenes/Sponza/glTF/Sponza.gltf"),
-        .transform = glm::mat4(1.0f),
+    });
+
+    m_LoadingScenes.push_back(PendingScene{
+        .scene = loader.LoadAsync("assets/scenes/DamagedHelmet/glTF/DamagedHelmet.gltf"),
+        .transform = glm::translate(glm::mat4(1.0f), glm::vec3(0, 2, 0)),
     });
 
     ve::gltf::Light purpleNeon{
@@ -49,7 +39,7 @@ void ExampleLayer::BuildLightTestScene()
         .intensity = 4.5f,
         .type = ve::gltf::LightType::Directional,
     };
-    glm::vec3 lightPos = {20.0f, 3.5f, -15.0f};
+    glm::vec3 lightPos = {-20.0f, 3.5f, 15.0f};
     glm::vec3 center = {0, 0, 0};
     glm::mat4 sunTransform = glm::inverse(glm::lookAt(lightPos, center, glm::vec3(0, 1, 0)));
     m_Renderer->AddLight(sun, sunTransform);

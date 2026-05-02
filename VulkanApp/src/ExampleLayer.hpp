@@ -23,7 +23,7 @@ private:
     struct PendingScene
     {
         std::future<ve::gltf::Scene> scene;
-        glm::mat4 transform;
+        glm::mat4 transform = glm::mat4(1.0f);
     };
     std::vector<PendingScene> m_LoadingScenes;
     ve::SceneRenderer m_SceneRenderer;

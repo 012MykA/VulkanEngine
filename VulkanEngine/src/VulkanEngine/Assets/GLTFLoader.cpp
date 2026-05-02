@@ -45,9 +45,7 @@ namespace ve
         // clang-format on
 
         ctx.scene.sourceFile = path;
-        ctx.scene.name = ctx.gltf.scenes.empty()
-                             ? path
-                             : ctx.gltf.scenes[ctx.gltf.defaultScene >= 0 ? ctx.gltf.defaultScene : 0].name;
+        ctx.scene.name = ctx.gltf.scenes[ctx.gltf.defaultScene >= 0 ? ctx.gltf.defaultScene : 0].name;
 
         ParseTextures(ctx);
         ParseMaterials(ctx);
@@ -60,7 +58,7 @@ namespace ve
             UploadAll(ctx);
 
         VE_CORE_TRACE("GLTFScene '{}' loaded ({} ms)",
-                      ctx.scene.name.empty() ? ctx.scene.name : std::filesystem::path(path).string(),
+                      std::filesystem::path(ctx.scene.sourceFile).filename().string(),
                       loadingTimer.ElapsedMilliseconds());
 
         return std::move(ctx.scene);
