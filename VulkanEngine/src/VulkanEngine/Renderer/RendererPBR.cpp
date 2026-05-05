@@ -12,6 +12,12 @@
 
 #include "VulkanEngine/Core/Log.hpp"
 
+#define PBR_VERTEX_SHADER_PATH "../VulkanEngine/assets/shaders/bin/raster/pbr_basic.vert.spv"
+#define PBR_FRAGMENT_SHADER_PATH "../VulkanEngine/assets/shaders/bin/raster/pbr_basic.frag.spv"
+
+#define SKYBOX_VERTEX_SHADER_PATH "../VulkanEngine/assets/shaders/bin/raster/skybox.vert.spv"
+#define SKYBOX_FRAGMENT_SHADER_PATH "../VulkanEngine/assets/shaders/bin/raster/skybox.frag.spv"
+
 namespace ve
 {
     RendererPBR::RendererPBR(const Window &window, const RenderSettings &settings)
@@ -156,8 +162,8 @@ namespace ve
                 .AddPushConstantRange<PushConstants>(VK_SHADER_STAGE_VERTEX_BIT)
                 .Build());
 
-        VulkanShader pbrVertexShader(*m_LogicalDevice, "../VulkanEngine/assets/shaders/bin/pbr_basic.vert.spv");
-        VulkanShader pbrFragmentShader(*m_LogicalDevice, "../VulkanEngine/assets/shaders/bin/pbr_basic.frag.spv");
+        VulkanShader pbrVertexShader(*m_LogicalDevice, PBR_VERTEX_SHADER_PATH);
+        VulkanShader pbrFragmentShader(*m_LogicalDevice, PBR_FRAGMENT_SHADER_PATH);
 
         m_Pipeline = std::make_unique<VulkanGraphicsPipeline>(
             *m_LogicalDevice,
@@ -190,8 +196,8 @@ namespace ve
                 .AddDescriptorSetLayout(m_SkyboxSetLayout->GetVkHandle())
                 .Build());
 
-        VulkanShader skyboxVertexShader(*m_LogicalDevice, "../VulkanEngine/assets/shaders/bin/skybox.vert.spv");
-        VulkanShader skyboxFragmentShader(*m_LogicalDevice, "../VulkanEngine/assets/shaders/bin/skybox.frag.spv");
+        VulkanShader skyboxVertexShader(*m_LogicalDevice, SKYBOX_VERTEX_SHADER_PATH);
+        VulkanShader skyboxFragmentShader(*m_LogicalDevice, SKYBOX_FRAGMENT_SHADER_PATH);
 
         m_SkyboxPipeline = std::make_unique<VulkanGraphicsPipeline>(
             *m_LogicalDevice,

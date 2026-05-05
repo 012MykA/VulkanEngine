@@ -27,7 +27,7 @@ void ExampleLayer::OnAttach()
     };
     m_Renderer = std::make_unique<ve::RendererPBR>(window, settings);
 
-    m_Camera = std::make_unique<ve::FPSCamera>(ve::FPSCameraDesc{}, window);
+    m_Camera = std::make_unique<ve::FPSCamera>(window);
     m_Camera->SetPosition({-8.0f, 1.0f, 0.0f});
     m_Camera->SetYaw(0);
 
@@ -44,8 +44,10 @@ void ExampleLayer::OnUpdate(ve::Timestep ts)
         {
             ve::gltf::Scene loadedScene = it->scene.get();
 
+            ve::Timer timer;
             ve::GLTFLoader loader(*m_Renderer);
             loader.UploadScene(loadedScene);
+            VE_INFO("Scene Uploaded: {}", timer.ElapsedMilliseconds());
 
             m_SceneRenderer.AddScene(std::move(loadedScene), it->transform);
 

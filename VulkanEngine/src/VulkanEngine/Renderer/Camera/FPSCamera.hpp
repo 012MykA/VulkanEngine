@@ -21,7 +21,7 @@ namespace ve
     class FPSCamera : public Camera
     {
     public:
-        FPSCamera(const FPSCameraDesc &desc, Window &window);
+        FPSCamera(Window &window, const FPSCameraDesc &desc = {});
         virtual ~FPSCamera() override = default;
 
         virtual void OnUpdate(Timestep ts) override;

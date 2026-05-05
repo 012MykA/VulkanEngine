@@ -4,7 +4,7 @@
 
 namespace ve
 {
-    FPSCamera::FPSCamera(const FPSCameraDesc &desc, Window &window)
+    FPSCamera::FPSCamera(Window &window, const FPSCameraDesc &desc)
         : m_Desc(desc), m_Window(window)
     {
         Camera::SetViewportSize(m_Window.GetWidth(), m_Window.GetHeight());
