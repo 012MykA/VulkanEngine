@@ -70,6 +70,7 @@ void ExampleLayer::OnEvent(ve::Event &e)
 {
     ve::EventDispatcher dp(e);
     dp.Dispatch<ve::WindowResizeEvent>(VE_BIND_EVENT_FN(OnWindowResize));
+    dp.Dispatch<ve::KeyPressedEvent>(VE_BIND_EVENT_FN(OnKeyPressed));
 
     m_Camera->OnEvent(e);
 }
@@ -79,5 +80,18 @@ bool ExampleLayer::OnWindowResize(ve::WindowResizeEvent &e)
     m_Camera->SetViewportSize(e.GetWidth(), e.GetHeight());
     m_Renderer->HandleResize(e.GetWidth(), e.GetHeight());
 
+    return false;
+}
+
+bool ExampleLayer::OnKeyPressed(ve::KeyPressedEvent &e)
+{
+    bool isRepeat = e.GetRepeatCount() > 0;
+
+    if (!isRepeat && e.GetKeyCode() == ve::Key::F11)
+    {
+        auto& window = ve::Application::Get().GetWindow();
+        window.ToogleFullscreen();        
+    }
+    
     return false;
 }

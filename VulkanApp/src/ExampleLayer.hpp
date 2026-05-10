@@ -12,6 +12,7 @@ public:
 
 private:
     bool OnWindowResize(ve::WindowResizeEvent &e);
+    bool OnKeyPressed(ve::KeyPressedEvent &e);
 
 private:
     void BuildLightTestScene();

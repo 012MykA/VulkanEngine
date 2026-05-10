@@ -37,6 +37,8 @@ namespace ve
 
         virtual void OnUpdate() = 0;
 
+        virtual void ToogleFullscreen() = 0;
+
         // Vulkan
         virtual std::vector<const char *> GetRequiredVulkanExtensions() const = 0;
         virtual VkSurfaceKHR GetVulkanSurface(VkInstance instance) const = 0;
@@ -50,12 +52,12 @@ namespace ve
         virtual bool IsCursorLocked() const = 0;
         virtual void SetCursorLocked(bool locked) = 0;
 
-    public: // Getters
+        // Getters
         virtual uint32_t GetWidth() const = 0;
         virtual uint32_t GetHeight() const = 0;
         virtual void *GetNativeWindow() const = 0;
 
-    public: // Setters
+        // Setters
         virtual void SetEventCallback(const EventCallbackFn &callback) = 0;
     };
 

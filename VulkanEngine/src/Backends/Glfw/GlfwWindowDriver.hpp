@@ -14,6 +14,8 @@ namespace ve
 
         virtual void OnUpdate() override;
 
+        virtual void ToogleFullscreen() override;
+
         // Vulkan
         virtual std::vector<const char *> GetRequiredVulkanExtensions() const override;
         virtual VkSurfaceKHR GetVulkanSurface(VkInstance instance) const override;
@@ -27,16 +29,20 @@ namespace ve
         virtual bool IsCursorLocked() const override;
         virtual void SetCursorLocked(bool locked) override;
 
-    public: // Getters
+        // Getters
         virtual uint32_t GetWidth() const override;
         virtual uint32_t GetHeight() const override;
         virtual void *GetNativeWindow() const override;
 
-    public: // Setters
+        // Setters
         virtual void SetEventCallback(const EventCallbackFn &callback) override;
 
     private:
         GLFWwindow *m_WindowHandle;
+
+        bool m_IsFullscreen;
+        int m_LastPosX, m_LastPosY;
+        int m_LastWidth, m_LastHeight;
 
         struct WindowData
         {

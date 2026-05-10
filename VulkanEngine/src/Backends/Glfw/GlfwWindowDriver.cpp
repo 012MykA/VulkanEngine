@@ -24,6 +24,8 @@ namespace ve
     }
 
     GlfwWindowDriver::GlfwWindowDriver(const WindowDesc &desc)
+        : m_IsFullscreen(desc.fullscreen), m_LastPosX(desc.posX), m_LastPosY(desc.posY),
+          m_LastWidth(desc.width), m_LastHeight(desc.height)
     {
         m_Data.title = desc.title;
         m_Data.width = desc.width;
@@ -194,6 +196,26 @@ namespace ve
     void GlfwWindowDriver::OnUpdate()
     {
         glfwPollEvents();
+    }
+
+    void GlfwWindowDriver::ToogleFullscreen()
+    {
+        if (!m_IsFullscreen)
+        {
+            glfwGetWindowPos(m_WindowHandle, &m_LastPosX, &m_LastPosY);
+            glfwGetWindowSize(m_WindowHandle, &m_LastWidth, &m_LastHeight);
+
+            GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+            const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+            glfwSetWindowMonitor(m_WindowHandle, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+
+            m_IsFullscreen = true;
+        }
+        else
+        {
+            glfwSetWindowMonitor(m_WindowHandle, nullptr, m_LastPosX, m_LastPosY, m_LastWidth, m_LastHeight, 0);
+            m_IsFullscreen = false;
+        }
     }
 
     uint32_t GlfwWindowDriver::GetWidth() const

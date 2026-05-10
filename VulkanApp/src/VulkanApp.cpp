@@ -22,7 +22,7 @@ ve::Application *ve::CreateApplication(ApplicationCommandLineArgs args)
 {
     ve::ApplicationDesc appInfo{
         .name = "VulkanApp",
-        .workingDirectory = "VulkanApp/",
+        .workingDirectory = "../../VulkanApp/",
         .commandLineArgs = args,
         .windowDesc{
             .title = "VulkanApp",
