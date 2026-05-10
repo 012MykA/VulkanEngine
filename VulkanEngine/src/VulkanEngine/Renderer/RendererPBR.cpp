@@ -12,11 +12,11 @@
 
 #include "VulkanEngine/Core/Log.hpp"
 
-#define PBR_VERTEX_SHADER_PATH "../VulkanEngine/assets/shaders/bin/raster/pbr_basic.vert.spv"
-#define PBR_FRAGMENT_SHADER_PATH "../VulkanEngine/assets/shaders/bin/raster/pbr_basic.frag.spv"
+#define PBR_VERTEX_SHADER_PATH "../VulkanEngine/assets/shaders/bin/pbr_basic.vert.spv"
+#define PBR_FRAGMENT_SHADER_PATH "../VulkanEngine/assets/shaders/bin/pbr_basic.frag.spv"
 
-#define SKYBOX_VERTEX_SHADER_PATH "../VulkanEngine/assets/shaders/bin/raster/skybox.vert.spv"
-#define SKYBOX_FRAGMENT_SHADER_PATH "../VulkanEngine/assets/shaders/bin/raster/skybox.frag.spv"
+#define SKYBOX_VERTEX_SHADER_PATH "../VulkanEngine/assets/shaders/bin/skybox.vert.spv"
+#define SKYBOX_FRAGMENT_SHADER_PATH "../VulkanEngine/assets/shaders/bin/skybox.frag.spv"
 
 namespace ve
 {

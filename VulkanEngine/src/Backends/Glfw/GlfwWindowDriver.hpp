@@ -40,6 +40,7 @@ namespace ve
     private:
         GLFWwindow *m_WindowHandle;
 
+        // Fullscreen state
         bool m_IsFullscreen;
         int m_LastPosX, m_LastPosY;
         int m_LastWidth, m_LastHeight;
