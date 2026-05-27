@@ -78,6 +78,8 @@ def main():
     except KeyboardInterrupt:
         print("\nCompilation canceled")
 
+    input("Press Enter to exit...")
+
 
 if __name__ == "__main__":
     main()
