@@ -26,6 +26,8 @@ void ExampleLayer::OnAttach()
         .iblIntensity = 1.0f,
     };
     m_Renderer = std::make_unique<ve::RendererPBR>(window, settings);
+    m_Renderer->SetSkybox("assets/skyboxes/street/faces/");
+    m_Renderer->SetSkyboxEnabled(true);
 
     m_Camera = std::make_unique<ve::FPSCamera>(window);
     m_Camera->SetPosition({-8.0f, 1.0f, 0.0f});
@@ -89,9 +91,9 @@ bool ExampleLayer::OnKeyPressed(ve::KeyPressedEvent &e)
 
     if (!isRepeat && e.GetKeyCode() == ve::Key::F11)
     {
-        auto& window = ve::Application::Get().GetWindow();
-        window.ToogleFullscreen();        
+        auto &window = ve::Application::Get().GetWindow();
+        window.ToogleFullscreen();
     }
-    
+
     return false;
 }

@@ -32,6 +32,11 @@ namespace ve
                     .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
                                        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
                 },
+#else
+                .enableValidation = false,
+                .debugMessenger{
+                    .enableDebugMessenger = false,
+                },
 #endif
             });
 
