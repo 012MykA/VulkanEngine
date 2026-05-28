@@ -9,6 +9,7 @@
 #include "Backends/Vulkan/Debug/VulkanValidation.hpp"
 
 #include <cassert>
+#include <vector>
 
 #include "VulkanEngine/Core/Log.hpp"
 
@@ -66,23 +67,41 @@ namespace ve
                 .height = window.GetHeight(),
             });
 
+        const bool useMsaa = (m_EffectiveSettings.msaaSamples > VK_SAMPLE_COUNT_1_BIT);
+        if (useMsaa)
+        {
+            m_MsaaColorBuffer = std::make_unique<VulkanImage>(
+                *m_Allocator, *m_LogicalDevice,
+                ImageDesc{
+                    .width = m_Swapchain->GetExtent().width,
+                    .height = m_Swapchain->GetExtent().height,
+                    .format = m_Swapchain->GetFormat(),
+                    .type = ImageType::ColorAttachment,
+                    .samples = m_EffectiveSettings.msaaSamples,
+                });
+        }
+
         m_DepthBuffer = std::make_unique<VulkanDepthBuffer>(
             *m_LogicalDevice,
             *m_PhysicalDevice,
             *m_Allocator,
             m_Swapchain->GetExtent().width,
-            m_Swapchain->GetExtent().height);
+            m_Swapchain->GetExtent().height,
+            m_EffectiveSettings.msaaSamples);
 
         m_RenderPass = std::make_unique<VulkanRenderPass>(
             *m_LogicalDevice,
             m_Swapchain->GetFormat(),
-            m_DepthBuffer->GetFormat());
+            m_DepthBuffer->GetFormat(),
+            m_EffectiveSettings.msaaSamples);
 
+        VkImageView msaaView = m_MsaaColorBuffer ? m_MsaaColorBuffer->GetView() : VK_NULL_HANDLE;
         m_Framebuffers = std::make_unique<VulkanFramebuffers>(
             *m_LogicalDevice,
             *m_Swapchain,
             *m_RenderPass,
-            *m_DepthBuffer);
+            *m_DepthBuffer,
+            msaaView);
 
         m_GraphicsCommandPool = std::make_unique<VulkanCommandPool>(
             *m_LogicalDevice, *m_PhysicalDevice,
@@ -113,13 +132,13 @@ namespace ve
         constexpr uint32_t framesInFlight = VulkanFrameManager::k_MaxFramesInFlight;
         constexpr uint32_t maxMats = k_MaxMaterials;
 
-        // Sets: global × frames + skybox + materials
+        // Sets: global * frames + skybox + materials
         constexpr uint32_t maxSets = framesInFlight + 1 + maxMats;
 
-        // UBOs: global UBO × frames + material UBO × mats
+        // UBOs: global UBO * frames + material UBO * mats
         constexpr uint32_t uboCount = framesInFlight + maxMats;
 
-        // Samplers: IBL(3) × frames + skybox(1) + material textures(6) × mats
+        // Samplers: IBL(3) * frames + skybox(1) + material textures(6) * mats
         constexpr uint32_t samplerCount = (3 * framesInFlight) + 1 + (6 * maxMats);
 
         m_DescriptorPool = std::make_unique<VulkanDescriptorPool>(
@@ -175,14 +194,11 @@ namespace ve
             GraphicsPipelineDesc{
                 .vertexShader = pbrVertexShader.GetVkHandle(),
                 .fragmentShader = pbrFragmentShader.GetVkHandle(),
-
                 .vertexInput = GetPBRVertexInputDesc(),
-
+                .samples = m_EffectiveSettings.msaaSamples,
                 .depthTest = true,
                 .depthWrite = true,
-
                 .colorBlendAttachment = MakeOpaqueBlend(),
-
                 .renderPass = m_RenderPass->GetVkHandle(),
                 .layout = m_PipelineLayout->GetVkHandle(),
             });
@@ -209,7 +225,6 @@ namespace ve
             GraphicsPipelineDesc{
                 .vertexShader = skyboxVertexShader.GetVkHandle(),
                 .fragmentShader = skyboxFragmentShader.GetVkHandle(),
-
                 .vertexInput{
                     .bindings = {
                         VkVertexInputBindingDescription{
@@ -221,13 +236,11 @@ namespace ve
                         {.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, position)},
                     },
                 },
-
                 .cullMode = VK_CULL_MODE_NONE,
-
+                .samples = m_EffectiveSettings.msaaSamples,
                 .depthTest = true,
                 .depthWrite = false,
                 .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL,
-
                 .colorBlendAttachment = MakeOpaqueBlend(),
                 .renderPass = m_RenderPass->GetVkHandle(),
                 .layout = m_SkyboxPipelineLayout->GetVkHandle(),
@@ -289,9 +302,11 @@ namespace ve
         CHECK_VK_RESULT(result);
 
         // RenderPass
-        std::array<VkClearValue, 2> clearValues{};
+        const bool useMsaa = (m_EffectiveSettings.msaaSamples > VK_SAMPLE_COUNT_1_BIT);
+        std::vector<VkClearValue> clearValues(useMsaa ? 3 : 2);
         clearValues[0].color = {{0.1f, 0.1f, 0.1f, 1.0f}};
         clearValues[1].depthStencil = {1.0f, 0};
+        // clearValues[3] = ...
 
         VkRenderPassBeginInfo rpBegin{
             .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
@@ -599,8 +614,30 @@ namespace ve
         Timer timer;
 
         m_Swapchain->Recreate(m_ResizeWidth, m_ResizeHeight);
-        m_DepthBuffer->Recreate(*m_Allocator, m_ResizeWidth, m_ResizeHeight);
-        m_Framebuffers->Recreate(*m_Swapchain, *m_RenderPass, *m_DepthBuffer);
+
+        const bool useMsaa = (m_EffectiveSettings.msaaSamples > VK_SAMPLE_COUNT_1_BIT);
+        if (useMsaa)
+        {
+            m_MsaaColorBuffer = std::make_unique<VulkanImage>(
+                *m_Allocator, *m_LogicalDevice,
+                ImageDesc{
+                    .width = m_ResizeWidth,
+                    .height = m_ResizeHeight,
+                    .format = m_Swapchain->GetFormat(),
+                    .type = ImageType::ColorAttachment,
+                    .samples = m_EffectiveSettings.msaaSamples,
+                });
+        }
+        m_DepthBuffer->Recreate(*m_Allocator,
+                                m_ResizeWidth,
+                                m_ResizeHeight,
+                                m_EffectiveSettings.msaaSamples);
+
+        VkImageView msaaView = m_MsaaColorBuffer ? m_MsaaColorBuffer->GetView() : VK_NULL_HANDLE;
+        m_Framebuffers->Recreate(*m_Swapchain,
+                                 *m_RenderPass,
+                                 *m_DepthBuffer,
+                                 msaaView);
 
         VE_CORE_TRACE("Swapchain recreated: {}x{} ({} ms)", m_ResizeWidth, m_ResizeHeight, timer.ElapsedMilliseconds());
     }

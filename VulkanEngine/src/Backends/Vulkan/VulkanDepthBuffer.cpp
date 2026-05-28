@@ -11,9 +11,11 @@ namespace ve
         const VulkanLogicalDevice &logicalDevice,
         const VulkanPhysicalDevice &physicalDevice,
         const VulkanAllocator &allocator,
-        uint32_t width, uint32_t height)
+        uint32_t width, uint32_t height,
+        VkSampleCountFlagBits samples)
         : m_Device(&logicalDevice),
-          m_Format(FindDepthFormat(physicalDevice.GetVkHandle()))
+          m_Format(FindDepthFormat(physicalDevice.GetVkHandle())),
+          m_Samples(samples)
     {
         Create(allocator, width, height);
         VE_CORE_TRACE("DepthBuffer created:");
@@ -23,9 +25,12 @@ namespace ve
 
     VulkanDepthBuffer::~VulkanDepthBuffer() = default;
 
-    void VulkanDepthBuffer::Recreate(const VulkanAllocator &allocator, uint32_t width, uint32_t height)
+    void VulkanDepthBuffer::Recreate(const VulkanAllocator &allocator,
+                                     uint32_t width, uint32_t height,
+                                     VkSampleCountFlagBits samples)
     {
         m_Image.reset();
+        m_Samples = samples;
         Create(allocator, width, height);
     }
 
@@ -39,6 +44,7 @@ namespace ve
                 .height = height,
                 .format = m_Format,
                 .type = ImageType::DepthAttachment,
+                .samples = m_Samples,
             });
     }
 

@@ -173,6 +173,7 @@ namespace ve
 
         std::unique_ptr<VulkanSwapchain> m_Swapchain;
         std::unique_ptr<VulkanDepthBuffer> m_DepthBuffer;
+        std::unique_ptr<VulkanImage> m_MsaaColorBuffer;
         std::unique_ptr<VulkanRenderPass> m_RenderPass;
         std::unique_ptr<VulkanFramebuffers> m_Framebuffers;
 

@@ -6,16 +6,19 @@
 #include "Debug/VulkanValidation.hpp"
 #include "VulkanEngine/Core/Log.hpp"
 
+#include <vector>
+
 namespace ve
 {
     VulkanFramebuffers::VulkanFramebuffers(
         const VulkanLogicalDevice &logicalDevice,
         const VulkanSwapchain &swapchain,
         const VulkanRenderPass &renderPass,
-        const VulkanDepthBuffer &depthBuffer)
+        const VulkanDepthBuffer &depthBuffer,
+        VkImageView msaaColorView)
         : m_Device(logicalDevice.GetVkHandle())
     {
-        Create(swapchain, renderPass, depthBuffer);
+        Create(swapchain, renderPass, depthBuffer, msaaColorView);
     }
 
     VulkanFramebuffers::~VulkanFramebuffers()
@@ -23,35 +26,45 @@ namespace ve
         Destroy();
     }
 
-    void VulkanFramebuffers::Recreate(const VulkanSwapchain &swapchain,
-                                      const VulkanRenderPass &renderPass,
-                                      const VulkanDepthBuffer &depthBuffer)
+    void VulkanFramebuffers::Recreate(
+        const VulkanSwapchain &swapchain,
+        const VulkanRenderPass &renderPass,
+        const VulkanDepthBuffer &depthBuffer,
+        VkImageView msaaColorView)
     {
         Destroy();
-        Create(swapchain, renderPass, depthBuffer);
+        Create(swapchain, renderPass, depthBuffer, msaaColorView);
     }
 
     void VulkanFramebuffers::Create(const VulkanSwapchain &swapchain,
                                     const VulkanRenderPass &renderPass,
-                                    const VulkanDepthBuffer &depthBuffer)
+                                    const VulkanDepthBuffer &depthBuffer,
+                                    VkImageView msaaColorView)
     {
         const auto &imageViews = swapchain.GetImageViews();
         const VkExtent2D &extent = swapchain.GetExtent();
-
         m_Framebuffers.resize(imageViews.size());
 
         for (size_t i = 0; i < imageViews.size(); ++i)
         {
-            VkImageView attachments[] = {
-                imageViews[i],
-                depthBuffer.GetView(),
-            };
+            std::vector<VkImageView> attachments;
+
+            if (msaaColorView != VK_NULL_HANDLE)
+            {
+                // MSAA: [msaaColor, depth, resolve(swapchain)]
+                attachments = {msaaColorView, depthBuffer.GetView(), imageViews[i]};
+            }
+            else
+            {
+                // No MSAA: [swapchainColor, depth]
+                attachments = {imageViews[i], depthBuffer.GetView()};
+            }
 
             VkFramebufferCreateInfo framebufferInfo{
                 .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
                 .renderPass = renderPass.GetVkHandle(),
-                .attachmentCount = 2,
-                .pAttachments = attachments,
+                .attachmentCount = static_cast<uint32_t>(attachments.size()),
+                .pAttachments = attachments.data(),
                 .width = extent.width,
                 .height = extent.height,
                 .layers = 1,

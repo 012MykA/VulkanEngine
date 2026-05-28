@@ -3,38 +3,45 @@
 #include "Debug/VulkanValidation.hpp"
 
 #include <array>
+#include <vector>
 
 namespace ve
 {
     VulkanRenderPass::VulkanRenderPass(const VulkanLogicalDevice &logicalDevice,
                                        VkFormat swapchainFormat,
-                                       VkFormat depthFormat)
+                                       VkFormat depthFormat,
+                                       VkSampleCountFlagBits samples)
         : m_Device(logicalDevice.GetVkHandle())
     {
         const bool hasDepth = (depthFormat != VK_FORMAT_UNDEFINED);
+        const bool hasMsaa = (samples != VK_SAMPLE_COUNT_1_BIT);
 
         // Attachments
 
         // attachment 0
         VkAttachmentDescription colorAttachment{
             .format = swapchainFormat,
-            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .samples = samples,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .storeOp = hasMsaa
+                           ? VK_ATTACHMENT_STORE_OP_DONT_CARE
+                           : VK_ATTACHMENT_STORE_OP_STORE,
             .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
             .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+            .finalLayout = hasMsaa
+                               ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+                               : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
         };
-
-        VkAttachmentReference colorRef{};
-        colorRef.attachment = 0;
-        colorRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        VkAttachmentReference colorRef{
+            .attachment = 0,
+            .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        };
 
         // attachment 1
         VkAttachmentDescription depthAttachment{
             .format = depthFormat,
-            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .samples = samples,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
             .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
@@ -42,10 +49,25 @@ namespace ve
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         };
-
         VkAttachmentReference depthRef{
             .attachment = 1,
             .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+        };
+
+        // attachment 2
+        VkAttachmentDescription resolveAttachment{
+            .format = swapchainFormat,
+            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        };
+        VkAttachmentReference resolveRef{
+            .attachment = 2,
+            .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         };
 
         // Subpass
@@ -53,6 +75,7 @@ namespace ve
             .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
             .colorAttachmentCount = 1,
             .pColorAttachments = &colorRef,
+            .pResolveAttachments = hasMsaa ? &resolveRef : nullptr,
             .pDepthStencilAttachment = hasDepth ? &depthRef : nullptr,
         };
 
@@ -79,15 +102,19 @@ namespace ve
                                         VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
         // RenderPass
-        std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
+        std::vector<VkAttachmentDescription> attachments = {colorAttachment};
+        if (hasDepth)
+            attachments.push_back(depthAttachment);
+        if (hasMsaa)
+            attachments.push_back(resolveAttachment);
 
         VkRenderPassCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-            .attachmentCount = hasDepth ? 2u : 1u,
+            .attachmentCount = static_cast<uint32_t>(attachments.size()),
             .pAttachments = attachments.data(),
             .subpassCount = 1,
             .pSubpasses = &subpass,
-            .dependencyCount = hasDepth ? 2u : 1u,
+            .dependencyCount = static_cast<uint32_t>(dependencies.size()),
             .pDependencies = dependencies.data(),
         };
 

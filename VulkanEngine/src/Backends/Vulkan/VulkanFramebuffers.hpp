@@ -18,7 +18,8 @@ namespace ve
         VulkanFramebuffers(const VulkanLogicalDevice &logicalDevice,
                            const VulkanSwapchain &swapchain,
                            const VulkanRenderPass &renderPass,
-                           const VulkanDepthBuffer &depthBuffer);
+                           const VulkanDepthBuffer &depthBuffer,
+                           VkImageView msaaColorView = VK_NULL_HANDLE);
         ~VulkanFramebuffers();
 
         VulkanFramebuffers(const VulkanFramebuffers &) = delete;
@@ -26,7 +27,8 @@ namespace ve
 
         void Recreate(const VulkanSwapchain &swapchain,
                       const VulkanRenderPass &renderPass,
-                      const VulkanDepthBuffer &depthBuffer);
+                      const VulkanDepthBuffer &depthBuffer,
+                      VkImageView msaaColorView = VK_NULL_HANDLE);
 
     public:
         // Getters
@@ -36,7 +38,8 @@ namespace ve
     private:
         void Create(const VulkanSwapchain &swapchain,
                     const VulkanRenderPass &renderPass,
-                    const VulkanDepthBuffer &depthBuffer);
+                    const VulkanDepthBuffer &depthBuffer,
+                    VkImageView msaaColorView);
         void Destroy();
 
     private:

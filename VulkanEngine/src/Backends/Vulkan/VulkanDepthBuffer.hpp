@@ -19,13 +19,16 @@ namespace ve
             const VulkanLogicalDevice &logicalDevice,
             const VulkanPhysicalDevice &physicalDevice,
             const VulkanAllocator &allocator,
-            uint32_t width, uint32_t height);
+            uint32_t width, uint32_t height,
+            VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT);
         ~VulkanDepthBuffer();
 
         VulkanDepthBuffer(const VulkanDepthBuffer &) = delete;
         VulkanDepthBuffer &operator=(const VulkanDepthBuffer &) = delete;
 
-        void Recreate(const VulkanAllocator &allocator, uint32_t width, uint32_t height);
+        void Recreate(const VulkanAllocator &allocator,
+                      uint32_t width, uint32_t height,
+                      VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT);
 
     public: // Getters
         VkImageView GetView() const { return m_Image->GetView(); }
@@ -38,8 +41,9 @@ namespace ve
 
     private:
         const VulkanLogicalDevice *m_Device = nullptr;
-        VkFormat m_Format = VK_FORMAT_UNDEFINED;
         std::unique_ptr<VulkanImage> m_Image;
+        VkFormat m_Format = VK_FORMAT_UNDEFINED;
+        VkSampleCountFlagBits m_Samples = VK_SAMPLE_COUNT_1_BIT;
     };
 
 } // namespace ve

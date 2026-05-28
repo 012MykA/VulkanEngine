@@ -11,7 +11,8 @@ namespace ve
     public:
         VulkanRenderPass(const VulkanLogicalDevice &logicalDevice,
                          VkFormat swapchainFormat,
-                         VkFormat depthFormat =  VK_FORMAT_UNDEFINED);
+                         VkFormat depthFormat = VK_FORMAT_UNDEFINED,
+                         VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT);
         ~VulkanRenderPass();
 
         VulkanRenderPass(const VulkanRenderPass &) = delete;
