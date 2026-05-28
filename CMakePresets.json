@@ -1,0 +1,23 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "vcpkg-windows",
+      "displayName": "Windows x64 (vcpkg)",
+      "generator": "Visual Studio 18 2026",
+      "binaryDir": "${sourceDir}/build/{presetName}",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "vcpkg-linux",
+      "displayName": "Linux (vcpkg)",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/{presetName}",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "/home/user/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      }
+    }
+  ]
+}

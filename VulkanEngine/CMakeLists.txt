@@ -27,15 +27,19 @@ else()
     message(FATAL_ERROR "Unknown platform!")
 endif()
 
-# Vendor
+# Required packages
 find_package(Vulkan REQUIRED)
+find_package(VulkanMemoryAllocator CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
+find_package(EnTT CONFIG REQUIRED)
 
-add_subdirectory(vendor/spdlog/)
-add_subdirectory(vendor/glfw/)
-add_subdirectory(vendor/vma/)
-add_subdirectory(vendor/glm/)
-add_subdirectory(vendor/tinygltf/)
-add_subdirectory(vendor/entt/)
+find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h" REQUIRED)
+
+set(STB_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb/src/stb_image.c
+)
 
 # Sources
 file(GLOB_RECURSE ENGINE_CORE_SOURCES src/VulkanEngine/*.cpp)
@@ -44,8 +48,7 @@ file(GLOB_RECURSE BACKENDS_SOURCES src/Backends/*.cpp)
 set(ALL_SOURCES
     ${ENGINE_CORE_SOURCES}
     ${BACKENDS_SOURCES}
-    # ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb/src/stb_image.c // implementation is in tinygltf.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tinygltf/tiny_gltf.cc
+    ${STB_SOURCES}
 )
 
 # Engine static lib
@@ -73,11 +76,8 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include/
     ${CMAKE_CURRENT_SOURCE_DIR}/src/
-    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/spdlog/include/
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb/include/
-    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/glm/
-    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tinygltf/
-    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/entt/single_include/
+    ${TINYGLTF_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -85,4 +85,7 @@ target_link_libraries(${PROJECT_NAME}
     Vulkan::Vulkan
     GPUOpen::VulkanMemoryAllocator
     glfw
+    spdlog::spdlog
+    glm::glm
+    EnTT::EnTT
 )

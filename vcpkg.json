@@ -1,0 +1,12 @@
+{
+    "name": "vulkan-engine-project",
+    "version-string": "1.1.0",
+    "dependencies": [
+        "vulkan-memory-allocator",
+        "spdlog",
+        "glfw3",
+        "glm",
+        "tinygltf",
+        "entt"
+    ]
+}
