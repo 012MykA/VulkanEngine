@@ -14,16 +14,24 @@ git clone --recursive https://github.com/012MykA/VulkanEngine.git
 cd VulkanEngine
 ```
 
-### Generate project files
+### Select your preset from `CMakePresets.json`
+* Windows:
 ```bash
-mkdir build
-cd build
-cmake ..
+cmake --preset vcpkg-windows
+```
+* Linux:
+```bash
+cmake --preset vcpkg-linux
 ```
 
-### Build with CMake
+### Build
+* Windows:
 ```bash
-cmake --build . --config Release
+cmake --build build/vcpkg-windows --config Release
+```
+* Windows:
+```bash
+cmake --build build/vcpkg-linux --config Release
 ```
 
 Now that you have the executable, make sure it is located next to the ```VulkanEngine/assets/``` folder before running it.

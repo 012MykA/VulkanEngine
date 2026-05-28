@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
 project(VulkanEngine)
 
+# Compile as Windows App
 option(VE_DIST_MODE "Build in Distribution mode (Windows App without console)" OFF)
 
 if(VE_DIST_MODE AND NOT WIN32)
