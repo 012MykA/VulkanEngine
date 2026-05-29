@@ -12,6 +12,17 @@
       }
     },
     {
+      "name": "vcpkg-windows-dist",
+      "displayName": "Windows x64 Dist (vcpkg)",
+      "description": "Compile as Windows App without console",
+      "generator": "Visual Studio 18 2026",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "VE_DIST_MODE": "ON"
+      }
+    },
+    {
       "name": "vcpkg-linux",
       "displayName": "Linux (vcpkg)",
       "generator": "Unix Makefiles",
@@ -19,6 +30,38 @@
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": "/home/user/vcpkg/scripts/buildsystems/vcpkg.cmake"
       }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "win-debug",
+      "displayName": "Windows Debug",
+      "configurePreset": "vcpkg-windows",
+      "configuration": "Debug"
+    },
+    {
+      "name": "win-release",
+      "displayName": "Windows Release",
+      "configurePreset": "vcpkg-windows",
+      "configuration": "Release"
+    },
+    {
+      "name": "win-dist",
+      "displayName": "Windows Dist (Release)",
+      "configurePreset": "vcpkg-windows-dist",
+      "configuration": "Release"
+    },
+    {
+      "name": "linux-debug",
+      "displayName": "Linux Debug",
+      "configurePreset": "vcpkg-linux",
+      "configuration": "Debug"
+    },
+    {
+      "name": "linux-release",
+      "displayName": "Linux Release",
+      "configurePreset": "vcpkg-linux",
+      "configuration": "Release"
     }
   ]
 }
