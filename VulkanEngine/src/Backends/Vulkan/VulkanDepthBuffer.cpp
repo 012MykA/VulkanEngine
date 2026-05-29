@@ -18,9 +18,6 @@ namespace ve
           m_Samples(samples)
     {
         Create(allocator, width, height);
-        VE_CORE_TRACE("DepthBuffer created:");
-        VE_CORE_TRACE("  Extent: {}x{}", width, height);
-        VE_CORE_TRACE("  Format: {}", string_VkFormat(m_Format));
     }
 
     VulkanDepthBuffer::~VulkanDepthBuffer() = default;

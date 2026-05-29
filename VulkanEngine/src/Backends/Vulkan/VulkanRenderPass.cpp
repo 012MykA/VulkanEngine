@@ -120,9 +120,6 @@ namespace ve
 
         VkResult result = vkCreateRenderPass(m_Device, &createInfo, nullptr, &m_RenderPass);
         CHECK_VK_RESULT(result);
-
-        VE_CORE_TRACE("RenderPass created");
-        VE_CORE_TRACE("  Depth: {}", hasDepth ? "ON" : "OFF");
     }
 
     VulkanRenderPass::~VulkanRenderPass()

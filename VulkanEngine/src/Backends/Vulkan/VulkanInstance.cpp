@@ -4,6 +4,7 @@
 
 #include <cstring>
 #include <stdexcept>
+#include <algorithm>
 
 namespace ve
 {
@@ -16,15 +17,15 @@ namespace ve
             [[maybe_unused]] void *pUserData)
         {
             if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
-                VE_CORE_TRACE("VulkanValidation:\n\t{0}", pCallbackData->pMessage);
+                VE_CORE_TRACE("VulkanValidation:\n\t{}", pCallbackData->pMessage);
             else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
-                VE_CORE_INFO("VulkanValidation:\n\t{0}", pCallbackData->pMessage);
+                VE_CORE_INFO("VulkanValidation:\n\t{}", pCallbackData->pMessage);
             else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
-                VE_CORE_WARN("VulkanValidation:\n\t{0}", pCallbackData->pMessage);
+                VE_CORE_WARN("VulkanValidation:\n\t{}", pCallbackData->pMessage);
             else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
-                VE_CORE_ERROR("VulkanValidation:\n\t{0}", pCallbackData->pMessage);
+                VE_CORE_ERROR("VulkanValidation:\n\t{}", pCallbackData->pMessage);
             else
-                VE_CORE_ERROR("VulkanValidation (Unknown Severity):\n\t{0}", pCallbackData->pMessage);
+                VE_CORE_ERROR("VulkanValidation (Unknown Severity):\n\t{}", pCallbackData->pMessage);
 
             return VK_FALSE;
         }
@@ -95,32 +96,76 @@ namespace ve
         VkResult result = vkCreateInstance(&createInfo, nullptr, &m_Instance);
         CHECK_VK_RESULT(result);
 
-        // Logging
-        VE_CORE_TRACE("VulkanInstance created");
-        VE_CORE_TRACE("  API version: {}.{}.{}",
-                      VK_API_VERSION_MAJOR(desc.apiVersion),
-                      VK_API_VERSION_MINOR(desc.apiVersion),
-                      VK_API_VERSION_PATCH(desc.apiVersion));
+#if !defined(DISABLE_VULKAN_LOGGING)
+        VE_CORE_TRACE("_________________________________________________");
+        VE_CORE_TRACE("Vulkan Version: {}.{}.{}",
+                      VK_VERSION_MAJOR(desc.apiVersion),
+                      VK_VERSION_MINOR(desc.apiVersion),
+                      VK_VERSION_PATCH(desc.apiVersion));
 
-        VE_CORE_TRACE("  Validation: {}", desc.enableValidation ? "ON" : "OFF");
-        if (desc.enableValidation)
+        VE_CORE_TRACE("_________________________________________________");
+        VE_CORE_TRACE("Available Instance Layers:");
+        std::vector<VkLayerProperties> availableLayers = GetAvailableLayers();
+        for (auto &layer : availableLayers)
         {
-            for (const char *layer : desc.validationLayers)
-                VE_CORE_TRACE("    layer: {}", layer);
+            VE_CORE_TRACE("{} (v. {}.{}.{} {}) : {}",
+                          layer.layerName,
+                          VK_VERSION_MAJOR(layer.specVersion),
+                          VK_VERSION_MINOR(layer.specVersion),
+                          VK_VERSION_PATCH(layer.specVersion),
+                          layer.implementationVersion,
+                          layer.description);
         }
 
-        VE_CORE_TRACE("  Extensions ({}):", extensions.size());
-        for (const char *ext : extensions)
-            VE_CORE_TRACE("     {}", ext);
+        VE_CORE_TRACE("_________________________________________________");
+        VE_CORE_TRACE("Available Instance Extensions:");
+        std::vector<VkExtensionProperties> availableExtensions = GetAvailableExtensions();
+        for (auto &ext : availableExtensions)
+        {
+            // clang-format off
+            auto it = std::find_if(extensions.begin(), extensions.end(),
+            [&ext](const char* reqExt)
+            {
+                return std::strcmp(reqExt, ext.extensionName) == 0;
+            });
+            // clang-format on
+            bool isUsed = (it != extensions.end());
+
+            VE_CORE_TRACE("[{}] {} (v. {}.{}.{})",
+                          isUsed ? 'x' : ' ',
+                          ext.extensionName,
+                          VK_VERSION_MAJOR(ext.specVersion),
+                          VK_VERSION_MINOR(ext.specVersion),
+                          VK_VERSION_PATCH(ext.specVersion));
+        }
+#endif
     }
 
-    bool VulkanInstance::CheckValidationLayerSupport(const std::vector<const char *> &layers)
+    std::vector<VkLayerProperties> VulkanInstance::GetAvailableLayers()
     {
         uint32_t count = 0;
         CHECK_VK_RESULT(vkEnumerateInstanceLayerProperties(&count, nullptr));
 
         std::vector<VkLayerProperties> available(count);
         CHECK_VK_RESULT(vkEnumerateInstanceLayerProperties(&count, available.data()));
+
+        return std::move(available);
+    }
+
+    std::vector<VkExtensionProperties> VulkanInstance::GetAvailableExtensions()
+    {
+        uint32_t count = 0;
+        CHECK_VK_RESULT(vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
+
+        std::vector<VkExtensionProperties> available(count);
+        CHECK_VK_RESULT(vkEnumerateInstanceExtensionProperties(nullptr, &count, available.data()));
+
+        return std::move(available);
+    }
+
+    bool VulkanInstance::CheckValidationLayerSupport(const std::vector<const char *> &layers)
+    {
+        std::vector<VkLayerProperties> available = GetAvailableLayers();
 
         for (const char *name : layers)
         {
@@ -163,11 +208,7 @@ namespace ve
                 extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
 
-        uint32_t count = 0;
-        CHECK_VK_RESULT(vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
-
-        std::vector<VkExtensionProperties> available(count);
-        CHECK_VK_RESULT(vkEnumerateInstanceExtensionProperties(nullptr, &count, available.data()));
+        std::vector<VkExtensionProperties> available = GetAvailableExtensions();
 
         for (const char *requested : extensions)
         {

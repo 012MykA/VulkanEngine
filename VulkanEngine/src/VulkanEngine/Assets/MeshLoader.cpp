@@ -117,18 +117,19 @@ namespace ve
         mesh->SetIndices(std::move(allIndices));
         mesh->RecalculateBounds();
 
-        VE_CORE_TRACE("Mesh '{}' loaded ({} ms)", mesh->GetName(), loadingTimer.ElapsedMilliseconds());
-        VE_CORE_TRACE("  Vertices: {}", mesh->GetVertices().size());
-        VE_CORE_TRACE("  Indices: {}", mesh->GetIndices().size());
+        VE_CORE_TRACE("Mesh '{}' loaded (Vertices: {}, Indices: {}, {} ms)",
+                      mesh->GetName(),
+                      mesh->GetVertices().size(),
+                      mesh->GetIndices().size(),
+                      loadingTimer.ElapsedMilliseconds());
 
         return std::move(mesh);
     }
 
     std::future<std::shared_ptr<Mesh>> MeshLoader::LoadGLTFAsync(const std::string &path)
     {
-        return std::async(std::launch::async, [this, path]() {
-            return LoadGLTF(path);
-        });
+        return std::async(std::launch::async, [this, path]()
+                          { return LoadGLTF(path); });
     }
 
 } // namespace ve

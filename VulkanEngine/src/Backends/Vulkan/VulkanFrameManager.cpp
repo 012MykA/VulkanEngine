@@ -14,9 +14,6 @@ namespace ve
             m_Frames[i].commandBuffer = buffers[i];
             m_Frames[i].syncObjects = std::make_unique<VulkanSyncObjects>(logicalDevice);
         }
-
-        VE_CORE_TRACE("FrameManager created:");
-        VE_CORE_TRACE("  frames-in-flight: {}", k_MaxFramesInFlight);
     }
 
 } // namespace ve

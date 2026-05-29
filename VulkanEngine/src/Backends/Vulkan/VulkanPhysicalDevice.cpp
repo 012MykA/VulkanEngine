@@ -44,6 +44,22 @@ namespace ve
         return details;
     }
 
+    std::vector<VkExtensionProperties> VulkanPhysicalDevice::GetAvailableExtensions() const
+    {
+        return VulkanPhysicalDevice::GetDeviceAvailableExtensions(m_PhysicalDevice);
+    }
+
+    std::vector<VkExtensionProperties> VulkanPhysicalDevice::GetDeviceAvailableExtensions(VkPhysicalDevice device)
+    {
+        uint32_t count = 0;
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &count, nullptr);
+
+        std::vector<VkExtensionProperties> available(count);
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &count, available.data());
+
+        return std::move(available);
+    }
+
     void VulkanPhysicalDevice::PickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface)
     {
         uint32_t count = 0;
@@ -81,8 +97,6 @@ namespace ve
         vkGetPhysicalDeviceFeatures(m_PhysicalDevice, &m_Features);
 
         BuildCapabilities();
-
-        VE_CORE_TRACE("Selected GPU: {}", m_Properties.deviceName);
     }
 
     void ve::VulkanPhysicalDevice::BuildCapabilities()
@@ -159,10 +173,7 @@ namespace ve
 
     bool VulkanPhysicalDevice::CheckExtensionSupport(VkPhysicalDevice device) const
     {
-        uint32_t count = 0;
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &count, nullptr);
-        std::vector<VkExtensionProperties> available(count);
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &count, available.data());
+        std::vector<VkExtensionProperties> available = GetDeviceAvailableExtensions(device);
 
         std::set<std::string> required(std::begin(k_RequiredExtensions), std::end(k_RequiredExtensions));
 

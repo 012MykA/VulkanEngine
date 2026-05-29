@@ -115,13 +115,6 @@ namespace ve
         m_Extent = extent;
 
         CreateImageViews();
-
-        VE_CORE_TRACE("Swapchain created:");
-        VE_CORE_TRACE("  Extent: {}x{}", extent.width, extent.height);
-        VE_CORE_TRACE("  Images: {}", actualImageCount);
-        VE_CORE_TRACE("  Format: {}", string_VkFormat(m_Format));
-        VE_CORE_TRACE("  Color space: {}", string_VkColorSpaceKHR(surfaceFormat.colorSpace));
-        VE_CORE_TRACE("  Present mode: {}", string_VkPresentModeKHR(presentMode));
     }
 
     void VulkanSwapchain::CreateImageViews()

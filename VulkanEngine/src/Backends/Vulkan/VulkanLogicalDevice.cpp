@@ -53,6 +53,29 @@ namespace ve
         for (const char *ext : desc.additionalExtensions)
             extensions.push_back(ext);
 
+#if !defined(DISABLE_VULKAN_LOGGING)
+        VE_CORE_TRACE("_________________________________________________");
+        VE_CORE_TRACE("Available Device Extensions:");
+        for (auto &ext : physicalDevice.GetAvailableExtensions())
+        {
+            // clang-format off
+            auto it = std::find_if(extensions.begin(), extensions.end(),
+            [&ext](const char* reqExt)
+            {
+                return std::strcmp(reqExt, ext.extensionName) == 0;
+            });
+            // clang-format on
+            bool isUsed = (it != extensions.end());
+
+            VE_CORE_TRACE("[{}] {} (v. {}.{}.{})",
+                          isUsed ? 'x' : ' ',
+                          ext.extensionName,
+                          VK_VERSION_MAJOR(ext.specVersion),
+                          VK_VERSION_MINOR(ext.specVersion),
+                          VK_VERSION_PATCH(ext.specVersion));
+        }
+#endif
+
         // Device
         VkDeviceCreateInfo createInfo{
             .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
@@ -66,11 +89,6 @@ namespace ve
 
         VkResult result = vkCreateDevice(physicalDevice.GetVkHandle(), &createInfo, nullptr, &m_Device);
         CHECK_VK_RESULT(result);
-
-        VE_CORE_TRACE("VulkanLogicalDevice created");
-        VE_CORE_TRACE("  Extensions ({}):", extensions.size());
-        for (const char *ext : extensions)
-            VE_CORE_TRACE("    {}", ext);
     }
 
     void VulkanLogicalDevice::RetrieveQueues(const QueueFamilyIndices &indices)
@@ -79,12 +97,6 @@ namespace ve
         vkGetDeviceQueue(m_Device, indices.presentFamily.value(), 0, &m_Queues.present);
         vkGetDeviceQueue(m_Device, indices.computeFamily.value(), 0, &m_Queues.compute);
         vkGetDeviceQueue(m_Device, indices.GetTransferFamily(), 0, &m_Queues.transfer);
-
-        VE_CORE_TRACE("Queue families:");
-        VE_CORE_TRACE("  Graphics: {}", indices.graphicsFamily.value());
-        VE_CORE_TRACE("  Present: {}", indices.presentFamily.value());
-        VE_CORE_TRACE("  Compute: {}", indices.computeFamily.value());
-        VE_CORE_TRACE("  Transfer: {}", indices.GetTransferFamily());
     }
 
 } // namespace ve

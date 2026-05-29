@@ -120,7 +120,6 @@ namespace ve
 
         VkResult result = vkCreateDescriptorPool(m_Device, &createInfo, nullptr, &m_Pool);
         CHECK_VK_RESULT(result);
-        VE_CORE_TRACE("VulkanDescriptorPool created (maxSets={})", desc.maxSets);
     }
 
     VulkanDescriptorPool::~VulkanDescriptorPool()

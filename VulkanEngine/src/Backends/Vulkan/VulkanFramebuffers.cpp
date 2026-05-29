@@ -73,8 +73,6 @@ namespace ve
             VkResult result = vkCreateFramebuffer(m_Device, &framebufferInfo, nullptr, &m_Framebuffers[i]);
             CHECK_VK_RESULT(result);
         }
-
-        VE_CORE_TRACE("Framebuffers created ({})", m_Framebuffers.size());
     }
 
     void VulkanFramebuffers::Destroy()

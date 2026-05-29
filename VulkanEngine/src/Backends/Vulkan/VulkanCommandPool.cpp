@@ -27,17 +27,6 @@ namespace ve
 
         VkResult result = vkCreateCommandPool(m_Device, &createInfo, nullptr, &m_CommandPool);
         CHECK_VK_RESULT(result);
-
-        const char *typeStr;
-        if (desc.type == CommandPoolType::Graphics)
-            typeStr = "Graphics";
-        else if (desc.type == CommandPoolType::Compute)
-            typeStr = "Compute";
-        else
-            typeStr = "Transfer";
-        VE_CORE_TRACE("CommandPool created");
-        VE_CORE_TRACE("  type: {}", typeStr);
-        VE_CORE_TRACE("  family: {}", familyIndex);
     }
 
     VulkanCommandPool::~VulkanCommandPool()

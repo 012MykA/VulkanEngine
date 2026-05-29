@@ -58,7 +58,9 @@ namespace ve
     private:
         void CreateInstance(const InstanceDesc &desc);
 
-    private:
+        static std::vector<VkLayerProperties> GetAvailableLayers();
+        static std::vector<VkExtensionProperties> GetAvailableExtensions();
+
         bool CheckValidationLayerSupport(const std::vector<const char *> &layers);
         std::vector<const char *> BuildExtensionList(const InstanceDesc &desc);
         VkDebugUtilsMessengerCreateInfoEXT BuildMessengerCreateInfo(const DebugMessengerDesc &desc);

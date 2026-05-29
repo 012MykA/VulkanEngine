@@ -128,6 +128,10 @@ namespace ve
 
         SwapchainSupportDetails QuerySwapchainSupport() const;
 
+        std::vector<VkExtensionProperties> GetAvailableExtensions() const;
+        
+        static std::vector<VkExtensionProperties> GetDeviceAvailableExtensions(VkPhysicalDevice device);
+        
     private:
         void PickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface);
         void BuildCapabilities();
