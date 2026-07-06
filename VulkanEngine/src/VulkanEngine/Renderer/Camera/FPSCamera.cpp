@@ -25,16 +25,18 @@ namespace ve
             return;
         }
 
+        float sprintMultiplier = m_Window.IsKeyPressed(Key::LeftShift) ? m_Desc.sprintMultiplier : 1.0f;
         float velocity = m_Desc.movementSpeed * ts.GetSeconds();
+        float speed = velocity * sprintMultiplier;
 
         // clang-format off
-        if (m_Window.IsKeyPressed(Key::W)) { m_Position += m_Front * velocity; m_IsViewDirty = true; }
-        if (m_Window.IsKeyPressed(Key::S)) { m_Position -= m_Front * velocity; m_IsViewDirty = true; }
-        if (m_Window.IsKeyPressed(Key::A)) { m_Position -= m_Right * velocity; m_IsViewDirty = true; }
-        if (m_Window.IsKeyPressed(Key::D)) { m_Position += m_Right * velocity; m_IsViewDirty = true; }
+        if (m_Window.IsKeyPressed(Key::W)) { m_Position += m_Front * speed; m_IsViewDirty = true; }
+        if (m_Window.IsKeyPressed(Key::S)) { m_Position -= m_Front * speed; m_IsViewDirty = true; }
+        if (m_Window.IsKeyPressed(Key::A)) { m_Position -= m_Right * speed; m_IsViewDirty = true; }
+        if (m_Window.IsKeyPressed(Key::D)) { m_Position += m_Right * speed; m_IsViewDirty = true; }
 
-        if (m_Window.IsKeyPressed(Key::E)) { m_Position += m_Up * velocity; m_IsViewDirty = true; }
-        if (m_Window.IsKeyPressed(Key::Q)) { m_Position -= m_Up * velocity; m_IsViewDirty = true; }
+        if (m_Window.IsKeyPressed(Key::E)) { m_Position += m_Up * speed; m_IsViewDirty = true; }
+        if (m_Window.IsKeyPressed(Key::Q)) { m_Position -= m_Up * speed; m_IsViewDirty = true; }
         // clang-format on
 
         auto [mouseX, mouseY] = m_Window.GetMousePosition();

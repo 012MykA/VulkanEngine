@@ -14,6 +14,7 @@
 #include "Backends/Vulkan/VulkanDescriptor.hpp"
 #include "Backends/Vulkan/VulkanPipelineLayout.hpp"
 #include "Backends/Vulkan/VulkanPipeline.hpp"
+#include "Backends/Vulkan/VulkanPipelineCache.hpp"
 #include "Backends/Vulkan/VulkanFrameManager.hpp"
 
 #include "VulkanEngine/Assets/Mesh.hpp"
@@ -171,6 +172,7 @@ namespace ve
         std::unique_ptr<VulkanLogicalDevice> m_LogicalDevice;
         std::unique_ptr<VulkanAllocator> m_Allocator;
 
+        std::unique_ptr<VulkanPipelineCache> m_PipelineCache;
         std::unique_ptr<VulkanSwapchain> m_Swapchain;
         std::unique_ptr<VulkanDepthBuffer> m_DepthBuffer;
         std::unique_ptr<VulkanImage> m_MsaaColorBuffer;

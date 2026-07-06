@@ -15,6 +15,7 @@ namespace ve
         float farClip = 1000.0f;
 
         float movementSpeed = 2.0f;
+        float sprintMultiplier = 2.0f;
         float mouseSensitivity = 0.05f;
     };
 

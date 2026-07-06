@@ -30,7 +30,9 @@ namespace ve
         return desc;
     }
 
-    VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanLogicalDevice &logicalDevice, const GraphicsPipelineDesc &desc)
+    VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanLogicalDevice &logicalDevice,
+                                                   const GraphicsPipelineDesc &desc,
+                                                   const VulkanPipelineCache *cache)
         : m_Device(logicalDevice.GetVkHandle())
     {
         // Shader stages
@@ -159,7 +161,9 @@ namespace ve
             .subpass = 0,
         };
 
-        VkResult result = vkCreateGraphicsPipelines(m_Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);
+        VkPipelineCache pipelineCache = cache ? cache->GetVkHandle() : VK_NULL_HANDLE;
+
+        VkResult result = vkCreateGraphicsPipelines(m_Device, pipelineCache, 1, &pipelineInfo, nullptr, &m_Pipeline);
         CHECK_VK_RESULT(result);
     }
 

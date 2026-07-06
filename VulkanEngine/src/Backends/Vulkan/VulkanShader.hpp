@@ -23,7 +23,6 @@ namespace ve
 
         VkShaderModule GetVkHandle() const { return m_Module; }
 
-    private:
         static std::vector<uint32_t> LoadSpv(const std::string &path);
 
     private:

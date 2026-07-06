@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VulkanPipelineCache.hpp"
+
 #include <vulkan/vulkan.h>
 
 #include <vector>
@@ -56,7 +58,8 @@ namespace ve
     {
     public:
         explicit VulkanGraphicsPipeline(const VulkanLogicalDevice &logicalDevice,
-                                        const GraphicsPipelineDesc &desc);
+                                        const GraphicsPipelineDesc &desc,
+                                        const VulkanPipelineCache *cache = nullptr);
 
         ~VulkanGraphicsPipeline();
 
@@ -86,8 +89,8 @@ namespace ve
     class VulkanComputePipeline
     {
     public:
-        VulkanComputePipeline( const VulkanLogicalDevice &logicalDevice,
-            const ComputePipelineDesc &desc);
+        VulkanComputePipeline(const VulkanLogicalDevice &logicalDevice,
+                              const ComputePipelineDesc &desc);
         ~VulkanComputePipeline();
 
         VulkanComputePipeline(const VulkanComputePipeline &) = delete;

@@ -10,6 +10,7 @@
 
 #include <cassert>
 #include <vector>
+#include <fstream>
 
 #include "VulkanEngine/Core/Log.hpp"
 
@@ -18,6 +19,8 @@
 
 #define SKYBOX_VERTEX_SHADER_PATH "../VulkanEngine/assets/shaders/bin/skybox.vert.spv"
 #define SKYBOX_FRAGMENT_SHADER_PATH "../VulkanEngine/assets/shaders/bin/skybox.frag.spv"
+
+#define PIPELINE_CACHE_PATH "../VulkanEngine/assets/cache/pipeline_cache.bin"
 
 namespace ve
 {
@@ -189,6 +192,22 @@ namespace ve
         VulkanShader pbrVertexShader(*m_LogicalDevice, PBR_VERTEX_SHADER_PATH);
         VulkanShader pbrFragmentShader(*m_LogicalDevice, PBR_FRAGMENT_SHADER_PATH);
 
+        ve::Timer startupTimer;
+
+        // Pipeline cache
+        std::vector<char> pipelineCacheData = VulkanPipelineCache::LoadCacheBinary(PIPELINE_CACHE_PATH);
+        if (!pipelineCacheData.empty())
+        {
+            VkPhysicalDeviceProperties deviceProps = m_PhysicalDevice->GetProperties();
+            if (!VulkanPipelineCache::IsCacheDataValid(pipelineCacheData, deviceProps))
+            {
+                VE_CORE_WARN("Pipeline cache file is incompatible with the current GPU/driver, ignoring it");
+                pipelineCacheData.clear();
+            }
+        }
+
+        VulkanPipelineCache pipelineCache(*m_LogicalDevice, pipelineCacheData);
+
         m_Pipeline = std::make_unique<VulkanGraphicsPipeline>(
             *m_LogicalDevice,
             GraphicsPipelineDesc{
@@ -201,7 +220,10 @@ namespace ve
                 .colorBlendAttachment = MakeOpaqueBlend(),
                 .renderPass = m_RenderPass->GetVkHandle(),
                 .layout = m_PipelineLayout->GetVkHandle(),
-            });
+            },
+            &pipelineCache);
+
+        VE_CORE_INFO("Pipeline creation completed in {} ms", startupTimer.ElapsedMilliseconds());
 
         // Skybox
         m_SkyboxSetLayout = std::make_unique<VulkanDescriptorSetLayout>(
@@ -244,7 +266,10 @@ namespace ve
                 .colorBlendAttachment = MakeOpaqueBlend(),
                 .renderPass = m_RenderPass->GetVkHandle(),
                 .layout = m_SkyboxPipelineLayout->GetVkHandle(),
-            });
+            },
+            &pipelineCache);
+
+        pipelineCache.SaveCacheToFile(PIPELINE_CACHE_PATH);
 
         m_SkyboxMesh = MeshLoader().LoadGLTF("../VulkanEngine/assets/models/Cube.glb");
         UploadMesh(*m_SkyboxMesh);
