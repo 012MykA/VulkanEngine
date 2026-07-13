@@ -7,9 +7,11 @@ layout(location = 3) in vec2 inTexCoord;
 
 #define MAX_LIGHTS 10
 
-struct PointLight {
-    vec4 position;
-    vec4 color;
+struct Light {
+    vec4 position;     // [x, y, z, type]
+    vec4 color;        // [r, g, b, intensity]
+    vec4 direction;    // [x, y, z, range]
+    vec4 coneAngles;   // [inner, outer, _padding, _padding]
 };
 
 layout(set = 0, binding = 0) uniform GlobalUBO {
@@ -18,7 +20,7 @@ layout(set = 0, binding = 0) uniform GlobalUBO {
     mat4 proj;
     vec4 cameraPos;
 
-    PointLight lights[MAX_LIGHTS];
+    Light lights[MAX_LIGHTS];
     int lightCount;
 } u_Global;
 
@@ -28,29 +30,29 @@ layout(set = 0, binding = 3) uniform sampler2D u_BrdfLUT;
 
 layout(set = 1, binding = 0) uniform MaterialPBRData {
     vec4 baseColorFactor;
-    vec3 emissiveFactor;
-    float alphaCutoff;
 
+    vec3 emissiveColorFactor;
+    float emissiveStrength;
+
+    float alphaCutoff;
     float metallicFactor;
     float roughnessFactor;
     float normalScale;
+
     float occlusionStrength;
-
-    uint alphaMode;   // 0: Opaque, 1: Mask, 2: Blend
-    uint doubleSided; // 0: false, 1: true
-
+    uint alphaMode; // Opaque = 0, Mask = 1, Blend = 2
+    uint doubleSided;
     uint hasBaseColorMap;
+
     uint hasNormalMap;
-    uint hasMetallicRoughnessMap;
+    uint hasAoMetallicRoughnessMap;
     uint hasEmissiveMap;
-    uint hasOcclusionMap;
 } u_Material;
 
 layout(set = 1, binding = 1) uniform sampler2D baseColorMap;
 layout(set = 1, binding = 2) uniform sampler2D emissiveMap;
-layout(set = 1, binding = 3) uniform sampler2D metallicRoughnessMap;
+layout(set = 1, binding = 3) uniform sampler2D aoMetallicRoughnessMap;
 layout(set = 1, binding = 4) uniform sampler2D normalMap;
-layout(set = 1, binding = 5) uniform sampler2D occlusionMap;
 
 layout(location = 0) out vec4 outColor;
 
@@ -99,33 +101,27 @@ void main() {
     }
 
     // Emissive
-    vec3 emissive = u_Material.emissiveFactor;
+    vec3 emissive = u_Material.emissiveColorFactor;
     if(u_Material.hasEmissiveMap != 0) {
         emissive *= texture(emissiveMap, UV).rgb;
     }
+    emissive *= u_Material.emissiveStrength;
 
-    // Metallic & Roughness
+    // AO & Metallic & Roughness
+    float occlusion = 1.0;
     float metallic = u_Material.metallicFactor;
     float roughness = u_Material.roughnessFactor;
 
-    if(u_Material.hasMetallicRoughnessMap != 0) {
-        metallic *= texture(metallicRoughnessMap, UV).b;
-        roughness *= texture(metallicRoughnessMap, UV).g;
-    }
-
-    // Occlusion
-    float occlusion = 1.0;
-    if(u_Material.hasOcclusionMap != 0) {
-        float aoSample = texture(occlusionMap, UV).r;
-        occlusion = 1.0 + u_Material.occlusionStrength * (aoSample - 1.0);
+    if(u_Material.hasAoMetallicRoughnessMap != 0) {
+        occlusion = 1.0 + u_Material.occlusionStrength * (texture(aoMetallicRoughnessMap, UV).r - 1.0);
+        metallic *= texture(aoMetallicRoughnessMap, UV).b;
+        roughness *= texture(aoMetallicRoughnessMap, UV).g;
     }
 
     // Constants
     const vec3 DIELECTRIC_F0 = vec3(0.04);
 
-    // const float AMBIENT_INTENSITY = 0.001;
-
-    // const float GAMMA = 2.2;
+    // const float BASE_AMBIENT = 1.0;
 
     const float EPSILON = 0.0001;
 
@@ -161,61 +157,81 @@ void main() {
     vec3 F0 = DIELECTRIC_F0;
     F0 = mix(F0, albedo, metallic);
 
-    // reflectance equation
+    // Direct Lighting
     vec3 Lo = vec3(0.0);
-
     int lightCount = min(u_Global.lightCount, MAX_LIGHTS);
-    for(int i = 0; i < lightCount; ++i) {
-        // calculate per-light radiance
-        vec3 L = normalize(u_Global.lights[i].position.rgb - inWorldPos);
-        vec3 H = normalize(V + L);
-        float distance = length(u_Global.lights[i].position.rgb - inWorldPos);
-        float attenuation = 1.0 / (distance * distance);
-        float intensity = u_Global.lights[i].color.a;
-        vec3 radiance = u_Global.lights[i].color.rgb * intensity * attenuation;
 
-        // cook-torrance brdf
+    for(int i = 0; i < lightCount; ++i) {
+        Light l = u_Global.lights[i];
+        int type = int(l.position.w);
+
+        vec3 L;
+        float attenuation = 1.0;
+
+        if(type == 0) { // Directional
+            L = normalize(-l.direction.xyz);
+        } else { // Point or Spot
+            L = normalize(l.position.xyz - inWorldPos);
+            float dist = length(l.position.xyz - inWorldPos);
+
+            attenuation = 1.0 / (dist * dist + 0.01);
+
+            if(l.direction.w > 0.0) {
+                attenuation *= clamp(1.0 - dist / l.direction.w, 0.0, 1.0);
+            }
+
+            if(type == 2) { // Spot
+                float theta = dot(L, normalize(-l.direction.xyz));
+                float epsilon = l.coneAngles.x - l.coneAngles.y;
+                float intensity = clamp((theta - l.coneAngles.y) / epsilon, 0.0, 1.0);
+                attenuation *= intensity;
+            }
+        }
+
+        vec3 radiance = l.color.rgb * l.color.a * attenuation;
+
+        vec3 H = normalize(V + L);
+
+        // Cook-Torrance BRDF
         float NDF = DistributionGGX(N, H, roughness);
         float G = GeometrySmith(N, V, L, roughness);
         vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
         vec3 kS = F;
-        vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metallic;
+        vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
         vec3 numerator = NDF * G * F;
         float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + EPSILON;
-        vec3 specular = numerator / denominator;  
+        vec3 specular = numerator / denominator;
 
-        // add to outgoing radiance Lo
         float NdotL = max(dot(N, L), 0.0);
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
 
-    // --- IBL ---
+    // --- Indirect Lighting ---
     float NdotV = max(dot(N, V), 0.0);
     vec3 F = fresnelSchlickRoughness(NdotV, F0, roughness);
 
     vec3 kS = F;
-    vec3 kD = 1.0 - kS;
-    kD *= 1.0 - metallic;
+    vec3 kD = (1.0 - kS) * (1.0 - metallic);
 
-    // Diffuse IBL (Irradiance)
     vec3 irradiance = texture(u_IrradianceMap, N).rgb;
-    vec3 diffuse = irradiance * albedo;
+    vec3 diffuseIBL = irradiance * albedo;
 
-    // Specular IBL (Prefiltered)
-    float lod = roughness * float(textureQueryLevels(u_PrefilteredMap) - 1);
-    vec3 prefilteredColor = textureLod(u_PrefilteredMap, R, lod).rgb;
+    vec3 R_ibl = reflect(-V, N);
+
+    const MAX_RELECTION_LOD = 4.0;
+    vec3 prefilteredColor = textureLod(u_PrefilteredMap, R_ibl, roughness * MAX_REFLECTION_LOD).rgb;
+
     vec2 brdf = texture(u_BrdfLUT, vec2(NdotV, roughness)).rg;
-    vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
+    vec3 specularIBL = prefilteredColor * (F * brdf.x, brdf.y);
 
-    // Ambient
-    vec3 ambient = (kD * diffuse + specular) * occlusion;
+    vec3 ambient = (kD * diffuseIBL + specularIBL) * occlusion;
 
     // Final color
     vec3 color = ambient + Lo + emissive;
 
+    // Tone Mappging (ACES)
     color = aces(color);
 
     outColor = vec4(color, albedoRGBA.a);
