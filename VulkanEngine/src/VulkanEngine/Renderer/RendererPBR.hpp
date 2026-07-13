@@ -132,7 +132,7 @@ namespace ve
 
         void SetSkybox(const std::array<std::string, 6> &faces);
 
-        void SetSkybox(const std::string &directory);
+        void SetSkybox(const std::string &panorama);
 
         // -------------------------------------------------------
         // Helpers

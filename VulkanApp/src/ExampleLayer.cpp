@@ -26,14 +26,15 @@ void ExampleLayer::OnAttach()
         .iblIntensity = 1.0f,
     };
     m_Renderer = std::make_unique<ve::RendererPBR>(window, settings);
-    m_Renderer->SetSkybox("assets/skyboxes/street/faces/");
+    m_Renderer->SetSkybox("assets/skyboxes/sunset/citrus_orchard_road_puresky_4k.hdr");
     m_Renderer->SetSkyboxEnabled(true);
 
     m_Camera = std::make_unique<ve::FPSCamera>(window);
-    m_Camera->SetPosition({-8.0f, 1.0f, 0.0f});
-    m_Camera->SetYaw(0);
 
-    BuildLightTestScene();
+    ve::GLTFLoader loader(*m_Renderer);
+    m_LoadingScenes.push_back(PendingScene{
+        .scene = loader.LoadAsync("assets/scenes/SpheresProject/SpheresProject.glb"),
+    });
 }
 
 void ExampleLayer::OnUpdate(ve::Timestep ts)

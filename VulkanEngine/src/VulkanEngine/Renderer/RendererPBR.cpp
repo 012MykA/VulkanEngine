@@ -125,10 +125,10 @@ namespace ve
             m_LogicalDevice->GetTransferQueue());
 
         // Default resources
-        m_DefaultWhiteTexture = TextureLoader().CreateSolid(255, 255, 255, 255);
+        m_DefaultWhiteTexture = TextureLoader::CreateSolid(255, 255, 255, 255);
         UploadTexture(*m_DefaultWhiteTexture);
 
-        m_DefaultNormalMap = TextureLoader().CreateSolid(128, 128, 255, 255);
+        m_DefaultNormalMap = TextureLoader::CreateSolid(128, 128, 255, 255);
         UploadTexture(*m_DefaultNormalMap);
 
         // Descriptors
@@ -562,23 +562,20 @@ namespace ve
     {
         WaitIdle();
 
-        m_EnvironmentMap = TextureLoader().LoadCubeMap(faces);
+        m_EnvironmentMap = TextureLoader::LoadCubeMap(faces);
         UploadTexture(*m_EnvironmentMap);
 
         RebindSkyboxDescriptor();
     }
 
-    void RendererPBR::SetSkybox(const std::string &directory)
+    void RendererPBR::SetSkybox(const std::string &panorama)
     {
-        std::array<std::string, 6> faces = {
-            directory + "px.hdr", // +X
-            directory + "nx.hdr", // -X
-            directory + "py.hdr", // +Y
-            directory + "ny.hdr", // -Y
-            directory + "pz.hdr", // +Z
-            directory + "nz.hdr", // -Z
-        };
-        SetSkybox(faces);
+        WaitIdle();
+
+        m_EnvironmentMap = TextureLoader::LoadCubeMapPanorama(panorama);
+        UploadTexture(*m_EnvironmentMap);
+
+        RebindSkyboxDescriptor();
     }
 
     void RendererPBR::UploadMesh(Mesh &mesh, bool freeCPU) const
