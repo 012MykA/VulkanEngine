@@ -3,8 +3,8 @@ from pathlib import Path
 import time
 
 # Config
-SRC_DIR = Path("VulkanEngine/assets/shaders/src")
-BIN_DIR = Path("VulkanEngine/assets/shaders/bin")
+SRC_DIR = Path("../VulkanEngine/assets/shaders/src")
+BIN_DIR = Path("../VulkanEngine/assets/shaders/bin")
 COMPILER_PATH = "glslc"
 SHADER_EXTENSIONS = {".vert", ".frag", ".comp"}
 # ---
